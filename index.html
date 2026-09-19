@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ============ BASE ============ */
 *,*::before,*::after{box-sizing:border-box}
@@ -103,7 +104,6 @@ input[type=date]{min-height:46px}
 input[type=checkbox]{
   width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;flex-shrink:0;
 }
-/* En escritorio sí podemos bajar el tamaño (no hay zoom de iOS) */
 @media (hover:hover) and (pointer:fine){
   .input{font-size:14px;min-height:42px;padding:10px 13px}
   select.input{padding-right:36px}
@@ -339,7 +339,7 @@ input[type=checkbox]{
   <header class="topbar">
     <div class="brand">
       <span class="brand-kicker">AION PERFUMERÍA</span>
-      <h1>Gestor <i>v3.1</i></h1>
+      <h1>Gestor <i>v3.2</i></h1>
       <span class="brand-sub">EXTRAIT 42% · ISF 0.2 · Fórmula pre-programada</span>
     </div>
     <div class="topstat"><span class="dot"></span><span id="statTot">0 esencias</span></div>
@@ -497,8 +497,12 @@ input[type=checkbox]{
         </div>
 
         <div class="grid2" style="margin-bottom:10px">
-          <button class="btn" onclick="exportPDF()">PDF filtrado</button>
-          <button class="btn btn-ghost" onclick="exportInvPDF()">PDF inventario</button>
+          <button class="btn" onclick="exportPDF()">📄 PDF filtrado</button>
+          <button class="btn" onclick="exportHistExcel()">📊 Excel filtrado</button>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <button class="btn btn-ghost" onclick="exportInvPDF()">📄 PDF inventario</button>
+          <button class="btn btn-ghost" onclick="exportInvExcel()">📊 Excel inventario</button>
         </div>
         <div class="grid2">
           <button class="btn btn-ghost btn-sm" onclick="clearHist()">Borrar historial</button>
@@ -570,7 +574,6 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-/* Rellena un <select> conservando el valor previo si aún existe */
 function fillSelect(el, html, keep = true) {
   const prev = keep ? el.value : null;
   el.innerHTML = html;
@@ -590,11 +593,11 @@ const DEFAULT_INV = {
   ],
   liquidos: { perfumol:1000, musk:1000, ipm:1000, dpg:1000 },
   botellas: [
-    { id:'b1', modelo:'Cilíndrica dorada',    variantes:[
+    { id:'b1', modelo:'Cilíndrica dorada', variantes:[
         { id:'v1', tamano:50,  stock:24 },
         { id:'v2', tamano:100, stock:12 }
     ]},
-    { id:'b2', modelo:'Cuadrada negra mate',  variantes:[
+    { id:'b2', modelo:'Cuadrada negra mate', variantes:[
         { id:'v3', tamano:100, stock:12 }
     ]}
   ],
@@ -622,7 +625,6 @@ function migrate(inv) {
 
   if (!Array.isArray(inv.botellas)) inv.botellas = [];
 
-  // Formato antiguo: {id, modelo, tamano, stock}  ->  {id, modelo, variantes:[{id,tamano,stock}]}
   const migradas = [];
   inv.botellas.forEach(b => {
     if (Array.isArray(b.variantes)) { migradas.push(b); return; }
@@ -836,7 +838,7 @@ function editVariante(bid, vid) {
     v.stock  = s;
     b.variantes.sort((a, c) => a.tamano - c.tamano);
     saveInv(); toast('Tamaño actualizado');
-  }, { okText:'Guardar', extra:'borrar' , onDelete: () => {
+  }, { okText:'Guardar', onDelete: () => {
       b.variantes = b.variantes.filter(x => x.id !== vid);
       saveInv(); toast('Tamaño eliminado');
   }});
@@ -922,25 +924,21 @@ function delAtom(id) {
    RENDER — SELECTS DE VENTA
    ========================================================= */
 function syncSelects() {
-  // Esencia de venta
   fillSelect($('vEsencia'),
     '<option value="">Selecciona esencia…</option>' +
     inventory.esencias.map(e =>
       `<option value="${e.id}">${esc(e.nombre)} — ${fmt(e.stockMl)} ml</option>`).join(''), true);
 
-  // Filtro de esencia en historial
   fillSelect($('fEss'),
     '<option value="all">Todas las esencias</option>' +
     inventory.esencias.map(e => `<option value="${esc(e.nombre)}">${esc(e.nombre)}</option>`).join(''), true);
 
-  // Modelos de frasco
   fillSelect($('vBotellaModelo'),
     '<option value="sin">Sin frasco</option>' +
     inventory.botellas.map(b => `<option value="${b.id}">${esc(b.modelo)}</option>`).join(''), true);
 
   renderVariantesVenta();
 
-  // Atomizadores
   fillSelect($('vAtom'),
     inventory.atomizadores.length
       ? inventory.atomizadores.map(a => `<option value="${a.id}">${esc(a.modelo)} (${a.stock}u)</option>`).join('')
@@ -1028,7 +1026,6 @@ function calcFormula() {
     alertEl.style.color = '#7CFF9E';
   }
 
-  /* ---- Consumo ---- */
   const tam  = getTamano();
   const cant = parseInt($('vCant').value, 10) || 0;
   const ess  = inventory.esencias.find(e => e.id === $('vEsencia').value);
@@ -1134,17 +1131,15 @@ function registrarVenta() {
     alc:  tam * pctAlc  / 100 * cant
   };
 
-  /* Validaciones de stock */
-  if (ess.stockMl < tot.es)                            return toast('Esencia insuficiente');
-  if (inventory.liquidos.perfumol < tot.alc)           return toast('Perfumol insuficiente');
-  if (inventory.liquidos.musk < tot.musk)              return toast('Musk insuficiente');
-  if (inventory.liquidos.ipm  < tot.ipm)               return toast('IPM insuficiente');
-  if (inventory.liquidos.dpg  < tot.dpg)               return toast('DPG insuficiente');
-  if (botM && !botV)                                   return toast('Selecciona un tamaño de frasco');
-  if (botV && botV.stock < cant)                       return toast('Frascos insuficientes');
-  if (usaAtom && atom && atom.stock < cant)            return toast('Atomizadores insuficientes');
+  if (ess.stockMl < tot.es)                    return toast('Esencia insuficiente');
+  if (inventory.liquidos.perfumol < tot.alc)   return toast('Perfumol insuficiente');
+  if (inventory.liquidos.musk < tot.musk)      return toast('Musk insuficiente');
+  if (inventory.liquidos.ipm  < tot.ipm)       return toast('IPM insuficiente');
+  if (inventory.liquidos.dpg  < tot.dpg)       return toast('DPG insuficiente');
+  if (botM && !botV)                           return toast('Selecciona un tamaño de frasco');
+  if (botV && botV.stock < cant)               return toast('Frascos insuficientes');
+  if (usaAtom && atom && atom.stock < cant)    return toast('Atomizadores insuficientes');
 
-  /* Descuento */
   ess.stockMl -= tot.es;
   inventory.liquidos.perfumol -= tot.alc;
   inventory.liquidos.musk     -= tot.musk;
@@ -1176,7 +1171,7 @@ function registrarVenta() {
     totalMlProducido: tam * cant
   });
 
-  saveInv();      // renderiza todo
+  saveInv();
   saveSales();
   toast('Venta registrada ✓');
 
@@ -1256,7 +1251,7 @@ function renderHistorial() {
 }
 
 /* =========================================================
-   PDF
+   EXPORTAR — PDF
    ========================================================= */
 function exportPDF() {
   const list = getFiltered();
@@ -1278,11 +1273,11 @@ function exportPDF() {
     s.esenciaNombre,
     s.tamanoMl + ' ml',
     s.cantidad,
-    (s.consumo?.esenciaMl ?? '—'),
-    (s.consumo?.muskMl ?? '—'),
-    (s.consumo?.ipmMl ?? '—'),
-    (s.consumo?.dpgMl ?? '—'),
-    (s.consumo?.alcoholMl ?? '—'),
+    s.consumo?.esenciaMl ?? '—',
+    s.consumo?.muskMl ?? '—',
+    s.consumo?.ipmMl ?? '—',
+    s.consumo?.dpgMl ?? '—',
+    s.consumo?.alcoholMl ?? '—',
     s.consumo?.botellaModelo || '—',
     s.consumo?.atomizadorModelo || '—'
   ]);
@@ -1303,44 +1298,288 @@ function exportPDF() {
 function exportInvPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  let y = 0;
-
-  const check = (need = 10) => { if (y > 280 - need) { doc.addPage(); y = 20; } };
+  const marginX = 14;
 
   doc.setFontSize(17);
-  doc.text('AION PERFUMES · Inventario actual', 14, 18);
+  doc.text('AION PERFUMES · Inventario actual', marginX, 18);
   doc.setFontSize(10);
-  doc.text('Fecha: ' + new Date().toLocaleString('es-ES'), 14, 25);
-  y = 38;
+  doc.text('Fecha: ' + new Date().toLocaleString('es-ES'), marginX, 25);
 
-  doc.setFontSize(13); doc.text('Esencias', 14, y); y += 8;
-  doc.setFontSize(10);
-  if (!inventory.esencias.length) { doc.text('— Sin esencias —', 18, y); y += 6; }
-  inventory.esencias.forEach(e => { check(); doc.text(`${e.nombre}: ${fmt(e.stockMl)} ml`, 18, y); y += 5.5; });
+  let y = 33;
+  const HEAD = { fillColor: [201, 162, 39], textColor: [10, 10, 10], fontStyle: 'bold' };
+  const BASE = {
+    margin: { left: marginX, right: marginX },
+    styles: { fontSize: 9, cellPadding: 2.4 },
+    headStyles: HEAD,
+    alternateRowStyles: { fillColor: [245, 243, 236] }
+  };
+  const checkPage = (need = 40) => { if (y > 297 - need) { doc.addPage(); y = 22; } };
 
-  y += 6; check(30);
-  doc.setFontSize(13); doc.text('Líquidos base', 14, y); y += 8;
-  doc.setFontSize(10);
-  LIQUIDOS.forEach(l => { check(); doc.text(`${l.label}: ${fmt(inventory.liquidos[l.key])} ml`, 18, y); y += 5.5; });
+  /* ---------- ESENCIAS ---------- */
+  doc.setFontSize(12); doc.text('Esencias', marginX, y);
+  doc.autoTable({
+    ...BASE, startY: y + 3,
+    head: [['#', 'Nombre', 'Stock (ml)', 'Estado']],
+    body: inventory.esencias.length
+      ? inventory.esencias.map((e, i) => [i + 1, e.nombre, fmt(e.stockMl), e.stockMl < 50 ? '⚠ Bajo' : 'OK'])
+      : [['—', 'Sin esencias registradas', '—', '—']],
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      2: { halign: 'right', cellWidth: 26 },
+      3: { cellWidth: 20, halign: 'center' }
+    },
+    didParseCell: d => {
+      if (d.section === 'body' && d.column.index === 3 && d.cell.raw === '⚠ Bajo') {
+        d.cell.styles.textColor = [200, 40, 40];
+        d.cell.styles.fontStyle = 'bold';
+      }
+    }
+  });
+  y = doc.lastAutoTable.finalY + 11;
 
-  y += 6; check(30);
-  doc.setFontSize(13); doc.text('Frascos', 14, y); y += 8;
-  doc.setFontSize(10);
-  if (!inventory.botellas.length) { doc.text('— Sin frascos —', 18, y); y += 6; }
-  inventory.botellas.forEach(b => {
-    check();
-    doc.text(b.modelo + ':', 18, y); y += 5.5;
-    b.variantes.forEach(v => { check(); doc.text(`• ${v.tamano} ml — ${v.stock} u`, 24, y); y += 5.5; });
+  /* ---------- LÍQUIDOS ---------- */
+  checkPage();
+  doc.setFontSize(12); doc.text('Líquidos base', marginX, y);
+  doc.autoTable({
+    ...BASE, startY: y + 3,
+    head: [['Líquido', 'Stock (ml)']],
+    body: LIQUIDOS.map(l => [l.label, fmt(inventory.liquidos[l.key])]),
+    columnStyles: { 1: { halign: 'right', cellWidth: 32 } }
+  });
+  y = doc.lastAutoTable.finalY + 11;
+
+  /* ---------- FRASCOS ---------- */
+  checkPage();
+  doc.setFontSize(12); doc.text('Frascos', marginX, y);
+
+  const frascosBody = [];
+  if (!inventory.botellas.length) {
+    frascosBody.push(['—', 'Sin frascos registrados', '—', '—', '—']);
+  } else {
+    inventory.botellas.forEach(b => {
+      if (!b.variantes.length) {
+        frascosBody.push([b.modelo, '—', '—', '—', '—']);
+      } else {
+        b.variantes.forEach((v, i) => {
+          frascosBody.push([
+            i === 0 ? b.modelo : '↳',
+            v.tamano + ' ml',
+            v.stock + ' u',
+            v.stock < 5 ? '⚠ Bajo' : 'OK',
+            (v.tamano * v.stock) + ' ml'
+          ]);
+        });
+      }
+    });
+  }
+
+  doc.autoTable({
+    ...BASE, startY: y + 3,
+    head: [['Modelo', 'Tamaño', 'Stock', 'Estado', 'Capacidad total']],
+    body: frascosBody,
+    columnStyles: {
+      0: { cellWidth: 55 },
+      1: { halign: 'right', cellWidth: 24 },
+      2: { halign: 'right', cellWidth: 24 },
+      3: { cellWidth: 22, halign: 'center' },
+      4: { halign: 'right', cellWidth: 34 }
+    },
+    didParseCell: d => {
+      if (d.section === 'body' && d.column.index === 3 && d.cell.raw === '⚠ Bajo') {
+        d.cell.styles.textColor = [200, 40, 40];
+        d.cell.styles.fontStyle = 'bold';
+      }
+      if (d.section === 'body' && d.column.index === 0 && d.cell.raw === '↳') {
+        d.cell.styles.textColor = [150, 150, 150];
+      }
+    }
+  });
+  y = doc.lastAutoTable.finalY + 11;
+
+  /* ---------- ATOMIZADORES ---------- */
+  checkPage();
+  doc.setFontSize(12); doc.text('Atomizadores', marginX, y);
+  doc.autoTable({
+    ...BASE, startY: y + 3,
+    head: [['Modelo', 'Stock (u)', 'Estado']],
+    body: inventory.atomizadores.length
+      ? inventory.atomizadores.map(a => [a.modelo, a.stock, a.stock < 5 ? '⚠ Bajo' : 'OK'])
+      : [['Sin atomizadores registrados', '—', '—']],
+    columnStyles: {
+      1: { halign: 'right', cellWidth: 32 },
+      2: { cellWidth: 22, halign: 'center' }
+    },
+    didParseCell: d => {
+      if (d.section === 'body' && d.column.index === 2 && d.cell.raw === '⚠ Bajo') {
+        d.cell.styles.textColor = [200, 40, 40];
+        d.cell.styles.fontStyle = 'bold';
+      }
+    }
   });
 
-  y += 6; check(30);
-  doc.setFontSize(13); doc.text('Atomizadores', 14, y); y += 8;
-  doc.setFontSize(10);
-  if (!inventory.atomizadores.length) { doc.text('— Sin atomizadores —', 18, y); y += 6; }
-  inventory.atomizadores.forEach(a => { check(); doc.text(`${a.modelo}: ${a.stock} u`, 18, y); y += 5.5; });
-
   doc.save('AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.pdf');
-  toast('Inventario exportado');
+  toast('Inventario PDF exportado');
+}
+
+/* =========================================================
+   EXPORTAR — EXCEL
+   ========================================================= */
+function exportHistExcel() {
+  const list = getFiltered();
+  if (!list.length) return toast('Nada que exportar');
+
+  const header = [
+    'Fecha', 'Cliente', 'Esencia', 'Tamaño (ml)', 'Cantidad',
+    '% Esencia', '% Musk', '% IPM', '% DPG', '% Alcohol',
+    'Esencia (ml)', 'Musk (ml)', 'IPM (ml)', 'DPG (ml)', 'Alcohol (ml)',
+    'Frasco', 'Atomizador', 'Total producido (ml)'
+  ];
+
+  const rows = list.map(s => [
+    new Date(s.fecha).toLocaleString('es-ES'),
+    s.cliente || '',
+    s.esenciaNombre,
+    s.tamanoMl,
+    s.cantidad,
+    s.pctEsencia,
+    s.pctMusk,
+    s.pctIpm,
+    s.pctDpg,
+    s.pctAlcohol,
+    s.consumo?.esenciaMl ?? '',
+    s.consumo?.muskMl ?? '',
+    s.consumo?.ipmMl ?? '',
+    s.consumo?.dpgMl ?? '',
+    s.consumo?.alcoholMl ?? '',
+    s.consumo?.botellaModelo || '',
+    s.consumo?.atomizadorModelo || '',
+    s.totalMlProducido
+  ]);
+
+  const wb = XLSX.utils.book_new();
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  ws['!cols'] = [
+    { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 11 }, { wch: 9 },
+    { wch: 9 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 9 },
+    { wch: 11 }, { wch: 10 }, { wch: 9 }, { wch: 9 }, { wch: 11 },
+    { wch: 22 }, { wch: 24 }, { wch: 14 }
+  ];
+  XLSX.utils.book_append_sheet(wb, ws, 'Historial');
+
+  const totalEss = list.reduce((a, s) => a + (s.consumo?.esenciaMl || 0), 0);
+  const totalMusk = list.reduce((a, s) => a + (s.consumo?.muskMl || 0), 0);
+  const totalIpm  = list.reduce((a, s) => a + (s.consumo?.ipmMl || 0), 0);
+  const totalDpg  = list.reduce((a, s) => a + (s.consumo?.dpgMl || 0), 0);
+  const totalAlc  = list.reduce((a, s) => a + (s.consumo?.alcoholMl || 0), 0);
+  const totalPiezas = list.reduce((a, s) => a + (s.cantidad || 0), 0);
+  const totalMl     = list.reduce((a, s) => a + (s.totalMlProducido || 0), 0);
+
+  const resumen = [
+    ['Métrica', 'Valor'],
+    ['Total ventas', list.length],
+    ['Total piezas', totalPiezas],
+    ['Total ml producidos', totalMl],
+    ['Esencia consumida (ml)', r2(totalEss)],
+    ['Musk consumido (ml)', r2(totalMusk)],
+    ['IPM consumido (ml)', r2(totalIpm)],
+    ['DPG consumido (ml)', r2(totalDpg)],
+    ['Alcohol consumido (ml)', r2(totalAlc)],
+    ['Fecha de exportación', new Date().toLocaleString('es-ES')]
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(resumen);
+  ws2['!cols'] = [{ wch: 30 }, { wch: 24 }];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  XLSX.writeFile(wb, 'AION_Historial_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  toast('Excel exportado');
+}
+
+function exportInvExcel() {
+  const wb = XLSX.utils.book_new();
+
+  /* ---------- ESENCIAS ---------- */
+  const essRows = [['Nombre', 'Stock (ml)', 'Estado']];
+  if (inventory.esencias.length) {
+    inventory.esencias.forEach(e =>
+      essRows.push([e.nombre, e.stockMl, e.stockMl < 50 ? 'Bajo' : 'OK']));
+  } else {
+    essRows.push(['Sin esencias registradas', '', '']);
+  }
+  const wsEss = XLSX.utils.aoa_to_sheet(essRows);
+  wsEss['!cols'] = [{ wch: 30 }, { wch: 14 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, wsEss, 'Esencias');
+
+  /* ---------- LÍQUIDOS ---------- */
+  const liqRows = [['Líquido', 'Stock (ml)']];
+  LIQUIDOS.forEach(l => liqRows.push([l.label, inventory.liquidos[l.key]]));
+  const wsLiq = XLSX.utils.aoa_to_sheet(liqRows);
+  wsLiq['!cols'] = [{ wch: 34 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, wsLiq, 'Líquidos');
+
+  /* ---------- FRASCOS ---------- */
+  const botRows = [['Modelo', 'Tamaño (ml)', 'Stock (u)', 'Capacidad total (ml)', 'Estado']];
+  if (inventory.botellas.length) {
+    inventory.botellas.forEach(b => {
+      if (!b.variantes.length) {
+        botRows.push([b.modelo, '', '', '', '']);
+      } else {
+        b.variantes.forEach(v =>
+          botRows.push([
+            b.modelo,
+            v.tamano,
+            v.stock,
+            v.tamano * v.stock,
+            v.stock < 5 ? 'Bajo' : 'OK'
+          ]));
+      }
+    });
+  } else {
+    botRows.push(['Sin frascos registrados', '', '', '', '']);
+  }
+  const wsBot = XLSX.utils.aoa_to_sheet(botRows);
+  wsBot['!cols'] = [{ wch: 26 }, { wch: 12 }, { wch: 11 }, { wch: 20 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, wsBot, 'Frascos');
+
+  /* ---------- ATOMIZADORES ---------- */
+  const atoRows = [['Modelo', 'Stock (u)', 'Estado']];
+  if (inventory.atomizadores.length) {
+    inventory.atomizadores.forEach(a =>
+      atoRows.push([a.modelo, a.stock, a.stock < 5 ? 'Bajo' : 'OK']));
+  } else {
+    atoRows.push(['Sin atomizadores registrados', '', '']);
+  }
+  const wsAto = XLSX.utils.aoa_to_sheet(atoRows);
+  wsAto['!cols'] = [{ wch: 30 }, { wch: 11 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, wsAto, 'Atomizadores');
+
+  /* ---------- RESUMEN GLOBAL ---------- */
+  const totalUdsFrasco = inventory.botellas.reduce((a, b) =>
+    a + b.variantes.reduce((s, v) => s + v.stock, 0), 0);
+  const totalCapacidad = inventory.botellas.reduce((a, b) =>
+    a + b.variantes.reduce((s, v) => s + v.stock * v.tamano, 0), 0);
+  const totalAtom = inventory.atomizadores.reduce((a, x) => a + x.stock, 0);
+
+  const resumen = [
+    ['Categoría', 'Total'],
+    ['Modelos de esencias', inventory.esencias.length],
+    ['Total stock esencias (ml)', r2(inventory.esencias.reduce((a, e) => a + e.stockMl, 0))],
+    ['Perfumol / Alcohol (ml)', inventory.liquidos.perfumol],
+    ['Musk (ml)', inventory.liquidos.musk],
+    ['IPM (ml)', inventory.liquidos.ipm],
+    ['DPG (ml)', inventory.liquidos.dpg],
+    ['Modelos de frascos', inventory.botellas.length],
+    ['Unidades de frascos', totalUdsFrasco],
+    ['Capacidad total frascos (ml)', totalCapacidad],
+    ['Unidades de atomizadores', totalAtom],
+    ['Fecha de exportación', new Date().toLocaleString('es-ES')]
+  ];
+  const wsRes = XLSX.utils.aoa_to_sheet(resumen);
+  wsRes['!cols'] = [{ wch: 32 }, { wch: 24 }];
+  XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
+
+  XLSX.writeFile(wb, 'AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  toast('Inventario Excel exportado');
 }
 
 /* =========================================================
@@ -1403,7 +1642,6 @@ function openModal(title, fields, onSave, opts = {}) {
   $('modalBackdrop').classList.add('show');
   document.body.style.overflow = 'hidden';
 
-  // Autofocus solo en escritorio (evita que salte el teclado en móvil)
   if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
     setTimeout(() => { const f = $('modalBody').querySelector('input'); if (f) f.focus(); }, 60);
   }
@@ -1441,7 +1679,6 @@ function switchTab(t) {
    EVENTOS
    ========================================================= */
 function bindEvents() {
-  // Campos que recalculan la fórmula
   ['pctEss', 'pctMusk', 'pctIpm', 'pctDpg', 'vCant'].forEach(id => {
     const el = $(id);
     el.addEventListener('input', calcFormula);
@@ -1467,11 +1704,9 @@ function bindEvents() {
     calcFormula();
   });
 
-  // Filtros del historial
   ['fEss', 'fDesde', 'fHasta'].forEach(id => $(id).addEventListener('change', renderHistorial));
   $('fSearch').addEventListener('input', renderHistorial);
 
-  // Enter en los formularios rápidos
   $('essName').addEventListener('keydown', e => { if (e.key === 'Enter') addEsencia(); });
   $('essMl').addEventListener('keydown',   e => { if (e.key === 'Enter') addEsencia(); });
   $('botModelo').addEventListener('keydown', e => { if (e.key === 'Enter') addFrasco(); });
