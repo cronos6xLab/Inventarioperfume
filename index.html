@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#070707">
+<title>AION PERFUMES · Gestor de Inventario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+/* ============ BASE ============ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  background-color:#070707;
+  background-image:radial-gradient(900px 520px at 50% -18%,rgba(212,175,55,.11),transparent 62%);
+  background-attachment:fixed;
+  color:#f5f1e8;
+  min-height:100vh;
+  padding-bottom:calc(104px + env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,.serif{font-family:'Instrument Serif',serif;font-weight:400;margin:0}
+button{font-family:inherit}
+
+/* ============ LAYOUT ============ */
+.wrap{max-width:960px;margin:0 auto;padding:0 14px}
+
+header.topbar{
+  padding:22px 0 14px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+}
+.brand-kicker{font-size:10px;letter-spacing:.22em;color:#D4AF37;font-weight:600}
+.brand h1{font-size:30px;line-height:1;margin-top:5px;letter-spacing:-.01em}
+.brand h1 i{font-style:italic;color:rgba(245,241,232,.45)}
+.brand-sub{display:block;font-size:10.5px;color:rgba(245,241,232,.38);margin-top:7px;letter-spacing:.04em}
+.topstat{
+  display:flex;align-items:center;gap:7px;flex-shrink:0;
+  font-size:11px;color:rgba(245,241,232,.55);
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  padding:7px 11px;border-radius:999px;white-space:nowrap;
+}
+.topstat .dot{width:6px;height:6px;border-radius:50%;background:#7CFF9E;box-shadow:0 0 8px #7CFF9E}
+
+/* ============ CARDS ============ */
+.card{
+  background:linear-gradient(180deg,#141414 0%,#0f0f0f 100%);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:12px;
+}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
+.card-head h2{font-size:19px;letter-spacing:-.01em}
+.card-sub{font-size:11px;color:rgba(245,241,232,.4);margin:-8px 0 12px}
+
+.badge{
+  font-size:10px;font-weight:600;padding:4px 10px;border-radius:999px;
+  color:#D4AF37;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.22);
+  letter-spacing:.04em;
+}
+
+/* ============ INPUTS (16px = no zoom iOS) ============ */
+.input{
+  width:100%;
+  background-color:#0a0a0a;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:12px;
+  padding:12px 14px;
+  color:#f5f1e8;
+  font-size:16px;
+  font-family:inherit;
+  line-height:1.3;
+  outline:none;
+  transition:border-color .18s,box-shadow .18s,background-color .18s;
+  -webkit-appearance:none;appearance:none;
+  min-height:46px;
+}
+.input::placeholder{color:rgba(245,241,232,.26)}
+.input:focus{
+  border-color:rgba(212,175,55,.7);
+  background-color:#0d0d0d;
+  box-shadow:0 0 0 3px rgba(212,175,55,.13);
+}
+select.input{
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23888' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 14px center;
+  padding-right:38px;
+  cursor:pointer;
+}
+select.input option{background:#111;color:#f5f1e8}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+input[type=date]{min-height:46px}
+input[type=checkbox]{
+  width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;flex-shrink:0;
+}
+/* En escritorio sí podemos bajar el tamaño (no hay zoom de iOS) */
+@media (hover:hover) and (pointer:fine){
+  .input{font-size:14px;min-height:42px;padding:10px 13px}
+  select.input{padding-right:36px}
+}
+
+.field{display:block;margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.label{display:block;font-size:11px;color:rgba(245,241,232,.5);margin-bottom:6px;letter-spacing:.03em}
+
+/* ============ BOTONES ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
+  color:#0a0a0a;border:0;border-radius:12px;
+  padding:12px 16px;font-size:14px;font-weight:600;letter-spacing:.01em;
+  cursor:pointer;min-height:46px;
+  transition:transform .12s ease,filter .18s ease,box-shadow .18s ease;
+  box-shadow:0 8px 22px -12px rgba(212,175,55,.9);
+  -webkit-tap-highlight-color:transparent;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:scale(.975)}
+.btn-block{width:100%}
+.btn-ghost{
+  background:rgba(255,255,255,.06);color:#f5f1e8;
+  border:1px solid rgba(255,255,255,.1);box-shadow:none;
+}
+.btn-ghost:hover{background:rgba(255,255,255,.1);filter:none}
+.btn-danger{background:rgba(255,90,90,.12);color:#ff8a8a;border:1px solid rgba(255,90,90,.24);box-shadow:none}
+.btn-danger:hover{background:rgba(255,90,90,.2)}
+.btn-sm{padding:9px 12px;font-size:12px;border-radius:10px;min-height:38px}
+.btn-lg{padding:15px;font-size:14.5px;letter-spacing:.05em}
+
+.icon-btn{
+  width:36px;height:36px;flex-shrink:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  color:rgba(245,241,232,.75);border-radius:10px;font-size:14px;cursor:pointer;
+  transition:.16s;-webkit-tap-highlight-color:transparent;
+}
+.icon-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.icon-btn.danger:hover{background:rgba(255,90,90,.16);color:#ff8a8a;border-color:rgba(255,90,90,.3)}
+
+/* ============ GRIDS ============ */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:640px){
+  .grid4{grid-template-columns:1fr 1fr}
+}
+
+/* ============ FILAS DE INVENTARIO ============ */
+.row{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.05);
+  border-radius:14px;padding:12px;
+}
+.row+.row{margin-top:8px}
+.row-main{min-width:0;flex:1}
+.row-title{font-size:13.5px;font-weight:500;word-break:break-word}
+.row-sub{font-size:11.5px;color:#D4AF37;margin-top:3px}
+.row-sub.is-low{color:#ff8a8a}
+.row-actions{display:flex;gap:6px;flex-shrink:0}
+
+.empty{
+  text-align:center;color:rgba(245,241,232,.32);font-size:13px;
+  padding:26px 10px;border:1px dashed rgba(255,255,255,.08);border-radius:14px;
+}
+
+/* ============ CHIPS ============ */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chips-mini{gap:6px;margin-top:8px}
+.chip{
+  border:1px solid rgba(255,255,255,.12);
+  background:#0a0a0a;color:rgba(245,241,232,.6);
+  padding:9px 14px;border-radius:999px;
+  font-size:13px;font-weight:500;cursor:pointer;
+  transition:.16s;-webkit-tap-highlight-color:transparent;min-height:38px;
+}
+.chip:hover{border-color:rgba(255,255,255,.25);color:#f5f1e8}
+.chip.active{
+  background:rgba(212,175,55,.14);
+  border-color:rgba(212,175,55,.55);
+  color:#D4AF37;font-weight:600;
+}
+.variant{
+  border:1px solid rgba(255,255,255,.09);
+  background:rgba(255,255,255,.03);
+  color:rgba(245,241,232,.7);
+  padding:6px 11px;border-radius:9px;
+  font-size:11.5px;cursor:pointer;transition:.16s;
+  -webkit-tap-highlight-color:transparent;
+}
+.variant:hover{border-color:rgba(212,175,55,.45);color:#D4AF37}
+.variant.low{color:#ff8a8a;border-color:rgba(255,90,90,.3);background:rgba(255,90,90,.08)}
+
+/* ============ LIQUIDOS ============ */
+.liq{background:#0a0a0a;border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:12px}
+.liq-name{font-size:11.5px;color:rgba(245,241,232,.5);margin-bottom:8px;line-height:1.35}
+.liq-row{display:flex;gap:6px}
+.liq-row .input{flex:1;min-width:0}
+.liq-stock{font-size:13px;color:#D4AF37;font-weight:600;margin-top:8px;font-variant-numeric:tabular-nums}
+
+/* ============ BOTTOM NAV ============ */
+.bottom{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(7,7,7,.55) 0%,rgba(7,7,7,.97) 45%);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.bottom-inner{max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.tab{
+  border:0;background:transparent;cursor:pointer;
+  border-radius:14px;padding:9px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:rgba(245,241,232,.42);
+  transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;
+}
+.tab span{font-size:9.5px;letter-spacing:.12em;font-weight:700}
+.tab.active{background:linear-gradient(180deg,#E6C55E,#C9A227);color:#0a0a0a}
+.tab:not(.active):active{background:rgba(255,255,255,.06)}
+
+/* ============ PREVIEW FÓRMULA ============ */
+.formula-box{
+  margin-top:14px;padding:14px;border-radius:14px;
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.06);
+}
+.formula-title{font-size:10px;letter-spacing:.15em;color:rgba(245,241,232,.45);margin-bottom:12px;font-weight:600}
+.alc-box{
+  margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;
+  background:#151515;border:1px solid rgba(255,255,255,.06);
+  padding:12px 14px;border-radius:12px;
+}
+.alc-label{font-size:10px;color:rgba(245,241,232,.45);letter-spacing:.06em}
+.alc-val{font-size:22px;color:#D4AF37;font-weight:600;font-variant-numeric:tabular-nums}
+.fij-val{font-size:13px;font-weight:500}
+.alert-txt{font-size:10.5px;margin-top:3px;line-height:1.3}
+
+.preview{
+  margin-top:16px;padding:14px;border-radius:14px;
+  background:#0a0a0a;border:1px solid rgba(212,175,55,.16);
+  font-size:12.5px;
+}
+.pv-head{font-size:10px;letter-spacing:.14em;color:#D4AF37;font-weight:600;margin-bottom:12px}
+.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:480px){.pv-grid{grid-template-columns:1fr}}
+.pv-col-title{font-size:10px;color:rgba(245,241,232,.42);letter-spacing:.06em;margin-bottom:7px}
+.pv-line{display:flex;justify-content:space-between;gap:10px;padding:2.5px 0;color:rgba(245,241,232,.6)}
+.pv-line b{font-weight:500;color:#f5f1e8;font-variant-numeric:tabular-nums}
+.ok{color:#7CFF9E!important}
+.bad{color:#ff8a8a!important}
+.pv-status{
+  margin-top:12px;padding:10px 12px;border-radius:11px;
+  font-size:12px;font-weight:600;text-align:center;letter-spacing:.01em;
+}
+.pv-status.good{background:rgba(124,255,158,.1);color:#7CFF9E;border:1px solid rgba(124,255,158,.22)}
+.pv-status.bad{background:rgba(255,100,100,.1);color:#ff8a8a;border:1px solid rgba(255,100,100,.22)}
+
+/* ============ STATS ============ */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.05);
+  border-radius:14px;padding:12px 8px;text-align:center;
+}
+.stat-label{font-size:9.5px;color:rgba(245,241,232,.42);letter-spacing:.05em;line-height:1.3}
+.stat-val{font-size:21px;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat-val.serif{font-family:'Instrument Serif',serif}
+
+/* ============ HISTORIAL ============ */
+.hist-item{
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.06);
+  border-radius:14px;padding:13px;
+}
+.hist-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hist-title{font-size:13.5px;font-weight:500}
+.hist-date{font-size:11px;color:rgba(245,241,232,.42);margin-top:3px}
+.pill{
+  font-size:11px;font-weight:600;padding:5px 10px;border-radius:999px;white-space:nowrap;
+  background:rgba(212,175,55,.14);color:#D4AF37;border:1px solid rgba(212,175,55,.22);
+  font-variant-numeric:tabular-nums;
+}
+.hist-detail{margin-top:11px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px}
+@media(max-width:420px){.hist-detail{grid-template-columns:1fr}}
+.hist-box{background:#131313;border:1px solid rgba(255,255,255,.05);border-radius:11px;padding:9px 11px;line-height:1.65;color:rgba(245,241,232,.68)}
+.hist-box strong{display:block;font-size:9.5px;color:rgba(245,241,232,.35);letter-spacing:.12em;margin-bottom:4px;font-weight:600}
+
+/* ============ MODAL ============ */
+.backdrop{
+  position:fixed;inset:0;z-index:200;display:none;
+  align-items:center;justify-content:center;padding:20px;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+.backdrop.show{display:flex;animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  width:100%;max-width:400px;
+  background:linear-gradient(180deg,#161616,#101010);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:20px;
+  box-shadow:0 30px 70px -20px rgba(0,0,0,.9);
+  animation:pop .22s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.modal h3{font-size:19px;margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;margin-top:18px}
+.modal-actions .btn{flex:1}
+
+/* ============ TOAST ============ */
+.toast{
+  position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));
+  transform:translate(-50%,16px);
+  background:linear-gradient(180deg,#E6C55E,#C9A227);
+  color:#0a0a0a;padding:12px 20px;border-radius:999px;
+  font-size:13px;font-weight:600;z-index:300;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s,transform .22s;
+  box-shadow:0 12px 34px -10px rgba(0,0,0,.85);
+  max-width:calc(100vw - 40px);text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ============ VISTAS ============ */
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+
+/* ============ SEPARADOR ============ */
+.divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-kicker">AION PERFUMERÍA</span>
+      <h1>Gestor <i>v3.1</i></h1>
+      <span class="brand-sub">EXTRAIT 42% · ISF 0.2 · Fórmula pre-programada</span>
+    </div>
+    <div class="topstat"><span class="dot"></span><span id="statTot">0 esencias</span></div>
+  </header>
+
+  <main>
+    <!-- ================= INVENTARIO ================= -->
+    <section id="view-inv" class="view active">
+
+      <!-- ESENCIAS -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Esencias</h2>
+          <span class="badge" id="countEss">0</span>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <input id="essName" class="input" placeholder="Nombre · ej: Baccarat Rouge" autocomplete="off">
+          <input id="essMl" class="input" type="number" inputmode="decimal" placeholder="Stock ml" value="100">
+        </div>
+        <button class="btn btn-block" onclick="addEsencia()">+ Añadir esencia</button>
+        <div id="listEss" style="margin-top:12px"></div>
+      </div>
+
+      <!-- LÍQUIDOS -->
+      <div class="card">
+        <div class="card-head"><h2>Líquidos base</h2></div>
+        <div class="grid2" id="liqGrid"></div>
+      </div>
+
+      <!-- FRASCOS -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Frascos</h2>
+          <span class="badge" id="countBot">0</span>
+        </div>
+        <p class="card-sub">Un modelo puede tener varios tamaños. Si el modelo ya existe, se añade el nuevo tamaño.</p>
+
+        <label class="label">Modelo</label>
+        <input id="botModelo" class="input" placeholder="Ej: Cilíndrica dorada" autocomplete="off" style="margin-bottom:10px">
+        <div class="grid2" style="margin-bottom:10px">
+          <div>
+            <label class="label">Tamaño (ml)</label>
+            <input id="botTam" class="input" type="number" inputmode="decimal" value="50">
+          </div>
+          <div>
+            <label class="label">Stock (unidades)</label>
+            <input id="botStock" class="input" type="number" inputmode="numeric" value="10">
+          </div>
+        </div>
+        <button class="btn btn-block" onclick="addFrasco()">+ Añadir frasco</button>
+        <div id="listBot" style="margin-top:12px"></div>
+      </div>
+
+      <!-- ATOMIZADORES -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Atomizadores</h2>
+          <span class="badge" id="countAto">0</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="atoModelo" class="input" placeholder="Modelo atomizador" autocomplete="off" style="flex:1;min-width:0">
+          <input id="atoStock" class="input" type="number" inputmode="numeric" value="20" style="width:104px;flex-shrink:0">
+        </div>
+        <button class="btn btn-block" onclick="addAtom()">+ Añadir atomizador</button>
+        <div id="listAto" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <!-- ================= VENTA ================= -->
+    <section id="view-venta" class="view">
+      <div class="card" style="border-color:rgba(212,175,55,.2)">
+        <div class="brand-kicker" style="margin-bottom:8px">FÓRMULA EXTRAIT 42% · MDDP ISF 0.2</div>
+        <h2 style="font-size:23px;margin-bottom:16px">Registrar venta / producción</h2>
+
+        <label class="label">Cliente / Referencia (opcional)</label>
+        <input id="vCliente" class="input" placeholder="Ej: María · pedido Instagram" autocomplete="off" style="margin-bottom:14px">
+
+        <label class="label">Esencia utilizada</label>
+        <select id="vEsencia" class="input" style="margin-bottom:14px"></select>
+
+        <label class="label">Tamaño por frasco</label>
+        <div class="chips" id="vTamChips" style="margin-bottom:8px"></div>
+        <input id="vTamCustom" class="input" type="number" inputmode="decimal" placeholder="ml personalizado" style="display:none;margin-bottom:14px">
+
+        <label class="label">Cantidad de piezas</label>
+        <input id="vCant" class="input" type="number" inputmode="numeric" value="1" min="1" style="margin-bottom:6px">
+
+        <!-- FÓRMULA -->
+        <div class="formula-box">
+          <div class="formula-title">AJUSTE DE FÓRMULA (EDITABLE)</div>
+          <div class="grid4">
+            <div><label class="label">% Esencia</label><input id="pctEss" class="input" type="number" inputmode="decimal" step="0.1" value="42"></div>
+            <div><label class="label">% Musk</label><input id="pctMusk" class="input" type="number" inputmode="decimal" step="0.05" value="0.25"></div>
+            <div><label class="label">% IPM</label><input id="pctIpm" class="input" type="number" inputmode="decimal" step="0.05" value="0.8"></div>
+            <div><label class="label">% DPG</label><input id="pctDpg" class="input" type="number" inputmode="decimal" step="0.05" value="0"></div>
+          </div>
+
+          <div class="alc-box">
+            <div>
+              <div class="alc-label">% PERFUMOL / ALCOHOL (AUTO)</div>
+              <div class="alc-val" id="pctAlc">56.95%</div>
+            </div>
+            <div style="text-align:right">
+              <div class="alc-label">FIJADORES TOTALES</div>
+              <div class="fij-val" id="fijTot">1.05%</div>
+              <div class="alert-txt" id="alertAlc"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ENVASE -->
+        <div class="grid2" style="margin-top:16px">
+          <div>
+            <label class="label">Modelo de frasco</label>
+            <select id="vBotellaModelo" class="input"></select>
+          </div>
+          <div>
+            <label class="label">Tamaño del frasco</label>
+            <select id="vBotellaTam" class="input"></select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:rgba(245,241,232,.7);white-space:nowrap">
+            <input type="checkbox" id="vUsaAtom" checked> Atomizador
+          </label>
+          <select id="vAtom" class="input" style="flex:1;min-width:0"></select>
+        </div>
+
+        <div id="preview" class="preview">
+          <div style="font-size:12px;color:rgba(245,241,232,.4);text-align:center;padding:8px 0">
+            Selecciona esencia, tamaño y cantidad para ver el consumo
+          </div>
+        </div>
+
+        <button class="btn btn-block btn-lg" style="margin-top:16px" onclick="registrarVenta()">
+          REGISTRAR Y DESCONTAR INVENTARIO
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= HISTORIAL ================= -->
+    <section id="view-hist" class="view">
+      <div class="card">
+        <div class="card-head"><h2>Historial de producción</h2></div>
+        <div class="stats" id="stats"></div>
+
+        <div class="grid2" style="margin-bottom:10px">
+          <select id="fEss" class="input"></select>
+          <input id="fSearch" class="input" placeholder="Buscar..." autocomplete="off">
+        </div>
+        <div class="grid2" style="margin-bottom:12px">
+          <input id="fDesde" class="input" type="date">
+          <input id="fHasta" class="input" type="date">
+        </div>
+
+        <div class="grid2" style="margin-bottom:10px">
+          <button class="btn" onclick="exportPDF()">PDF filtrado</button>
+          <button class="btn btn-ghost" onclick="exportInvPDF()">PDF inventario</button>
+        </div>
+        <div class="grid2">
+          <button class="btn btn-ghost btn-sm" onclick="clearHist()">Borrar historial</button>
+          <button class="btn btn-danger btn-sm" onclick="clearAll()">Borrar todo</button>
+        </div>
+
+        <div class="divider"></div>
+        <div id="listHist" style="display:grid;gap:10px"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= NAV ================= -->
+<nav class="bottom">
+  <div class="bottom-inner">
+    <button id="tab-inv" class="tab active" onclick="switchTab('inv')">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/>
+      </svg>
+      <span>INVENTARIO</span>
+    </button>
+    <button id="tab-venta" class="tab" onclick="switchTab('venta')">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <span>VENTA</span>
+    </button>
+    <button id="tab-hist" class="tab" onclick="switchTab('hist')">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <path d="M3 3v18h18"/><path d="M7 15l3.5-3.5L13 14l4-6"/>
+      </svg>
+      <span>HISTORIAL</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ================= MODAL ================= -->
+<div class="backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Editar</h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn" id="modalOk">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const $  = id => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+const r2  = n => Math.round(n * 100) / 100;
+const fmt = n => (Math.round(n * 100) / 100).toLocaleString('es-ES');
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* Rellena un <select> conservando el valor previo si aún existe */
+function fillSelect(el, html, keep = true) {
+  const prev = keep ? el.value : null;
+  el.innerHTML = html;
+  if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+}
+
+/* =========================================================
+   DATOS
+   ========================================================= */
+const LS_INV   = 'aion_inventory';
+const LS_SALES = 'aion_sales';
+
+const DEFAULT_INV = {
+  esencias: [
+    { id:'e1', nombre:'Aventus Creed', stockMl:200 },
+    { id:'e2', nombre:'Sauvage',       stockMl:150 }
+  ],
+  liquidos: { perfumol:1000, musk:1000, ipm:1000, dpg:1000 },
+  botellas: [
+    { id:'b1', modelo:'Cilíndrica dorada',    variantes:[
+        { id:'v1', tamano:50,  stock:24 },
+        { id:'v2', tamano:100, stock:12 }
+    ]},
+    { id:'b2', modelo:'Cuadrada negra mate',  variantes:[
+        { id:'v3', tamano:100, stock:12 }
+    ]}
+  ],
+  atomizadores: [
+    { id:'a1', modelo:'Atomizador negro premium', stock:40 }
+  ]
+};
+
+const LIQUIDOS = [
+  { key:'perfumol', label:'Perfumol / Alcohol' },
+  { key:'musk',     label:'Perpetual Musk' },
+  { key:'ipm',      label:'Miristato Isopropilo (IPM)' },
+  { key:'dpg',      label:'DPG' }
+];
+
+let inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
+let sales = [];
+
+/* ---------- Migración de formatos antiguos ---------- */
+function migrate(inv) {
+  if (!inv.esencias)  inv.esencias = [];
+  if (!inv.atomizadores) inv.atomizadores = [];
+  if (!inv.liquidos)  inv.liquidos = { perfumol:0, musk:0, ipm:0, dpg:0 };
+  LIQUIDOS.forEach(l => { if (typeof inv.liquidos[l.key] !== 'number') inv.liquidos[l.key] = 0; });
+
+  if (!Array.isArray(inv.botellas)) inv.botellas = [];
+
+  // Formato antiguo: {id, modelo, tamano, stock}  ->  {id, modelo, variantes:[{id,tamano,stock}]}
+  const migradas = [];
+  inv.botellas.forEach(b => {
+    if (Array.isArray(b.variantes)) { migradas.push(b); return; }
+    const key = String(b.modelo || '').toLowerCase().trim();
+    let g = migradas.find(x => x.modelo.toLowerCase().trim() === key);
+    if (!g) { g = { id: b.id || uid(), modelo: b.modelo || 'Sin nombre', variantes: [] }; migradas.push(g); }
+    g.variantes.push({ id: uid(), tamano: Number(b.tamano) || 0, stock: Number(b.stock) || 0 });
+  });
+  migradas.forEach(b => b.variantes.sort((a, c) => a.tamano - c.tamano));
+  inv.botellas = migradas;
+
+  return inv;
+}
+
+function saveInv()    { localStorage.setItem(LS_INV, JSON.stringify(inventory)); renderAll(); }
+function saveSales()  { localStorage.setItem(LS_SALES, JSON.stringify(sales)); renderHistorial(); }
+
+function loadData() {
+  try {
+    const ri = localStorage.getItem(LS_INV);
+    inventory = ri ? migrate(JSON.parse(ri)) : JSON.parse(JSON.stringify(DEFAULT_INV));
+    const rs = localStorage.getItem(LS_SALES);
+    sales = rs ? JSON.parse(rs) : [];
+  } catch (e) {
+    inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
+    sales = [];
+  }
+}
+
+/* =========================================================
+   RENDER — INVENTARIO
+   ========================================================= */
+function renderAll() {
+  renderEsencias();
+  renderLiquidos();
+  renderBotellas();
+  renderAtomizadores();
+  syncSelects();
+  calcFormula();
+  renderHistorial();
+  const n = inventory.esencias.length;
+  $('statTot').textContent = n + (n === 1 ? ' esencia' : ' esencias');
+}
+
+/* ---------- Esencias ---------- */
+function renderEsencias() {
+  $('countEss').textContent = inventory.esencias.length;
+  const wrap = $('listEss');
+  if (!inventory.esencias.length) {
+    wrap.innerHTML = '<p class="empty">Sin esencias registradas</p>';
+    return;
+  }
+  wrap.innerHTML = inventory.esencias.map(e => `
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">${esc(e.nombre)}</div>
+        <div class="row-sub ${e.stockMl < 50 ? 'is-low' : ''}">${fmt(e.stockMl)} ml${e.stockMl < 50 ? ' · stock bajo' : ''}</div>
+      </div>
+      <div class="row-actions">
+        <button class="icon-btn" onclick="editEsencia('${e.id}')" title="Editar">✎</button>
+        <button class="icon-btn danger" onclick="delEsencia('${e.id}')" title="Eliminar">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function addEsencia() {
+  const n  = $('essName').value.trim();
+  const ml = num($('essMl').value);
+  if (!n)     return toast('Escribe el nombre de la esencia');
+  if (ml <= 0) return toast('Introduce un stock válido');
+  const ex = inventory.esencias.find(e => e.nombre.toLowerCase() === n.toLowerCase());
+  if (ex) { ex.stockMl += ml; }
+  else    { inventory.esencias.push({ id: uid(), nombre: n, stockMl: ml }); }
+  $('essName').value = '';
+  $('essMl').value = 100;
+  saveInv();
+  toast(ex ? 'Stock actualizado' : 'Esencia añadida');
+}
+
+function editEsencia(id) {
+  const e = inventory.esencias.find(x => x.id === id);
+  if (!e) return;
+  openModal('Editar esencia', [
+    { key:'nombre',  label:'Nombre',           type:'text',   value:e.nombre },
+    { key:'stockMl', label:'Stock (ml)',        type:'number', value:e.stockMl, step:'0.01' }
+  ], d => {
+    if (!d.nombre) return toast('Nombre requerido'), false;
+    e.nombre  = d.nombre;
+    e.stockMl = num(d.stockMl);
+    saveInv(); toast('Esencia actualizada');
+  });
+}
+
+function delEsencia(id) {
+  const e = inventory.esencias.find(x => x.id === id);
+  if (!e) return;
+  if (!confirm(`¿Eliminar "${e.nombre}" del inventario?`)) return;
+  inventory.esencias = inventory.esencias.filter(x => x.id !== id);
+  saveInv(); toast('Esencia eliminada');
+}
+
+/* ---------- Líquidos ---------- */
+function renderLiquidos() {
+  const g = $('liqGrid');
+  if (!g.dataset.built) {
+    g.innerHTML = LIQUIDOS.map(l => `
+      <div class="liq">
+        <div class="liq-name">${esc(l.label)}</div>
+        <div class="liq-row">
+          <input id="liq-${l.key}" class="input" type="number" inputmode="decimal" value="0" placeholder="ml">
+          <button class="btn btn-sm" onclick="addLiq('${l.key}')">+</button>
+        </div>
+        <div class="liq-stock" id="stock-${l.key}">0 ml</div>
+      </div>`).join('');
+    g.dataset.built = '1';
+  }
+  LIQUIDOS.forEach(l => {
+    $('stock-' + l.key).textContent = fmt(inventory.liquidos[l.key]) + ' ml';
+  });
+}
+
+function addLiq(key) {
+  const v = num($('liq-' + key).value);
+  if (v <= 0) return toast('Cantidad no válida');
+  inventory.liquidos[key] += v;
+  $('liq-' + key).value = 0;
+  saveInv();
+  const lbl = (LIQUIDOS.find(l => l.key === key) || {}).label || key;
+  toast(`${lbl} +${fmt(v)} ml`);
+}
+
+/* ---------- Frascos (modelos + tamaños) ---------- */
+function renderBotellas() {
+  $('countBot').textContent = inventory.botellas.length;
+  const wrap = $('listBot');
+  if (!inventory.botellas.length) {
+    wrap.innerHTML = '<p class="empty">Sin frascos. Añade tu primer modelo.</p>';
+    return;
+  }
+  wrap.innerHTML = inventory.botellas.map(b => `
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">${esc(b.modelo)}</div>
+        <div class="chips chips-mini">
+          ${b.variantes.length
+            ? b.variantes.map(v => `
+                <button class="variant ${v.stock < 5 ? 'low' : ''}" onclick="editVariante('${b.id}','${v.id}')" title="Editar stock">
+                  ${v.tamano} ml · ${v.stock} u
+                </button>`).join('')
+            : '<span class="row-sub" style="color:rgba(245,241,232,.35)">Sin tamaños</span>'}
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="icon-btn" onclick="addVariante('${b.id}')" title="Añadir tamaño">+</button>
+        <button class="icon-btn" onclick="editModelo('${b.id}')" title="Renombrar">✎</button>
+        <button class="icon-btn danger" onclick="delModelo('${b.id}')" title="Eliminar modelo">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function addFrasco() {
+  const modelo = $('botModelo').value.trim();
+  const tam    = num($('botTam').value);
+  const stock  = num($('botStock').value);
+  if (!modelo)  return toast('Escribe el modelo del frasco');
+  if (tam <= 0) return toast('Tamaño no válido');
+  if (stock < 0) return toast('Stock no válido');
+
+  let b = inventory.botellas.find(x => x.modelo.toLowerCase() === modelo.toLowerCase());
+  let existia = !!b;
+  if (!b) { b = { id: uid(), modelo, variantes: [] }; inventory.botellas.push(b); }
+
+  const v = b.variantes.find(x => x.tamano === tam);
+  if (v) v.stock += stock;
+  else   b.variantes.push({ id: uid(), tamano: tam, stock });
+  b.variantes.sort((a, c) => a.tamano - c.tamano);
+
+  $('botModelo').value = '';
+  saveInv();
+  toast(existia ? (v ? 'Stock actualizado' : 'Tamaño añadido') : 'Modelo añadido');
+}
+
+function addVariante(bid) {
+  const b = inventory.botellas.find(x => x.id === bid);
+  if (!b) return;
+  openModal(`Nuevo tamaño · ${b.modelo}`, [
+    { key:'tamano', label:'Tamaño (ml)',      type:'number', value:50, step:'1' },
+    { key:'stock',  label:'Unidades en stock', type:'number', value:10, step:'1' }
+  ], d => {
+    const t = num(d.tamano), s = num(d.stock);
+    if (t <= 0) return toast('Tamaño no válido'), false;
+    const ex = b.variantes.find(v => v.tamano === t);
+    if (ex) ex.stock += s;
+    else    b.variantes.push({ id: uid(), tamano: t, stock: s });
+    b.variantes.sort((a, c) => a.tamano - c.tamano);
+    saveInv(); toast('Tamaño guardado');
+  });
+}
+
+function editVariante(bid, vid) {
+  const b = inventory.botellas.find(x => x.id === bid);
+  const v = b && b.variantes.find(x => x.id === vid);
+  if (!v) return;
+  openModal(`Editar ${v.tamano} ml · ${b.modelo}`, [
+    { key:'tamano', label:'Tamaño (ml)',       type:'number', value:v.tamano, step:'1' },
+    { key:'stock',  label:'Unidades en stock', type:'number', value:v.stock,  step:'1' }
+  ], d => {
+    const t = num(d.tamano), s = num(d.stock);
+    if (t <= 0) return toast('Tamaño no válido'), false;
+    v.tamano = t;
+    v.stock  = s;
+    b.variantes.sort((a, c) => a.tamano - c.tamano);
+    saveInv(); toast('Tamaño actualizado');
+  }, { okText:'Guardar', extra:'borrar' , onDelete: () => {
+      b.variantes = b.variantes.filter(x => x.id !== vid);
+      saveInv(); toast('Tamaño eliminado');
+  }});
+}
+
+function editModelo(bid) {
+  const b = inventory.botellas.find(x => x.id === bid);
+  if (!b) return;
+  openModal('Renombrar modelo', [
+    { key:'modelo', label:'Nombre del modelo', type:'text', value:b.modelo }
+  ], d => {
+    if (!d.modelo) return toast('Nombre requerido'), false;
+    b.modelo = d.modelo;
+    saveInv(); toast('Modelo actualizado');
+  });
+}
+
+function delModelo(bid) {
+  const b = inventory.botellas.find(x => x.id === bid);
+  if (!b) return;
+  if (!confirm(`¿Eliminar "${b.modelo}" y todos sus tamaños?`)) return;
+  inventory.botellas = inventory.botellas.filter(x => x.id !== bid);
+  saveInv(); toast('Modelo eliminado');
+}
+
+/* ---------- Atomizadores ---------- */
+function renderAtomizadores() {
+  $('countAto').textContent = inventory.atomizadores.length;
+  const wrap = $('listAto');
+  if (!inventory.atomizadores.length) {
+    wrap.innerHTML = '<p class="empty">Sin atomizadores registrados</p>';
+    return;
+  }
+  wrap.innerHTML = inventory.atomizadores.map(a => `
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">${esc(a.modelo)}</div>
+        <div class="row-sub ${a.stock < 5 ? 'is-low' : ''}">${a.stock} u${a.stock < 5 ? ' · stock bajo' : ''}</div>
+      </div>
+      <div class="row-actions">
+        <button class="icon-btn" onclick="editAtom('${a.id}')" title="Editar">✎</button>
+        <button class="icon-btn danger" onclick="delAtom('${a.id}')" title="Eliminar">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function addAtom() {
+  const modelo = $('atoModelo').value.trim();
+  const stock  = num($('atoStock').value);
+  if (!modelo) return toast('Escribe el modelo');
+  const ex = inventory.atomizadores.find(a => a.modelo.toLowerCase() === modelo.toLowerCase());
+  if (ex) ex.stock += stock;
+  else    inventory.atomizadores.push({ id: uid(), modelo, stock });
+  $('atoModelo').value = '';
+  $('atoStock').value = 20;
+  saveInv();
+  toast(ex ? 'Stock actualizado' : 'Atomizador añadido');
+}
+
+function editAtom(id) {
+  const a = inventory.atomizadores.find(x => x.id === id);
+  if (!a) return;
+  openModal('Editar atomizador', [
+    { key:'modelo', label:'Modelo', type:'text',   value:a.modelo },
+    { key:'stock',  label:'Stock',  type:'number', value:a.stock, step:'1' }
+  ], d => {
+    if (!d.modelo) return toast('Modelo requerido'), false;
+    a.modelo = d.modelo;
+    a.stock  = num(d.stock);
+    saveInv(); toast('Atomizador actualizado');
+  });
+}
+
+function delAtom(id) {
+  const a = inventory.atomizadores.find(x => x.id === id);
+  if (!a) return;
+  if (!confirm(`¿Eliminar "${a.modelo}"?`)) return;
+  inventory.atomizadores = inventory.atomizadores.filter(x => x.id !== id);
+  saveInv(); toast('Atomizador eliminado');
+}
+
+/* =========================================================
+   RENDER — SELECTS DE VENTA
+   ========================================================= */
+function syncSelects() {
+  // Esencia de venta
+  fillSelect($('vEsencia'),
+    '<option value="">Selecciona esencia…</option>' +
+    inventory.esencias.map(e =>
+      `<option value="${e.id}">${esc(e.nombre)} — ${fmt(e.stockMl)} ml</option>`).join(''), true);
+
+  // Filtro de esencia en historial
+  fillSelect($('fEss'),
+    '<option value="all">Todas las esencias</option>' +
+    inventory.esencias.map(e => `<option value="${esc(e.nombre)}">${esc(e.nombre)}</option>`).join(''), true);
+
+  // Modelos de frasco
+  fillSelect($('vBotellaModelo'),
+    '<option value="sin">Sin frasco</option>' +
+    inventory.botellas.map(b => `<option value="${b.id}">${esc(b.modelo)}</option>`).join(''), true);
+
+  renderVariantesVenta();
+
+  // Atomizadores
+  fillSelect($('vAtom'),
+    inventory.atomizadores.length
+      ? inventory.atomizadores.map(a => `<option value="${a.id}">${esc(a.modelo)} (${a.stock}u)</option>`).join('')
+      : '<option value="">Sin atomizadores</option>', true);
+}
+
+function renderVariantesVenta() {
+  const modelId = $('vBotellaModelo').value;
+  const sel = $('vBotellaTam');
+  const m = inventory.botellas.find(b => b.id === modelId);
+
+  if (!m) {
+    sel.innerHTML = '<option value="">—</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  fillSelect(sel, m.variantes.length
+    ? m.variantes.map(v => `<option value="${v.id}">${v.tamano} ml · ${v.stock} u</option>`).join('')
+    : '<option value="">Sin tamaños</option>', true);
+}
+
+/* =========================================================
+   FÓRMULA Y PREVISUALIZACIÓN
+   ========================================================= */
+const TAMANOS = [10, 30, 50, 60, 100, 120, 320];
+const tamState = { value: 50, custom: false };
+
+function renderTamChips() {
+  $('vTamChips').innerHTML =
+    TAMANOS.map(t =>
+      `<button type="button" class="chip ${(!tamState.custom && tamState.value === t) ? 'active' : ''}" onclick="setTam(${t})">${t} ml</button>`
+    ).join('') +
+    `<button type="button" class="chip ${tamState.custom ? 'active' : ''}" onclick="setCustom()">Otro</button>`;
+}
+
+function setTam(v) {
+  tamState.value = v;
+  tamState.custom = false;
+  $('vTamCustom').style.display = 'none';
+  renderTamChips();
+  calcFormula();
+}
+
+function setCustom() {
+  tamState.custom = true;
+  $('vTamCustom').style.display = 'block';
+  tamState.value = num($('vTamCustom').value);
+  renderTamChips();
+  calcFormula();
+}
+
+function getTamano() {
+  return tamState.custom ? num($('vTamCustom').value) : tamState.value;
+}
+
+function calcFormula() {
+  const pctEss  = num($('pctEss').value);
+  const pctMusk = num($('pctMusk').value);
+  const pctIpm  = num($('pctIpm').value);
+  const pctDpg  = num($('pctDpg').value);
+
+  const sum    = pctEss + pctMusk + pctIpm + pctDpg;
+  const pctAlc = Math.max(0, 100 - sum);
+  const fij    = pctMusk + pctIpm + pctDpg;
+
+  $('pctAlc').textContent = pctAlc.toFixed(2) + '%';
+  $('fijTot').textContent = fij.toFixed(2) + '%';
+
+  const alertEl = $('alertAlc');
+  if (sum > 100) {
+    alertEl.textContent = '⚠ La fórmula supera el 100%';
+    alertEl.style.color = '#ff8a8a';
+  } else if (pctAlc < 50) {
+    alertEl.textContent = '⚠ Alcohol <50% · riesgo de sofocación';
+    alertEl.style.color = '#ff8a8a';
+  } else if (fij > 8) {
+    alertEl.textContent = '⚠ Fijadores >8% · no permitido';
+    alertEl.style.color = '#ff8a8a';
+  } else if (fij > 4) {
+    alertEl.textContent = 'Nota: fijadores >4% solo perfiles volátiles';
+    alertEl.style.color = '#D4AF37';
+  } else {
+    alertEl.textContent = '✓ ISF 0.2 OK · fijación mínima';
+    alertEl.style.color = '#7CFF9E';
+  }
+
+  /* ---- Consumo ---- */
+  const tam  = getTamano();
+  const cant = parseInt($('vCant').value, 10) || 0;
+  const ess  = inventory.esencias.find(e => e.id === $('vEsencia').value);
+  const botM = inventory.botellas.find(b => b.id === $('vBotellaModelo').value);
+  const botV = botM ? botM.variantes.find(v => v.id === $('vBotellaTam').value) : null;
+  const usaAtom = $('vUsaAtom').checked;
+  const atom = inventory.atomizadores.find(a => a.id === $('vAtom').value);
+
+  const prev = $('preview');
+
+  if (!tam || !cant) {
+    prev.innerHTML = '<div style="font-size:12px;color:rgba(245,241,232,.4);text-align:center;padding:8px 0">Selecciona tamaño y cantidad para ver el consumo</div>';
+    return;
+  }
+
+  const per = {
+    es:   tam * pctEss / 100,
+    musk: tam * pctMusk / 100,
+    ipm:  tam * pctIpm / 100,
+    dpg:  tam * pctDpg / 100,
+    alc:  tam * pctAlc / 100
+  };
+  const tot = {
+    es:   per.es   * cant,
+    musk: per.musk * cant,
+    ipm:  per.ipm  * cant,
+    dpg:  per.dpg  * cant,
+    alc:  per.alc  * cant
+  };
+
+  const ck = {
+    es:   ess ? ess.stockMl >= tot.es : false,
+    alc:  inventory.liquidos.perfumol >= tot.alc,
+    musk: inventory.liquidos.musk >= tot.musk,
+    ipm:  inventory.liquidos.ipm  >= tot.ipm,
+    dpg:  inventory.liquidos.dpg  >= tot.dpg,
+    bot:  !botM || (botV ? botV.stock >= cant : false),
+    ato:  !usaAtom || !atom || atom.stock >= cant
+  };
+  const allOk = !!ess && Object.values(ck).every(Boolean);
+
+  const cls = ok => ok ? 'ok' : 'bad';
+
+  prev.innerHTML = `
+    <div class="pv-head">CONSUMO ESTIMADO ${ess ? '· ' + esc(ess.nombre).toUpperCase() : ''}</div>
+    <div class="pv-grid">
+      <div>
+        <div class="pv-col-title">POR FRASCO · ${tam} ML</div>
+        <div class="pv-line"><span>Esencia</span><b>${r2(per.es)} ml</b></div>
+        <div class="pv-line"><span>Perfumol</span><b>${r2(per.alc)} ml</b></div>
+        <div class="pv-line"><span>Musk</span><b>${r2(per.musk)} ml</b></div>
+        <div class="pv-line"><span>IPM</span><b>${r2(per.ipm)} ml</b></div>
+        <div class="pv-line"><span>DPG</span><b>${r2(per.dpg)} ml</b></div>
+      </div>
+      <div>
+        <div class="pv-col-title">TOTAL ×${cant} · ${(tam * cant).toFixed(0)} ML</div>
+        <div class="pv-line"><span>Esencia</span><b class="${cls(ck.es)}">${r2(tot.es)} ml${ess ? ' / ' + fmt(ess.stockMl) : ''}</b></div>
+        <div class="pv-line"><span>Perfumol</span><b class="${cls(ck.alc)}">${r2(tot.alc)} ml / ${fmt(inventory.liquidos.perfumol)}</b></div>
+        <div class="pv-line"><span>Musk</span><b class="${cls(ck.musk)}">${r2(tot.musk)} ml</b></div>
+        <div class="pv-line"><span>IPM</span><b class="${cls(ck.ipm)}">${r2(tot.ipm)} ml</b></div>
+        <div class="pv-line"><span>DPG</span><b class="${cls(ck.dpg)}">${r2(tot.dpg)} ml</b></div>
+        ${botM ? `<div class="pv-line"><span>Frasco</span><b class="${cls(ck.bot)}">${esc(botM.modelo)}${botV ? ' ' + botV.tamano + 'ml' : ''} ×${cant}</b></div>` : ''}
+        ${usaAtom && atom ? `<div class="pv-line"><span>Atomizador</span><b class="${cls(ck.ato)}">×${cant} / ${atom.stock} u</b></div>` : ''}
+      </div>
+    </div>
+    <div class="pv-status ${allOk ? 'good' : 'bad'}">
+      ${allOk ? '✓ Stock suficiente para registrar' : '✗ Stock insuficiente o falta seleccionar esencia'}
+    </div>`;
+}
+
+/* =========================================================
+   REGISTRAR VENTA
+   ========================================================= */
+function registrarVenta() {
+  const cliente = $('vCliente').value.trim();
+  const ess = inventory.esencias.find(e => e.id === $('vEsencia').value);
+  if (!ess) return toast('Selecciona una esencia');
+
+  const tam  = getTamano();
+  const cant = parseInt($('vCant').value, 10) || 0;
+  if (tam <= 0)  return toast('Tamaño no válido');
+  if (cant <= 0) return toast('Cantidad no válida');
+
+  const pctEss  = num($('pctEss').value);
+  const pctMusk = num($('pctMusk').value);
+  const pctIpm  = num($('pctIpm').value);
+  const pctDpg  = num($('pctDpg').value);
+  const pctAlc  = 100 - (pctEss + pctMusk + pctIpm + pctDpg);
+
+  if (pctAlc < 0) return toast('La fórmula supera el 100%');
+  if (pctAlc < 50 && !confirm('Alcohol por debajo del 50%. ¿Continuar de todas formas?')) return;
+
+  const botM = inventory.botellas.find(b => b.id === $('vBotellaModelo').value);
+  const botV = botM ? botM.variantes.find(v => v.id === $('vBotellaTam').value) : null;
+  const usaAtom = $('vUsaAtom').checked;
+  const atom = inventory.atomizadores.find(a => a.id === $('vAtom').value);
+
+  const tot = {
+    es:   tam * pctEss  / 100 * cant,
+    musk: tam * pctMusk / 100 * cant,
+    ipm:  tam * pctIpm  / 100 * cant,
+    dpg:  tam * pctDpg  / 100 * cant,
+    alc:  tam * pctAlc  / 100 * cant
+  };
+
+  /* Validaciones de stock */
+  if (ess.stockMl < tot.es)                            return toast('Esencia insuficiente');
+  if (inventory.liquidos.perfumol < tot.alc)           return toast('Perfumol insuficiente');
+  if (inventory.liquidos.musk < tot.musk)              return toast('Musk insuficiente');
+  if (inventory.liquidos.ipm  < tot.ipm)               return toast('IPM insuficiente');
+  if (inventory.liquidos.dpg  < tot.dpg)               return toast('DPG insuficiente');
+  if (botM && !botV)                                   return toast('Selecciona un tamaño de frasco');
+  if (botV && botV.stock < cant)                       return toast('Frascos insuficientes');
+  if (usaAtom && atom && atom.stock < cant)            return toast('Atomizadores insuficientes');
+
+  /* Descuento */
+  ess.stockMl -= tot.es;
+  inventory.liquidos.perfumol -= tot.alc;
+  inventory.liquidos.musk     -= tot.musk;
+  inventory.liquidos.ipm      -= tot.ipm;
+  inventory.liquidos.dpg      -= tot.dpg;
+  if (botV) botV.stock -= cant;
+  if (usaAtom && atom) atom.stock -= cant;
+
+  sales.unshift({
+    id: uid(),
+    fecha: new Date().toISOString(),
+    cliente,
+    esenciaId: ess.id,
+    esenciaNombre: ess.nombre,
+    tamanoMl: tam,
+    cantidad: cant,
+    pctEsencia: pctEss,
+    pctMusk, pctIpm, pctDpg,
+    pctAlcohol: r2(pctAlc),
+    consumo: {
+      esenciaMl: r2(tot.es),
+      muskMl:    r2(tot.musk),
+      ipmMl:     r2(tot.ipm),
+      dpgMl:     r2(tot.dpg),
+      alcoholMl: r2(tot.alc),
+      botellaModelo:    botV ? `${botM.modelo} ${botV.tamano}ml` : 'Sin frasco',
+      atomizadorModelo: usaAtom ? (atom ? atom.modelo : 'N/A') : 'Sin atomizador'
+    },
+    totalMlProducido: tam * cant
+  });
+
+  saveInv();      // renderiza todo
+  saveSales();
+  toast('Venta registrada ✓');
+
+  $('vCliente').value = '';
+  $('vCant').value = 1;
+  calcFormula();
+}
+
+/* =========================================================
+   HISTORIAL
+   ========================================================= */
+function getFiltered() {
+  const fEss    = $('fEss').value;
+  const fSearch = $('fSearch').value.trim().toLowerCase();
+  const fDesde  = $('fDesde').value;
+  const fHasta  = $('fHasta').value;
+
+  return sales.filter(s => {
+    if (fEss !== 'all' && s.esenciaNombre !== fEss) return false;
+    if (fSearch) {
+      const hay = (s.esenciaNombre || '') + ' ' + (s.cliente || '') + ' ' +
+                  ((s.consumo && s.consumo.botellaModelo) || '');
+      if (!hay.toLowerCase().includes(fSearch)) return false;
+    }
+    if (fDesde && new Date(s.fecha) < new Date(fDesde + 'T00:00:00')) return false;
+    if (fHasta && new Date(s.fecha) > new Date(fHasta + 'T23:59:59')) return false;
+    return true;
+  });
+}
+
+function renderHistorial() {
+  const list = getFiltered();
+
+  const totalEss = list.reduce((a, s) => a + (s.consumo?.esenciaMl || 0), 0);
+  const totalBot = list.reduce((a, s) => a + (s.cantidad || 0), 0);
+
+  $('stats').innerHTML = `
+    <div class="stat"><div class="stat-label">VENTAS</div><div class="stat-val serif">${list.length}</div></div>
+    <div class="stat"><div class="stat-label">ESENCIA</div><div class="stat-val serif">${totalEss.toFixed(1)}<span style="font-size:12px"> ml</span></div></div>
+    <div class="stat"><div class="stat-label">FRASCOS</div><div class="stat-val serif">${totalBot}</div></div>`;
+
+  const wrap = $('listHist');
+  if (!list.length) {
+    wrap.innerHTML = '<p class="empty">Sin registros que coincidan</p>';
+    return;
+  }
+
+  wrap.innerHTML = list.map(s => {
+    const c = s.consumo || {};
+    const fecha = new Date(s.fecha).toLocaleString('es-ES', {
+      day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'
+    });
+    return `
+      <div class="hist-item">
+        <div class="hist-top">
+          <div>
+            <div class="hist-title">${esc(s.esenciaNombre)} · ${s.tamanoMl} ml × ${s.cantidad}</div>
+            <div class="hist-date">${fecha}${s.cliente ? ' · ' + esc(s.cliente) : ''}</div>
+          </div>
+          <div class="pill">${s.totalMlProducido} ml</div>
+        </div>
+        <div class="hist-detail">
+          <div class="hist-box">
+            <strong>CONSUMO</strong>
+            Esencia: ${c.esenciaMl ?? '—'} ml (${s.pctEsencia}%)<br>
+            Alcohol: ${c.alcoholMl ?? '—'} ml (${Number(s.pctAlcohol || 0).toFixed(1)}%)<br>
+            Musk ${c.muskMl ?? '—'} · IPM ${c.ipmMl ?? '—'} · DPG ${c.dpgMl ?? '—'}
+          </div>
+          <div class="hist-box">
+            <strong>ENVASE</strong>
+            ${esc(c.botellaModelo || 'Sin frasco')}<br>
+            ${esc(c.atomizadorModelo || 'Sin atomizador')}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* =========================================================
+   PDF
+   ========================================================= */
+function exportPDF() {
+  const list = getFiltered();
+  if (!list.length) return toast('Nada que exportar');
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape' });
+
+  doc.setFontSize(16);
+  doc.text('AION PERFUMES · Historial de producción', 14, 18);
+  doc.setFontSize(10);
+  doc.text('Exportado: ' + new Date().toLocaleString('es-ES'), 14, 25);
+  const filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
+  doc.text(`Filtro: ${filtro}  |  Registros: ${list.length}`, 14, 31);
+
+  const rows = list.map(s => [
+    new Date(s.fecha).toLocaleDateString('es-ES'),
+    s.cliente || '—',
+    s.esenciaNombre,
+    s.tamanoMl + ' ml',
+    s.cantidad,
+    (s.consumo?.esenciaMl ?? '—'),
+    (s.consumo?.muskMl ?? '—'),
+    (s.consumo?.ipmMl ?? '—'),
+    (s.consumo?.dpgMl ?? '—'),
+    (s.consumo?.alcoholMl ?? '—'),
+    s.consumo?.botellaModelo || '—',
+    s.consumo?.atomizadorModelo || '—'
+  ]);
+
+  doc.autoTable({
+    startY: 37,
+    head: [['Fecha','Cliente','Esencia','Tam.','Cant.','Ess ml','Musk','IPM','DPG','Alcohol','Frasco','Atomizador']],
+    body: rows,
+    styles: { fontSize: 7, cellPadding: 1.8 },
+    headStyles: { fillColor: [201, 162, 39], textColor: [10, 10, 10], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 243, 236] }
+  });
+
+  doc.save('AION_Historial_' + new Date().toISOString().slice(0, 10) + '.pdf');
+  toast('PDF exportado');
+}
+
+function exportInvPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 0;
+
+  const check = (need = 10) => { if (y > 280 - need) { doc.addPage(); y = 20; } };
+
+  doc.setFontSize(17);
+  doc.text('AION PERFUMES · Inventario actual', 14, 18);
+  doc.setFontSize(10);
+  doc.text('Fecha: ' + new Date().toLocaleString('es-ES'), 14, 25);
+  y = 38;
+
+  doc.setFontSize(13); doc.text('Esencias', 14, y); y += 8;
+  doc.setFontSize(10);
+  if (!inventory.esencias.length) { doc.text('— Sin esencias —', 18, y); y += 6; }
+  inventory.esencias.forEach(e => { check(); doc.text(`${e.nombre}: ${fmt(e.stockMl)} ml`, 18, y); y += 5.5; });
+
+  y += 6; check(30);
+  doc.setFontSize(13); doc.text('Líquidos base', 14, y); y += 8;
+  doc.setFontSize(10);
+  LIQUIDOS.forEach(l => { check(); doc.text(`${l.label}: ${fmt(inventory.liquidos[l.key])} ml`, 18, y); y += 5.5; });
+
+  y += 6; check(30);
+  doc.setFontSize(13); doc.text('Frascos', 14, y); y += 8;
+  doc.setFontSize(10);
+  if (!inventory.botellas.length) { doc.text('— Sin frascos —', 18, y); y += 6; }
+  inventory.botellas.forEach(b => {
+    check();
+    doc.text(b.modelo + ':', 18, y); y += 5.5;
+    b.variantes.forEach(v => { check(); doc.text(`• ${v.tamano} ml — ${v.stock} u`, 24, y); y += 5.5; });
+  });
+
+  y += 6; check(30);
+  doc.setFontSize(13); doc.text('Atomizadores', 14, y); y += 8;
+  doc.setFontSize(10);
+  if (!inventory.atomizadores.length) { doc.text('— Sin atomizadores —', 18, y); y += 6; }
+  inventory.atomizadores.forEach(a => { check(); doc.text(`${a.modelo}: ${a.stock} u`, 18, y); y += 5.5; });
+
+  doc.save('AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.pdf');
+  toast('Inventario exportado');
+}
+
+/* =========================================================
+   RESET
+   ========================================================= */
+function clearHist() {
+  if (!sales.length) return toast('El historial ya está vacío');
+  if (!confirm('¿Borrar todo el historial de producción?')) return;
+  sales = [];
+  saveSales();
+  toast('Historial borrado');
+}
+
+function clearAll() {
+  if (!confirm('¿Borrar TODO el inventario y el historial?')) return;
+  if (!confirm('Confirmación final: esta acción no se puede deshacer.')) return;
+  localStorage.removeItem(LS_INV);
+  localStorage.removeItem(LS_SALES);
+  inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
+  sales = [];
+  saveInv();
+  saveSales();
+  toast('Todo reseteado');
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+function openModal(title, fields, onSave, opts = {}) {
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = fields.map(f => `
+    <label class="field">
+      <span class="label">${esc(f.label)}</span>
+      <input class="input" data-key="${f.key}" type="${f.type || 'text'}"
+             ${f.step ? `step="${f.step}"` : ''}
+             value="${esc(f.value ?? '')}"
+             ${f.type === 'number' ? 'inputmode="decimal"' : 'autocomplete="off"'}>
+    </label>`).join('') +
+    (opts.onDelete ? `
+      <button class="btn btn-danger btn-block btn-sm" id="modalDelete" style="margin-top:6px">Eliminar este tamaño</button>` : '');
+
+  $('modalOk').textContent = opts.okText || 'Guardar';
+
+  $('modalOk').onclick = () => {
+    const data = {};
+    $('modalBody').querySelectorAll('input').forEach(i => {
+      data[i.dataset.key] = i.type === 'number' ? num(i.value) : i.value.trim();
+    });
+    if (onSave(data) !== false) closeModal();
+  };
+
+  if (opts.onDelete) {
+    $('modalDelete').onclick = () => {
+      if (!confirm('¿Eliminar este tamaño?')) return;
+      opts.onDelete();
+      closeModal();
+    };
+  }
+
+  $('modalBackdrop').classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  // Autofocus solo en escritorio (evita que salte el teclado en móvil)
+  if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    setTimeout(() => { const f = $('modalBody').querySelector('input'); if (f) f.focus(); }, 60);
+  }
+}
+
+function closeModal() {
+  $('modalBackdrop').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+$('modalBackdrop').addEventListener('click', e => {
+  if (e.target === $('modalBackdrop')) closeModal();
+});
+$('modalBody').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); $('modalOk').click(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('modalBackdrop').classList.contains('show')) closeModal();
+});
+
+/* =========================================================
+   TABS
+   ========================================================= */
+function switchTab(t) {
+  ['inv', 'venta', 'hist'].forEach(k => {
+    $('view-' + k).classList.toggle('active', k === t);
+    $('tab-' + k).classList.toggle('active', k === t);
+  });
+  if (t === 'venta') calcFormula();
+  if (t === 'hist')  renderHistorial();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* =========================================================
+   EVENTOS
+   ========================================================= */
+function bindEvents() {
+  // Campos que recalculan la fórmula
+  ['pctEss', 'pctMusk', 'pctIpm', 'pctDpg', 'vCant'].forEach(id => {
+    const el = $(id);
+    el.addEventListener('input', calcFormula);
+    el.addEventListener('change', calcFormula);
+  });
+
+  $('vTamCustom').addEventListener('input', () => {
+    tamState.value = num($('vTamCustom').value);
+    calcFormula();
+  });
+
+  $('vEsencia').addEventListener('change', calcFormula);
+  $('vBotellaTam').addEventListener('change', calcFormula);
+  $('vAtom').addEventListener('change', calcFormula);
+
+  $('vBotellaModelo').addEventListener('change', () => {
+    renderVariantesVenta();
+    calcFormula();
+  });
+
+  $('vUsaAtom').addEventListener('change', () => {
+    $('vAtom').style.display = $('vUsaAtom').checked ? 'block' : 'none';
+    calcFormula();
+  });
+
+  // Filtros del historial
+  ['fEss', 'fDesde', 'fHasta'].forEach(id => $(id).addEventListener('change', renderHistorial));
+  $('fSearch').addEventListener('input', renderHistorial);
+
+  // Enter en los formularios rápidos
+  $('essName').addEventListener('keydown', e => { if (e.key === 'Enter') addEsencia(); });
+  $('essMl').addEventListener('keydown',   e => { if (e.key === 'Enter') addEsencia(); });
+  $('botModelo').addEventListener('keydown', e => { if (e.key === 'Enter') addFrasco(); });
+  $('botStock').addEventListener('keydown',  e => { if (e.key === 'Enter') addFrasco(); });
+  $('atoModelo').addEventListener('keydown', e => { if (e.key === 'Enter') addAtom(); });
+  $('atoStock').addEventListener('keydown',  e => { if (e.key === 'Enter') addAtom(); });
+}
+
+/* =========================================================
+   INICIALIZACIÓN
+   ========================================================= */
+(function init() {
+  loadData();
+  renderTamChips();
+  $('vAtom').style.display = $('vUsaAtom').checked ? 'block' : 'none';
+  bindEvents();
+  renderAll();
+})();
+</script>
+</body>
+</html>
