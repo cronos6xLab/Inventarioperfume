@@ -3,865 +3,1683 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#b3936d">
+<meta name="theme-color" content="#F0DFC0">
 <title>AION PERFUMES · Gestor de Inventario</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- SVG Filters para bordes irregulares (estilo plastilina) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="clay-rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7"/>
+      <feDisplacementMap in="SourceGraphic" scale="2.5"/>
+    </filter>
+    <filter id="clay-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3"/>
+      <feDisplacementMap in="SourceGraphic" scale="1.2"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 0.24
+                             0 0 0 0 0.15
+                             0 0 0 0 0.09
+                             0 0 0 0.08 0"/>
+    </filter>
+  </defs>
+</svg>
+
 <style>
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
-/* ============ PALETA ARCILLA ============ */
-:root{
-  --ink:#4a3524;
-  --ink-2:rgba(74,53,36,.66);
-  --ink-3:rgba(74,53,36,.46);
-  --ink-4:rgba(74,53,36,.28);
-  --cream:#f8eeda;
-  --cream-2:#eddcbe;
-  --cream-3:#e0c9a5;
-  --edge:rgba(138,104,68,.42);
-  --edge-soft:rgba(138,104,68,.24);
-  --terra:#c46a3a;
-  --terra-l:#e08752;
-  --terra-d:#8a4622;
-  --ochre:#cf9a34;
-  --ochre-d:#a2761f;
-  --sage:#6e8b5a;
-  --sage-d:#4f6740;
-  --brick:#b04a35;
-  --brick-d:#8a3524;
-  --clay-sh:rgba(122,88,58,.38);
-  --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
-}
-
 body{
   margin:0;
-  font-family:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
-  font-weight:600;
-  color:var(--ink);
-  background-color:#b3936d;
-  background-image:
-    radial-gradient(1100px 720px at 50% -18%, rgba(255,240,208,.60), transparent 62%),
-    radial-gradient(900px 620px at 50% 118%, rgba(78,50,28,.42), transparent 66%),
-    var(--noise);
-  background-attachment:fixed;
+  font-family:'Nunito','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-weight:500;
+  background-color:#E8D4B8;
+  color:#3D2817;
   min-height:100vh;
-  padding-bottom:calc(108px + env(safe-area-inset-bottom));
+  padding-bottom:calc(110px + env(safe-area-inset-bottom));
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
+  position:relative;
 }
 
-h1,h2,h3,.serif{font-family:'Fredoka','Nunito',sans-serif;font-weight:600;margin:0;letter-spacing:.005em}
+/* Textura de papel/cartón de fondo */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(201,139,78,0.15), transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(181,114,70,0.12), transparent 50%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.22 0 0 0 0 0.12 0 0 0 0.25 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-attachment:fixed;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Capa de grano sutil sobre todo */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    repeating-linear-gradient(45deg, rgba(61,40,23,0.015) 0 1px, transparent 1px 4px);
+  pointer-events:none;
+  z-index:1;
+}
+
+.wrap{max-width:960px;margin:0 auto;padding:0 14px;position:relative;z-index:2}
+
+h1,h2,h3,.serif{
+  font-family:'Instrument Serif',serif;
+  font-weight:400;
+  margin:0;
+  color:#2E1A0F;
+}
+
+.handwritten{font-family:'Caveat',cursive;font-weight:600}
+
 button{font-family:inherit}
 
-.wrap{max-width:960px;margin:0 auto;padding:0 14px}
-
-/* ============ CABECERA ============ */
-header.topbar{padding:24px 0 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.brand-kicker{
-  display:inline-block;font-size:10px;letter-spacing:.26em;
-  color:#8a4622;font-weight:800;text-transform:uppercase;
+/* ============ HEADER - Placa de madera ============ */
+header.topbar{
+  padding:28px 0 22px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  position:relative;
 }
-.brand h1{font-size:34px;line-height:1;margin-top:7px;color:#3d2b1c;letter-spacing:-.005em}
-.brand h1 i{font-style:normal;color:var(--terra);font-size:.7em;letter-spacing:.02em}
-.brand-sub{display:block;font-size:11px;color:var(--ink-3);margin-top:9px;letter-spacing:.05em;font-weight:700}
+
+.brand{
+  background:linear-gradient(180deg,#D4B896 0%,#C4A47E 100%);
+  border-radius:22px;
+  padding:18px 22px 16px;
+  box-shadow:
+    inset 0 2px 0 rgba(255,245,225,0.6),
+    inset 0 -3px 6px rgba(101,66,35,0.25),
+    0 6px 0 #A88660,
+    0 10px 20px -8px rgba(80,50,25,0.35);
+  filter:url(#clay-soft);
+  position:relative;
+  transform:rotate(-0.5deg);
+}
+
+.brand-kicker{
+  font-family:'Caveat',cursive;
+  font-size:14px;
+  letter-spacing:.05em;
+  color:#6B4423;
+  font-weight:700;
+  margin-bottom:2px;
+}
+
+.brand h1{
+  font-size:34px;
+  line-height:1;
+  margin-top:4px;
+  letter-spacing:-.02em;
+  color:#3D2817;
+}
+
+.brand h1 i{font-style:italic;color:#8B5A2B;font-size:0.7em;vertical-align:middle}
+
+.brand-sub{
+  display:block;
+  font-size:11px;
+  color:#6B4423;
+  margin-top:6px;
+  letter-spacing:.08em;
+  font-weight:600;
+}
+
+/* Sello lacre dorado decorativo */
+.brand::before{
+  content:"";
+  position:absolute;
+  top:-8px;
+  right:-8px;
+  width:40px;
+  height:40px;
+  background:radial-gradient(circle at 30% 30%, #F4D47C, #C9A227 45%, #8B6914);
+  border-radius:50%;
+  box-shadow:
+    inset -3px -3px 6px rgba(100,60,0,0.5),
+    inset 2px 2px 4px rgba(255,230,150,0.7),
+    0 3px 6px rgba(0,0,0,0.3);
+  filter:url(#clay-rough);
+}
 
 .topstat{
-  display:flex;align-items:center;gap:7px;flex-shrink:0;
-  font-size:11.5px;font-weight:800;color:var(--ink-2);
-  background:linear-gradient(180deg,#faf1e0,#e6d3b4);
-  border:2px solid var(--edge);
-  padding:8px 14px;
-  border-radius:18px 22px 16px 20px / 22px 16px 20px 18px;
-  white-space:nowrap;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9), 0 4px 0 -1px var(--clay-sh), 0 10px 16px -10px rgba(60,38,20,.6);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+  font-size:12px;
+  color:#3D2817;
+  background:linear-gradient(180deg,#EADBC8 0%,#D4C1A8 100%);
+  border-radius:999px;
+  padding:10px 16px;
+  box-shadow:
+    inset 0 2px 0 rgba(255,250,235,0.7),
+    inset 0 -2px 4px rgba(101,66,35,0.2),
+    0 4px 0 #B89878,
+    0 6px 12px -4px rgba(80,50,25,0.3);
+  font-weight:600;
+  transform:rotate(0.8deg);
 }
-.topstat .dot{width:9px;height:9px;border-radius:50%;background:#7dbb6a;box-shadow:0 0 0 2px rgba(125,187,106,.25), inset 0 1px 0 rgba(255,255,255,.7);}
 
-/* ============ TARJETAS DE ARCILLA ============ */
+.topstat .dot{
+  width:8px;height:8px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #A8E8BD, #5BB07A);
+  box-shadow:0 0 0 2px rgba(91,176,122,0.2), inset -1px -1px 2px rgba(0,0,0,0.2);
+}
+
+/* ============ CARDS - Piezas de arcilla ============ */
 .card{
-  background-color:var(--cream);
-  background-image:var(--noise),linear-gradient(168deg,#fbf3e3 0%,#f0e0c6 48%,#e4cfae 100%);
-  border:2px solid var(--edge);
-  border-radius:30px 36px 28px 34px / 36px 28px 34px 30px;
-  padding:18px;
+  background:linear-gradient(180deg,#F0DFC0 0%,#E0CBA8 100%);
+  border-radius:28px;
+  padding:20px;
   margin-bottom:16px;
   box-shadow:
-    inset 0 3px 0 rgba(255,255,255,.9),
-    inset 0 -9px 18px rgba(150,115,80,.18),
-    0 8px 0 -2px rgba(122,88,58,.42),
-    0 22px 34px -16px rgba(60,38,20,.6);
+    inset 0 2px 0 rgba(255,250,235,0.8),
+    inset 0 -4px 8px rgba(120,80,40,0.15),
+    inset 2px 0 0 rgba(255,250,235,0.5),
+    inset -2px 0 0 rgba(120,80,40,0.08),
+    0 6px 0 #B89878,
+    0 10px 22px -8px rgba(80,50,25,0.35);
+  position:relative;
+  filter:url(#clay-soft);
 }
 
-/* pequeñas irregularidades "hechas a mano" en el inventario */
-#view-inv .card:nth-child(odd){transform:rotate(-.2deg)}
-#view-inv .card:nth-child(even){transform:rotate(.17deg)}
-#view-inv .card:nth-child(3n){transform:rotate(-.08deg)}
+/* Marca de dedo en esquina (estilo plastilina) */
+.card::after{
+  content:"";
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:18px;
+  height:12px;
+  background:radial-gradient(ellipse, rgba(120,80,40,0.08), transparent 70%);
+  border-radius:50%;
+  transform:rotate(-20deg);
+  pointer-events:none;
+}
 
-.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
-.card-head h2{font-size:21px;color:#3d2b1c;flex:1}
+.card-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+  gap:10px;
+}
+
+.card-head h2{
+  font-size:24px;
+  letter-spacing:-.01em;
+  flex:1;
+  color:#2E1A0F;
+  text-shadow:0 1px 0 rgba(255,250,235,0.5);
+}
+
 .card-head-right{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.card-sub{font-size:12px;color:var(--ink-3);margin:-8px 0 14px;font-weight:700;line-height:1.5}
-.card-body{overflow:hidden;transition:opacity .25s ease}
+
+.card-sub{
+  font-size:12px;
+  color:#6B4423;
+  margin:-8px 0 14px;
+  font-family:'Caveat',cursive;
+  font-size:16px;
+}
+
+.card-body{overflow:hidden;transition:opacity .3s ease}
 .card-body.hidden{display:none}
 .card.collapsed .card-head{margin-bottom:0}
 
 .collapse-btn{
-  width:34px;height:34px;flex-shrink:0;
+  width:36px;height:36px;flex-shrink:0;
   display:inline-flex;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#faf1e0,#e6d3b4);
-  border:2px solid var(--edge);
-  color:var(--ink-2);
-  border-radius:13px 15px 12px 14px / 15px 12px 14px 13px;
-  font-size:11px;cursor:pointer;
-  transition:transform .16s,box-shadow .16s,background .16s,color .16s,border-color .16s;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9), 0 3px 0 -1px var(--clay-sh);
+  background:linear-gradient(180deg,#E8D4B8 0%,#C9B08F 100%);
+  border:0;
+  color:#3D2817;
+  border-radius:12px;
+  font-size:11px;
+  cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,250,235,0.7),
+    inset 0 -2px 3px rgba(120,80,40,0.2),
+    0 3px 0 #8B6A48,
+    0 4px 8px -2px rgba(80,50,25,0.3);
+  transition:transform .12s steps(3), box-shadow .12s;
   -webkit-tap-highlight-color:transparent;
 }
-.collapse-btn:hover{background:linear-gradient(180deg,#ffdcc0,#f0b98d);color:#8a4622;border-color:rgba(196,106,58,.55)}
-.collapse-btn:active{transform:translateY(2px);box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 1px 0 -1px var(--clay-sh)}
-.collapse-btn svg{transition:transform .25s ease}
+
+.collapse-btn:hover{transform:translateY(-1px)}
+.collapse-btn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.2),0 1px 0 #8B6A48}
+.collapse-btn svg{transition:transform .3s steps(4)}
 .collapse-btn.collapsed svg{transform:rotate(-90deg)}
 
 .badge{
-  font-size:10.5px;font-weight:800;padding:5px 12px;border-radius:999px;
-  color:#6b4a10;
-  background:linear-gradient(180deg,#f5d68e,#e3b855);
-  border:2px solid rgba(162,118,31,.4);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.65), 0 2px 0 rgba(162,118,31,.3);
-  letter-spacing:.04em;
+  font-size:12px;
+  font-weight:800;
+  padding:6px 12px;
+  border-radius:14px;
+  color:#fff;
+  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,230,150,0.6),
+    inset 0 -2px 3px rgba(100,60,0,0.4),
+    0 2px 0 #8B6914;
+  letter-spacing:.02em;
+  font-family:'Nunito',sans-serif;
 }
 
-/* ============ CAMPOS ============ */
+/* ============ INPUTS - Campos tallados en arcilla ============ */
 .input{
   width:100%;
-  background:#fdf7ea;
-  border:2px solid var(--edge);
-  border-radius:15px 19px 13px 17px / 19px 13px 17px 15px;
-  padding:12px 14px;
-  color:var(--ink);
-  font-size:16px;
+  background-color:#FAF0DC;
+  border:0;
+  border-radius:14px;
+  padding:13px 16px;
+  color:#3D2817;
+  font-size:15px;
   font-family:inherit;
   font-weight:600;
   line-height:1.3;
   outline:none;
-  transition:border-color .18s,box-shadow .18s,background .18s;
-  -webkit-appearance:none;appearance:none;
-  min-height:46px;
-  box-shadow:inset 0 3px 8px rgba(140,105,70,.22), inset 0 -1px 0 rgba(255,255,255,.9);
+  transition:transform .1s steps(2);
+  -webkit-appearance:none;
+  appearance:none;
+  min-height:48px;
+  box-shadow:
+    inset 2px 2px 4px rgba(120,80,40,0.2),
+    inset -2px -2px 4px rgba(255,250,235,0.8),
+    0 2px 0 #B89878;
 }
-.input::placeholder{color:rgba(74,53,36,.34);font-weight:600}
+
+.input::placeholder{color:rgba(107,68,35,0.45);font-weight:500}
+
 .input:focus{
-  border-color:rgba(196,106,58,.8);
-  background:#fffbf2;
-  box-shadow:inset 0 3px 8px rgba(140,105,70,.18), 0 0 0 4px rgba(196,106,58,.16);
+  transform:scale(1.01);
+  box-shadow:
+    inset 2px 2px 4px rgba(201,162,39,0.25),
+    inset -2px -2px 4px rgba(255,240,180,0.8),
+    0 2px 0 #C9A227,
+    0 0 0 3px rgba(201,162,39,0.3);
 }
+
 select.input{
-  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%235c4229' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 14px center;
-  padding-right:38px;cursor:pointer;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'%3E%3Cpath fill='none' stroke='%236B4423' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 16px center;
+  padding-right:42px;
+  cursor:pointer;
+  background-color:#FAF0DC;
 }
-select.input option{background:#faf1e0;color:var(--ink)}
-input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+select.input option{background:#FAF0DC;color:#3D2817;padding:10px}
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
-input[type=date]{min-height:46px}
-input[type=checkbox]{width:20px;height:20px;accent-color:var(--terra);cursor:pointer;flex-shrink:0}
+input[type=date]{min-height:48px}
+
+input[type=checkbox]{
+  width:22px;height:22px;
+  accent-color:#C9A227;
+  cursor:pointer;
+  flex-shrink:0;
+  border-radius:6px;
+}
 
 @media (hover:hover) and (pointer:fine){
-  .input{font-size:14px;min-height:42px;padding:10px 13px}
-  select.input{padding-right:36px}
+  .input{font-size:14px;min-height:44px;padding:11px 14px}
+  select.input{padding-right:40px}
 }
 
-.field{display:block;margin-bottom:12px}
+.field{display:block;margin-bottom:14px}
 .field:last-child{margin-bottom:0}
-.label{display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:6px;letter-spacing:.02em;font-weight:800}
-.section-title{font-size:10.5px;letter-spacing:.18em;color:#a8552b;font-weight:800;margin-bottom:10px;text-transform:uppercase}
 
-/* ============ BUSCADOR DESPLEGABLE ============ */
+.label{
+  display:block;
+  font-family:'Caveat',cursive;
+  font-size:17px;
+  color:#6B4423;
+  margin-bottom:6px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+
+.section-title{
+  font-family:'Caveat',cursive;
+  font-size:18px;
+  letter-spacing:.04em;
+  color:#8B5A2B;
+  font-weight:700;
+  margin-bottom:10px;
+  text-transform:uppercase;
+}
+
+/* ============ SEARCH SELECT ============ */
 .search-select{position:relative}
 .search-select .ss-input{padding-right:38px;cursor:text}
-.search-select .ss-arrow{position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--ink-3);transition:transform .2s ease,color .2s ease}
-.search-select.open .ss-arrow{transform:translateY(-50%) rotate(180deg);color:var(--terra)}
-.search-select .ss-dropdown{
-  position:absolute;top:calc(100% + 8px);left:0;right:0;
-  background-color:#fdf6e8;
-  background-image:var(--noise),linear-gradient(180deg,#fdf6e8,#f2e3c8);
-  border:2px solid var(--edge);
-  border-radius:22px 26px 20px 24px / 26px 20px 24px 22px;
-  max-height:280px;overflow-y:auto;z-index:100;display:none;padding:6px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9), 0 10px 0 -3px rgba(122,88,58,.35), 0 26px 44px -16px rgba(50,30,15,.7);
-  -webkit-overflow-scrolling:touch;
+
+.search-select .ss-arrow{
+  position:absolute;right:15px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:#6B4423;
+  transition:transform .2s steps(3),color .2s;
 }
-.search-select.open .ss-dropdown{display:block;animation:ssFade .16s ease}
-@keyframes ssFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.search-select.open .ss-arrow{transform:translateY(-50%) rotate(180deg);color:#C9A227}
+
+.search-select .ss-dropdown{
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;right:0;
+  background:linear-gradient(180deg,#F0DFC0,#E0CBA8);
+  border-radius:18px;
+  max-height:280px;
+  overflow-y:auto;
+  z-index:100;
+  display:none;
+  padding:6px;
+  box-shadow:
+    inset 0 2px 0 rgba(255,250,235,0.8),
+    inset 0 -3px 6px rgba(120,80,40,0.15),
+    0 6px 0 #B89878,
+    0 18px 48px -12px rgba(80,50,25,0.45);
+  -webkit-overflow-scrolling:touch;
+  filter:url(#clay-soft);
+}
+
+.search-select.open .ss-dropdown{display:block;animation:ssFade .2s steps(4)}
+
+@keyframes ssFade{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 
 .ss-option{
-  padding:10px 12px;
-  border-radius:13px 16px 12px 15px / 16px 12px 15px 13px;
-  font-size:13px;cursor:pointer;color:var(--ink-2);
-  display:flex;justify-content:space-between;gap:10px;align-items:center;
-  transition:background .12s ease,color .12s ease;
-  font-weight:700;
+  padding:11px 14px;
+  border-radius:12px;
+  font-size:13px;
+  cursor:pointer;
+  color:#3D2817;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  transition:background .08s steps(2);
   -webkit-tap-highlight-color:transparent;
+  font-weight:600;
 }
-.ss-option:hover,.ss-option.active{background:rgba(196,106,58,.14);color:#8a4622}
-.ss-option.selected{background:linear-gradient(180deg,#f0b98d,#e0a071);color:#4a2410}
+
+.ss-option:hover,.ss-option.active{
+  background:rgba(201,162,39,0.2);
+  color:#6B4423;
+  box-shadow:inset 1px 1px 2px rgba(120,80,40,0.2);
+}
+
+.ss-option.selected{
+  background:linear-gradient(180deg,#E6C55E,#C9A227);
+  color:#fff;
+  font-weight:700;
+  box-shadow:inset 0 1px 0 rgba(255,230,150,0.5),inset 0 -2px 3px rgba(100,60,0,0.4);
+}
+
 .ss-option.disabled{opacity:.35;pointer-events:none}
 .ss-option-main{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ss-option-sub{font-size:10.5px;color:var(--ink-3);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
-.ss-option.selected .ss-option-sub{color:rgba(74,36,16,.7)}
-.ss-empty{padding:16px 12px;text-align:center;font-size:12px;color:var(--ink-3);font-style:italic;font-weight:700}
-.ss-count{padding:7px 12px 9px;font-size:10px;color:var(--ink-4);letter-spacing:.08em;border-bottom:2px dashed var(--edge-soft);margin-bottom:5px;font-weight:800}
+.ss-option-sub{font-size:11px;color:rgba(61,40,23,0.6);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:500}
+.ss-option.selected .ss-option-sub{color:rgba(255,255,255,0.9)}
+.ss-empty{padding:16px 12px;text-align:center;font-size:12px;color:rgba(61,40,23,0.5);font-style:italic;font-family:'Caveat',cursive;font-size:16px}
+.ss-count{padding:6px 12px 8px;font-size:11px;color:rgba(61,40,23,0.5);letter-spacing:.06em;border-bottom:1px solid rgba(120,80,40,0.15);margin-bottom:4px;font-weight:600}
 
-/* ============ BOTONES DE ARCILLA ============ */
+/* ============ BOTONES ============ */
 .btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  background:linear-gradient(180deg,#e8905c 0%,#c46a3a 55%,#b05a2e 100%);
-  color:#fff6ea;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
+  color:#3D2817;
   border:0;
-  border-radius:17px 21px 15px 19px / 21px 15px 19px 17px;
-  padding:12px 16px;
-  font-size:14px;font-weight:800;letter-spacing:.01em;
-  cursor:pointer;min-height:46px;
-  transition:transform .12s ease,filter .18s ease,box-shadow .18s ease;
+  border-radius:16px;
+  padding:13px 18px;
+  font-size:14px;
+  font-weight:800;
+  letter-spacing:.02em;
+  cursor:pointer;
+  min-height:48px;
+  transition:transform .1s steps(2);
   box-shadow:
-    inset 0 2px 0 rgba(255,255,255,.45),
-    inset 0 -5px 10px rgba(120,50,20,.28),
-    0 6px 0 -1px #8a4622,
-    0 14px 22px -12px rgba(70,35,15,.85);
-  text-shadow:0 1px 0 rgba(110,45,15,.35);
+    inset 0 2px 0 rgba(255,240,180,0.8),
+    inset 0 -3px 5px rgba(100,60,0,0.35),
+    0 4px 0 #8B6914,
+    0 6px 14px -6px rgba(80,50,25,0.4);
   -webkit-tap-highlight-color:transparent;
+  text-shadow:0 1px 0 rgba(255,240,180,0.3);
+  filter:url(#clay-soft);
 }
-.btn:hover{filter:brightness(1.06)}
-.btn:active{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -3px 6px rgba(120,50,20,.3),0 2px 0 -1px #8a4622,0 6px 12px -8px rgba(70,35,15,.7)}
 
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,240,180,0.6),inset 0 -3px 5px rgba(100,60,0,0.4),0 1px 0 #8B6914}
 .btn-block{width:100%}
 
 .btn-ghost{
-  background:linear-gradient(180deg,#faf1e0,#e4cfae);
-  color:var(--ink);
-  text-shadow:none;
+  background:linear-gradient(180deg,#EADBC8 0%,#D4C1A8 100%);
+  color:#3D2817;
   box-shadow:
-    inset 0 2px 0 rgba(255,255,255,.9),
-    inset 0 -4px 8px rgba(150,115,80,.18),
-    0 6px 0 -1px rgba(122,88,58,.5),
-    0 14px 22px -12px rgba(70,45,25,.7);
+    inset 0 2px 0 rgba(255,250,235,0.7),
+    inset 0 -3px 5px rgba(120,80,40,0.2),
+    0 4px 0 #A88660,
+    0 6px 14px -6px rgba(80,50,25,0.3);
 }
-.btn-ghost:hover{filter:brightness(1.03)}
+.btn-ghost:hover{transform:translateY(-1px);background:linear-gradient(180deg,#F0DFC0,#E0CBA8)}
 
 .btn-danger{
-  background:linear-gradient(180deg,#d9735f,#b04a35 55%,#9a3f2c);
-  color:#fff2ec;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -5px 10px rgba(90,25,15,.3),0 6px 0 -1px #8a3524,0 14px 22px -12px rgba(70,25,15,.8);
-  text-shadow:0 1px 0 rgba(90,25,15,.35);
+  background:linear-gradient(180deg,#E88A7C 0%,#C75A4A 100%);
+  color:#fff;
+  box-shadow:
+    inset 0 2px 0 rgba(255,200,190,0.6),
+    inset 0 -3px 5px rgba(120,30,20,0.4),
+    0 4px 0 #8B3A2A,
+    0 6px 14px -6px rgba(100,30,20,0.4);
+  text-shadow:0 1px 0 rgba(0,0,0,0.2);
 }
-.btn-danger:hover{filter:brightness(1.05)}
+.btn-danger:hover{transform:translateY(-1px)}
 
 .btn-money{
-  background:linear-gradient(180deg,#9ec182,#6e8b5a 55%,#5d784c);
-  color:#f6fff0;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -5px 10px rgba(35,55,25,.3),0 6px 0 -1px #4f6740,0 14px 22px -12px rgba(35,55,25,.8);
-  text-shadow:0 1px 0 rgba(40,60,30,.35);
+  background:linear-gradient(180deg,#A8E8BD 0%,#5BB07A 100%);
+  color:#1A3A25;
+  box-shadow:
+    inset 0 2px 0 rgba(200,255,220,0.6),
+    inset 0 -3px 5px rgba(30,80,40,0.35),
+    0 4px 0 #2E6A42,
+    0 6px 14px -6px rgba(30,80,40,0.4);
+  text-shadow:0 1px 0 rgba(200,255,220,0.3);
 }
-.btn-money:hover{filter:brightness(1.05)}
 
 .btn-shopping{
-  background:linear-gradient(180deg,#eec264,#cf9a34 55%,#b5852a);
-  color:#3a2708;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.55),inset 0 -5px 10px rgba(120,80,10,.28),0 6px 0 -1px #a2761f,0 14px 22px -12px rgba(90,60,10,.8);
-  text-shadow:0 1px 0 rgba(255,235,180,.5);
+  background:linear-gradient(180deg,#FFB84D 0%,#E68A00 100%);
+  color:#3D1F00;
+  box-shadow:
+    inset 0 2px 0 rgba(255,230,160,0.6),
+    inset 0 -3px 5px rgba(150,70,0,0.4),
+    0 4px 0 #8B5500,
+    0 6px 14px -6px rgba(100,60,20,0.4);
+  text-shadow:0 1px 0 rgba(255,230,160,0.3);
 }
-.btn-shopping:hover{filter:brightness(1.04)}
 
-.btn-sm{padding:9px 12px;font-size:12px;border-radius:14px 17px 12px 15px;min-height:38px}
-.btn-lg{padding:16px;font-size:15px;letter-spacing:.06em}
+.btn-sm{padding:10px 14px;font-size:12.5px;border-radius:13px;min-height:40px}
+.btn-lg{padding:15px;font-size:15px;letter-spacing:.05em}
 
 .icon-btn{
   width:38px;height:38px;flex-shrink:0;
   display:inline-flex;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#faf1e0,#e6d3b4);
-  border:2px solid var(--edge);
-  color:var(--ink-2);
-  border-radius:13px 16px 12px 15px / 16px 12px 15px 13px;
-  font-size:14px;cursor:pointer;
-  transition:transform .15s,box-shadow .15s,background .15s,color .15s,border-color .15s;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9), 0 3px 0 -1px var(--clay-sh);
+  background:linear-gradient(180deg,#E8D4B8 0%,#C9B08F 100%);
+  border:0;
+  color:#3D2817;
+  border-radius:13px;
+  font-size:15px;
+  cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,250,235,0.7),
+    inset 0 -2px 3px rgba(120,80,40,0.2),
+    0 3px 0 #8B6A48;
+  transition:transform .1s steps(2);
   -webkit-tap-highlight-color:transparent;
+  font-weight:800;
 }
-.icon-btn:hover{background:linear-gradient(180deg,#fff3e2,#f0dcc0);color:#8a4622;border-color:rgba(196,106,58,.5)}
-.icon-btn:active{transform:translateY(2px);box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 1px 0 -1px var(--clay-sh)}
-.icon-btn.danger:hover{background:linear-gradient(180deg,#e7907f,#cf6a55);color:#fff;border-color:rgba(138,53,36,.6)}
 
-/* ============ REJILLAS ============ */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.icon-btn:hover{transform:translateY(-1px);background:linear-gradient(180deg,#F0DFC0,#D4C1A8)}
+.icon-btn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.3),0 1px 0 #8B6A48}
+.icon-btn.danger:hover{background:linear-gradient(180deg,#F0A89C,#D87566);color:#fff}
+
+/* ============ GRIDS & ROWS ============ */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
 @media(max-width:640px){.grid4{grid-template-columns:1fr 1fr}}
 
-/* ============ FILAS / TARJETAS PEQUEÑAS ============ */
 .row{
-  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
-  background-color:#fdf6e8;
-  background-image:var(--noise),linear-gradient(180deg,#fdf6e8,#f4e6cd);
-  border:2px solid var(--edge-soft);
-  border-radius:20px 24px 18px 22px / 24px 18px 22px 20px;
-  padding:13px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 4px 0 -2px rgba(122,88,58,.28),0 10px 16px -12px rgba(60,38,20,.55);
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
+  border:0;
+  border-radius:18px;
+  padding:14px;
+  box-shadow:
+    inset 2px 2px 3px rgba(255,250,235,0.7),
+    inset -2px -2px 3px rgba(120,80,40,0.15),
+    0 3px 0 #B89878;
+  filter:url(#clay-soft);
+  position:relative;
 }
+
 .row+.row{margin-top:10px}
 .row-main{min-width:0;flex:1}
-.row-title{font-size:14px;font-weight:800;color:#3d2b1c;word-break:break-word}
-.row-sub{font-size:12px;color:#a8552b;margin-top:4px;font-weight:800}
-.row-sub.is-low{color:var(--brick)}
-.row-sub2{font-size:11.5px;color:var(--ink-3);margin-top:4px;font-weight:700}
+
+.row-title{
+  font-size:14px;
+  font-weight:800;
+  word-break:break-word;
+  color:#2E1A0F;
+}
+
+.row-sub{
+  font-size:13px;
+  color:#8B5A2B;
+  margin-top:4px;
+  font-weight:600;
+  font-family:'Caveat',cursive;
+  font-size:16px;
+}
+
+.row-sub.is-low{color:#C75A4A;font-weight:700}
+
+.row-sub2{
+  font-size:11.5px;
+  color:#6B4423;
+  margin-top:4px;
+  font-weight:600;
+}
+
 .row-actions{display:flex;gap:6px;flex-shrink:0}
 
 .empty{
-  text-align:center;color:var(--ink-3);font-size:13px;padding:28px 12px;
-  border:2px dashed var(--edge);border-radius:20px;font-weight:700;
-  background:rgba(255,255,255,.28);
+  text-align:center;
+  color:#8B6A48;
+  font-size:14px;
+  padding:30px 10px;
+  border:2px dashed rgba(120,80,40,0.3);
+  border-radius:18px;
+  font-family:'Caveat',cursive;
+  font-size:20px;
+  background:rgba(255,250,235,0.3);
 }
 
-/* ============ CHIPS / VARIANTES ============ */
+/* ============ CHIPS & VARIANTS ============ */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chips-mini{gap:7px;margin-top:9px}
+.chips-mini{gap:6px;margin-top:8px}
 
 .chip{
-  border:2px solid var(--edge);
-  background:linear-gradient(180deg,#faf1e0,#e9d7b8);
-  color:var(--ink-2);
-  padding:9px 15px;
-  border-radius:20px 24px 18px 22px / 24px 18px 22px 20px;
-  font-size:13px;font-weight:800;cursor:pointer;
-  transition:transform .15s,box-shadow .15s,background .15s,color .15s,border-color .15s;
-  min-height:38px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 3px 0 -1px var(--clay-sh);
+  background:linear-gradient(180deg,#E8D4B8 0%,#C9B08F 100%);
+  color:#3D2817;
+  padding:10px 16px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform .1s steps(2);
   -webkit-tap-highlight-color:transparent;
+  min-height:40px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,250,235,0.7),
+    inset 0 -2px 3px rgba(120,80,40,0.2),
+    0 3px 0 #8B6A48;
+  border:0;
+  filter:url(#clay-soft);
 }
-.chip:hover{color:#8a4622;background:linear-gradient(180deg,#fff3e2,#f0dcc0);border-color:rgba(196,106,58,.5)}
-.chip:active{transform:translateY(2px);box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 1px 0 -1px var(--clay-sh)}
+
+.chip:hover{transform:translateY(-1px);background:linear-gradient(180deg,#F0DFC0,#D4C1A8)}
+.chip:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.3),0 1px 0 #8B6A48}
+
 .chip.active{
-  background:linear-gradient(180deg,#e8905c,#c46a3a 60%,#b05a2e);
-  color:#fff6ea;border-color:rgba(138,70,34,.55);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 8px rgba(120,50,20,.25),0 3px 0 -1px #8a4622;
+  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
+  color:#fff;
+  font-weight:800;
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,180,0.6),
+    inset 0 -2px 3px rgba(100,60,0,0.4),
+    0 3px 0 #8B6914;
 }
 
 .variant{
-  border:2px solid var(--edge-soft);
-  background:linear-gradient(180deg,#fdf6e8,#f0dfc2);
-  color:var(--ink-2);
+  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
+  color:#3D2817;
   padding:7px 12px;
-  border-radius:13px 16px 12px 15px / 16px 12px 15px 13px;
-  font-size:11.5px;font-weight:800;cursor:pointer;
-  transition:transform .15s,box-shadow .15s,border-color .15s,color .15s;
+  border-radius:12px;
+  font-size:12px;
+  cursor:pointer;
+  transition:transform .1s steps(2);
   -webkit-tap-highlight-color:transparent;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.85),0 2px 0 -1px rgba(122,88,58,.25);
+  box-shadow:
+    inset 1px 1px 2px rgba(255,250,235,0.7),
+    inset -1px -1px 2px rgba(120,80,40,0.15),
+    0 2px 0 #A88660;
+  border:0;
+  font-weight:700;
+  filter:url(#clay-soft);
 }
-.variant:hover{border-color:rgba(196,106,58,.6);color:#8a4622}
-.variant:active{transform:translateY(1px)}
-.variant.low{color:#8a3524;border-color:rgba(176,74,53,.45);background:linear-gradient(180deg,#f8ded6,#efc8bd)}
 
-/* ============ PANEL LÍQUIDOS ============ */
+.variant:hover{transform:translateY(-1px);background:linear-gradient(180deg,#E6C55E,#C9A227);color:#fff}
+.variant.low{background:linear-gradient(180deg,#F0A89C,#D87566);color:#fff;box-shadow:inset 1px 1px 2px rgba(255,200,190,0.5),inset -1px -1px 2px rgba(120,30,20,0.2),0 2px 0 #8B3A2A}
+
+/* ============ LIQUIDOS ============ */
 .liq{
-  background-color:#fdf6e8;
-  background-image:var(--noise),linear-gradient(180deg,#fdf6e8,#f3e4c9);
-  border:2px solid var(--edge-soft);
-  border-radius:20px 24px 18px 22px / 24px 18px 22px 20px;
-  padding:13px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 4px 0 -2px rgba(122,88,58,.28);
+  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
+  border-radius:18px;
+  padding:14px;
+  box-shadow:
+    inset 2px 2px 3px rgba(255,250,235,0.7),
+    inset -2px -2px 3px rgba(120,80,40,0.15),
+    0 3px 0 #B89878;
+  filter:url(#clay-soft);
 }
-.liq-name{font-size:12px;color:var(--ink-2);margin-bottom:9px;line-height:1.35;font-weight:800}
-.liq-row{display:flex;gap:6px;margin-bottom:6px}
+
+.liq-name{
+  font-size:14px;
+  color:#6B4423;
+  margin-bottom:10px;
+  line-height:1.35;
+  font-weight:700;
+  font-family:'Caveat',cursive;
+  font-size:18px;
+}
+
+.liq-row{display:flex;gap:8px;margin-bottom:8px}
 .liq-row .input{flex:1;min-width:0}
-.liq-stock{font-size:12px;color:#a8552b;font-weight:800;margin-top:8px;font-variant-numeric:tabular-nums}
-.liq-cost-label{font-size:10px;color:var(--ink-3);margin-bottom:4px;letter-spacing:.06em;font-weight:800}
 
-/* ============ BARRA INFERIOR ============ */
+.liq-stock{
+  font-size:12px;
+  color:#8B5A2B;
+  font-weight:700;
+  margin-top:8px;
+  font-variant-numeric:tabular-nums;
+  font-family:'Caveat',cursive;
+  font-size:15px;
+}
+
+.liq-cost-label{
+  font-family:'Caveat',cursive;
+  font-size:15px;
+  color:#6B4423;
+  margin-bottom:5px;
+  font-weight:700;
+}
+
+/* ============ BOTTOM NAV ============ */
 .bottom{
-  position:fixed;left:0;right:0;bottom:0;z-index:50;
-  padding:10px 10px calc(10px + env(safe-area-inset-bottom));
-  background-color:#d9c0a0;
-  background-image:var(--noise),linear-gradient(180deg,#e6d1b0 0%,#c9ad86 100%);
-  border-top:3px solid rgba(138,104,68,.42);
-  box-shadow:0 -12px 26px -8px rgba(60,38,20,.4), inset 0 3px 0 rgba(255,255,255,.6);
+  position:fixed;
+  left:0;right:0;
+  bottom:0;
+  z-index:50;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(232,212,184,0.6) 0%,rgba(212,193,168,0.98) 50%);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-top:3px solid #B89878;
+  box-shadow:0 -4px 20px rgba(80,50,25,0.2);
 }
-.bottom-inner{max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.tab{
-  border:0;background:transparent;cursor:pointer;
-  border-radius:18px 22px 16px 20px / 22px 16px 20px 18px;
-  padding:10px 6px;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  color:rgba(74,53,36,.55);
-  transition:background .2s,color .2s,box-shadow .2s,transform .12s;
-  -webkit-tap-highlight-color:transparent;
-}
-.tab span{font-size:9.5px;letter-spacing:.13em;font-weight:800}
-.tab.active{
-  background:linear-gradient(180deg,#e8905c,#c46a3a 60%,#b05a2e);
-  color:#fff6ea;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 8px rgba(120,50,20,.25),0 4px 0 -1px #8a4622,0 10px 16px -10px rgba(60,30,10,.7);
-  text-shadow:0 1px 0 rgba(110,45,15,.35);
-}
-.tab:not(.active):active{transform:translateY(2px);background:rgba(255,255,255,.45)}
 
-/* ============ FÓRMULA ============ */
-.formula-box{
-  margin-top:14px;padding:16px;
-  border-radius:22px 26px 20px 24px / 26px 20px 24px 22px;
-  background-color:#f1e2c6;
-  background-image:var(--noise),linear-gradient(180deg,#f4e6cc,#ead8b8);
-  border:2px solid var(--edge-soft);
-  box-shadow:inset 0 4px 10px rgba(140,105,70,.2),inset 0 -2px 0 rgba(255,255,255,.75);
+.bottom-inner{max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+.tab{
+  border:0;
+  background:linear-gradient(180deg,#E8D4B8 0%,#D4C1A8 100%);
+  cursor:pointer;
+  border-radius:18px;
+  padding:10px 6px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  color:#6B4423;
+  transition:transform .12s steps(2);
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255,250,235,0.7),
+    inset 0 -2px 3px rgba(120,80,40,0.2),
+    0 3px 0 #A88660;
+  filter:url(#clay-soft);
 }
-.formula-title{font-size:10.5px;letter-spacing:.18em;color:var(--ink-3);margin-bottom:12px;font-weight:800}
+
+.tab span{
+  font-size:10px;
+  letter-spacing:.12em;
+  font-weight:800;
+  font-family:'Nunito',sans-serif;
+}
+
+.tab svg{color:#6B4423}
+
+.tab.active{
+  background:linear-gradient(180deg,#E6C55E,#C9A227);
+  color:#3D2817;
+  box-shadow:
+    inset 0 2px 0 rgba(255,240,180,0.8),
+    inset 0 -3px 5px rgba(100,60,0,0.4),
+    0 4px 0 #8B6914;
+}
+
+.tab.active svg{color:#3D2817}
+
+.tab:not(.active):active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.3),0 1px 0 #A88660}
+
+/* ============ FORMULA & PREVIEW BOXES ============ */
+.formula-box{
+  margin-top:16px;
+  padding:16px;
+  border-radius:20px;
+  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
+  box-shadow:
+    inset 2px 2px 3px rgba(255,250,235,0.7),
+    inset -2px -2px 3px rgba(120,80,40,0.15),
+    0 3px 0 #B89878;
+  filter:url(#clay-soft);
+}
+
+.formula-title{
+  font-family:'Caveat',cursive;
+  font-size:18px;
+  letter-spacing:.04em;
+  color:#8B5A2B;
+  margin-bottom:14px;
+  font-weight:700;
+  text-transform:uppercase;
+}
 
 .alc-box{
-  margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;
-  background:linear-gradient(180deg,#fdf6e8,#f0e0c4);
-  border:2px solid var(--edge-soft);
-  padding:13px 15px;
-  border-radius:18px 22px 16px 20px / 22px 16px 20px 18px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 3px 0 -1px rgba(122,88,58,.25);
+  margin-top:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  background:linear-gradient(180deg,#E8D4B8,#D4C1A8);
+  padding:14px 16px;
+  border-radius:16px;
+  box-shadow:inset 2px 2px 3px rgba(255,250,235,0.6),inset -2px -2px 3px rgba(120,80,40,0.2),0 2px 0 #A88660;
 }
-.alc-label{font-size:10px;color:var(--ink-3);letter-spacing:.07em;font-weight:800}
-.alc-val{font-size:26px;color:#a8552b;font-weight:600;font-variant-numeric:tabular-nums;font-family:'Fredoka',sans-serif;line-height:1.1}
-.fij-val{font-size:13px;font-weight:800}
-.alert-txt{font-size:10.5px;margin-top:4px;line-height:1.35;font-weight:800}
 
-/* ============ PRECIO / PREVIEW ============ */
-.precio-box{
-  margin-top:14px;padding:16px;
-  border-radius:22px 26px 20px 24px / 26px 20px 24px 22px;
-  background-image:var(--noise),linear-gradient(180deg,rgba(150,190,130,.28),rgba(150,190,130,.10));
-  border:2px solid rgba(110,139,90,.45);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.7),0 5px 0 -2px rgba(79,103,64,.3);
+.alc-label{
+  font-size:11px;
+  color:#6B4423;
+  letter-spacing:.06em;
+  font-weight:700;
 }
-.precio-title{font-size:10.5px;letter-spacing:.18em;color:#4f6740;margin-bottom:10px;font-weight:800}
-.precio-unit{font-size:11.5px;color:var(--ink-3);margin-top:8px;font-weight:700}
+
+.alc-val{
+  font-size:24px;
+  color:#8B5A2B;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+  font-family:'Instrument Serif',serif;
+}
+
+.fij-val{font-size:14px;font-weight:800;color:#6B4423;font-family:'Instrument Serif',serif}
+.alert-txt{font-size:11.5px;margin-top:4px;line-height:1.3;font-family:'Caveat',cursive;font-size:15px;font-weight:700}
+
+.precio-box{
+  margin-top:16px;
+  padding:16px;
+  border-radius:20px;
+  background:linear-gradient(180deg,#D8F0DE 0%,#B8D8C0 100%);
+  box-shadow:
+    inset 2px 2px 3px rgba(220,255,230,0.8),
+    inset -2px -2px 3px rgba(60,120,80,0.15),
+    0 3px 0 #7CA888;
+  filter:url(#clay-soft);
+}
+
+.precio-title{
+  font-family:'Caveat',cursive;
+  font-size:20px;
+  letter-spacing:.04em;
+  color:#2E6A42;
+  margin-bottom:12px;
+  font-weight:700;
+  text-transform:uppercase;
+}
+
+.precio-unit{font-size:12px;color:#4A6B52;margin-top:8px;font-weight:600}
 
 .preview{
-  margin-top:16px;padding:16px;
-  border-radius:22px 26px 20px 24px / 26px 20px 24px 22px;
-  background-color:#fdf6e8;
-  background-image:var(--noise),linear-gradient(180deg,#fdf6e8,#f4e6cd);
-  border:2px solid rgba(196,106,58,.4);
-  font-size:12.5px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 6px 0 -2px rgba(122,88,58,.32),0 14px 22px -16px rgba(60,38,20,.5);
+  margin-top:18px;
+  padding:16px;
+  border-radius:20px;
+  background:linear-gradient(180deg,#F8E8C8 0%,#E8D4B0 100%);
+  box-shadow:
+    inset 2px 2px 3px rgba(255,250,235,0.8),
+    inset -2px -2px 3px rgba(180,130,70,0.2),
+    0 3px 0 #B89878;
+  font-size:13px;
+  filter:url(#clay-soft);
 }
-.pv-head{font-size:10.5px;letter-spacing:.16em;color:#a8552b;font-weight:800;margin-bottom:12px}
-.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.pv-head{
+  font-family:'Caveat',cursive;
+  font-size:18px;
+  letter-spacing:.04em;
+  color:#8B5A2B;
+  font-weight:700;
+  margin-bottom:14px;
+  text-transform:uppercase;
+}
+
+.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:480px){.pv-grid{grid-template-columns:1fr}}
-.pv-col-title{font-size:10px;color:var(--ink-3);letter-spacing:.09em;margin-bottom:7px;font-weight:800}
-.pv-line{display:flex;justify-content:space-between;gap:10px;padding:3px 0;color:var(--ink-2);font-weight:600}
-.pv-line b{font-weight:800;color:#3d2b1c;font-variant-numeric:tabular-nums}
 
-.ok{color:#4f6740!important}
-.bad{color:#b04a35!important}
-.gold{color:#9a6f16!important}
+.pv-col-title{
+  font-size:11px;
+  color:#6B4423;
+  letter-spacing:.06em;
+  margin-bottom:8px;
+  font-weight:800;
+  text-transform:uppercase;
+}
 
-.pv-econ{margin-top:14px;padding-top:12px;border-top:2px dashed rgba(196,106,58,.35)}
-.pv-econ-title{font-size:10.5px;letter-spacing:.16em;color:#4f6740;font-weight:800;margin-bottom:10px}
-.pv-econ-line{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12.5px}
-.pv-econ-line span{color:var(--ink-2);font-weight:600}
-.pv-econ-line b{font-variant-numeric:tabular-nums;font-weight:800}
-.pv-econ-line.big b{font-size:19px}
+.pv-line{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:3px 0;
+  color:#3D2817;
+}
+
+.pv-line b{font-weight:800;color:#2E1A0F;font-variant-numeric:tabular-nums}
+
+.ok{color:#2E6A42!important;font-weight:800}
+.bad{color:#8B3A2A!important;font-weight:800}
+.gold{color:#8B5A2B!important;font-weight:800}
+
+.pv-econ{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:2px dashed rgba(120,80,40,0.25);
+}
+
+.pv-econ-title{
+  font-family:'Caveat',cursive;
+  font-size:18px;
+  letter-spacing:.04em;
+  color:#2E6A42;
+  font-weight:700;
+  margin-bottom:12px;
+  text-transform:uppercase;
+}
+
+.pv-econ-line{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:5px 0;
+  font-size:13px;
+}
+
+.pv-econ-line span{color:#6B4423;font-weight:600}
+.pv-econ-line b{font-variant-numeric:tabular-nums;font-weight:800;color:#2E1A0F}
+.pv-econ-line.big b{font-size:20px;font-family:'Instrument Serif',serif}
 
 .pv-status{
-  margin-top:14px;padding:12px;border-radius:16px 20px 14px 18px / 20px 14px 18px 16px;
-  font-size:12.5px;font-weight:800;text-align:center;letter-spacing:.01em;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.6);
+  margin-top:14px;
+  padding:12px 14px;
+  border-radius:14px;
+  font-size:13px;
+  font-weight:800;
+  text-align:center;
+  letter-spacing:.01em;
+  box-shadow:inset 2px 2px 3px rgba(255,250,235,0.6),inset -2px -2px 3px rgba(120,80,40,0.15),0 2px 0 rgba(120,80,40,0.2);
+  filter:url(#clay-soft);
 }
-.pv-status.good{background:linear-gradient(180deg,rgba(150,190,130,.35),rgba(150,190,130,.15));color:#3d5230;border:2px solid rgba(110,139,90,.5)}
-.pv-status.bad{background:linear-gradient(180deg,rgba(210,120,100,.28),rgba(210,120,100,.12));color:#7a2d1e;border:2px solid rgba(176,74,53,.5)}
 
-/* ============ ESTADÍSTICAS ============ */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:9px;margin-bottom:14px}
+.pv-status.good{background:linear-gradient(180deg,#D8F0DE,#B8D8C0);color:#1A3A25}
+.pv-status.bad{background:linear-gradient(180deg,#F0C8C0,#D89888);color:#5A2015}
+
+/* ============ STATS ============ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:16px}
+
 .stat{
-  background-color:#fdf6e8;
-  background-image:var(--noise),linear-gradient(180deg,#fdf6e8,#f2e2c6);
-  border:2px solid var(--edge-soft);
-  border-radius:18px 22px 16px 20px / 22px 16px 20px 18px;
-  padding:13px 8px;text-align:center;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 4px 0 -2px rgba(122,88,58,.28);
+  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
+  border-radius:18px;
+  padding:14px 10px;
+  text-align:center;
+  box-shadow:
+    inset 2px 2px 3px rgba(255,250,235,0.7),
+    inset -2px -2px 3px rgba(120,80,40,0.15),
+    0 3px 0 #B89878;
+  filter:url(#clay-soft);
 }
-.stat-label{font-size:9.5px;color:var(--ink-3);letter-spacing:.09em;line-height:1.3;font-weight:800}
-.stat-val{font-size:21px;margin-top:5px;font-variant-numeric:tabular-nums;font-family:'Fredoka',sans-serif;font-weight:600}
-.stat-val.serif{font-family:'Fredoka',serif}
-.stat-val.money{color:#4f6740}
-.stat-val.gold{color:#9a6f16}
-.stat-val.red{color:#b04a35}
+
+.stat-label{
+  font-size:10px;
+  color:#6B4423;
+  letter-spacing:.06em;
+  line-height:1.3;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.stat-val{
+  font-size:22px;
+  margin-top:5px;
+  font-variant-numeric:tabular-nums;
+  font-weight:800;
+  color:#2E1A0F;
+}
+
+.stat-val.serif{font-family:'Instrument Serif',serif}
+.stat-val.money{color:#2E6A42}
+.stat-val.gold{color:#8B5A2B}
+.stat-val.red{color:#8B3A2A}
 
 /* ============ HISTORIAL ============ */
 .hist-item{
-  background-color:#fdf6e8;
-  background-image:var(--noise),linear-gradient(180deg,#fdf6e8,#f3e4c9);
-  border:2px solid var(--edge-soft);
-  border-radius:22px 26px 20px 24px / 26px 20px 24px 22px;
-  padding:14px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 5px 0 -2px rgba(122,88,58,.28),0 12px 20px -14px rgba(60,38,20,.5);
+  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
+  border-radius:20px;
+  padding:15px;
+  box-shadow:
+    inset 2px 2px 3px rgba(255,250,235,0.7),
+    inset -2px -2px 3px rgba(120,80,40,0.15),
+    0 3px 0 #B89878;
+  filter:url(#clay-soft);
 }
+
 .hist-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.hist-title{font-size:14px;font-weight:800;color:#3d2b1c}
-.hist-date{font-size:11px;color:var(--ink-3);margin-top:4px;font-weight:700}
+
+.hist-title{font-size:15px;font-weight:800;color:#2E1A0F}
+.hist-date{font-size:12px;color:#6B4423;margin-top:4px;font-family:'Caveat',cursive;font-size:16px;font-weight:700}
 
 .pill{
-  font-size:11.5px;font-weight:800;padding:6px 12px;border-radius:999px;white-space:nowrap;
-  background:linear-gradient(180deg,#f5d68e,#e3b855);color:#6b4a10;
-  border:2px solid rgba(162,118,31,.4);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.65);
+  font-size:12px;
+  font-weight:800;
+  padding:7px 12px;
+  border-radius:14px;
+  white-space:nowrap;
+  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
+  color:#3D2817;
   font-variant-numeric:tabular-nums;
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,180,0.6),
+    inset 0 -2px 3px rgba(100,60,0,0.4),
+    0 2px 0 #8B6914;
+  filter:url(#clay-soft);
 }
-.pill.money{background:linear-gradient(180deg,#b6cf9c,#8fae74);color:#2f4222;border-color:rgba(79,103,64,.45)}
-.pill.loss{background:linear-gradient(180deg,#e8a08e,#d0715c);color:#4a1a10;border-color:rgba(138,53,36,.45)}
 
-.hist-detail{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:9px;font-size:11px}
+.pill.money{background:linear-gradient(180deg,#A8E8BD 0%,#5BB07A 100%);color:#1A3A25;box-shadow:inset 0 1px 0 rgba(200,255,220,0.6),inset 0 -2px 3px rgba(30,80,40,0.35),0 2px 0 #2E6A42}
+.pill.loss{background:linear-gradient(180deg,#E88A7C 0%,#C75A4A 100%);color:#fff;box-shadow:inset 0 1px 0 rgba(255,200,190,0.6),inset 0 -2px 3px rgba(120,30,20,0.4),0 2px 0 #8B3A2A}
+
+.hist-detail{margin-top:13px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px}
 @media(max-width:420px){.hist-detail{grid-template-columns:1fr}}
-.hist-box{
-  background:linear-gradient(180deg,#f7ecd8,#efe0c4);
-  border:2px solid var(--edge-soft);
-  border-radius:15px 18px 13px 16px / 18px 13px 16px 15px;
-  padding:11px 13px;line-height:1.7;color:var(--ink-2);font-weight:600;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.85);
-}
-.hist-box strong{display:block;font-size:9.5px;color:var(--ink-4);letter-spacing:.15em;margin-bottom:5px;font-weight:800}
-.hist-box.money{background:linear-gradient(180deg,rgba(150,190,130,.26),rgba(150,190,130,.09));border-color:rgba(110,139,90,.4)}
-.hist-box.money .line{display:flex;justify-content:space-between;gap:8px}
-.hist-box.money .line b{color:#4f6740}
-.hist-box.money .line.loss b{color:#b04a35}
 
-/* ============ MODAL ============ */
-.backdrop{
-  position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
-  background:rgba(58,36,18,.62);
-  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+.hist-box{
+  background:linear-gradient(180deg,#F0DFC0,#E0CBA8);
+  border-radius:14px;
+  padding:11px 13px;
+  line-height:1.7;
+  color:#3D2817;
+  box-shadow:inset 1px 1px 2px rgba(255,250,235,0.6),inset -1px -1px 2px rgba(120,80,40,0.15);
+  font-weight:600;
 }
-.backdrop.show{display:flex;animation:fade .18s ease}
+
+.hist-box strong{
+  display:block;
+  font-size:11px;
+  color:#8B5A2B;
+  letter-spacing:.12em;
+  margin-bottom:5px;
+  font-weight:800;
+  font-family:'Caveat',cursive;
+  font-size:16px;
+  text-transform:uppercase;
+}
+
+.hist-box.money{background:linear-gradient(180deg,#D8F0DE,#B8D8C0);box-shadow:inset 1px 1px 2px rgba(220,255,230,0.6),inset -1px -1px 2px rgba(60,120,80,0.15)}
+.hist-box.money .line{display:flex;justify-content:space-between;gap:8px}
+.hist-box.money .line b{color:#1A3A25;font-weight:800}
+.hist-box.money .line.loss b{color:#8B3A2A}
+
+/* ============ MODALES ============ */
+.backdrop{
+  position:fixed;
+  inset:0;
+  z-index:200;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(61,40,23,0.5);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+.backdrop.show{display:flex;animation:fade .2s steps(4)}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 
 .modal{
-  width:100%;max-width:420px;
-  background-color:var(--cream);
-  background-image:var(--noise),linear-gradient(172deg,#fbf3e3,#e8d6b6);
-  border:2px solid var(--edge);
-  border-radius:30px 36px 28px 34px / 36px 28px 34px 30px;
-  padding:22px;
-  box-shadow:inset 0 3px 0 rgba(255,255,255,.9),0 12px 0 -3px rgba(122,88,58,.42),0 34px 70px -24px rgba(50,30,15,.85);
-  animation:pop .22s cubic-bezier(.2,.9,.3,1.2);
-  max-height:calc(100vh - 40px);overflow-y:auto;
+  width:100%;
+  max-width:420px;
+  background:linear-gradient(180deg,#F0DFC0 0%,#E0CBA8 100%);
+  border-radius:28px;
+  padding:24px;
+  box-shadow:
+    inset 0 2px 0 rgba(255,250,235,0.8),
+    inset 0 -4px 8px rgba(120,80,40,0.15),
+    0 6px 0 #B89878,
+    0 20px 50px -15px rgba(60,40,20,0.5);
+  animation:pop .25s steps(5);
+  max-height:calc(100vh - 40px);
+  overflow-y:auto;
+  filter:url(#clay-soft);
 }
+
 .modal.modal-lg{max-width:520px}
-@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
-.modal h3{font-size:21px;margin-bottom:16px;color:#3d2b1c}
-.modal-actions{display:flex;gap:8px;margin-top:18px}
+
+@keyframes pop{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:none}}
+
+.modal h3{font-size:22px;margin-bottom:18px;color:#2E1A0F}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
 .modal-actions .btn{flex:1}
 
-/* ============ LISTA DE COMPRAS ============ */
-.shop-list{margin-top:4px;max-height:52vh;overflow-y:auto;padding-right:4px}
+/* ============ SHOPPING LIST ============ */
+.shop-list{margin-top:6px;max-height:52vh;overflow-y:auto;padding-right:4px}
 .shop-cat{margin-bottom:18px}
 .shop-cat:last-child{margin-bottom:0}
+
 .shop-cat-title{
-  font-size:10.5px;letter-spacing:.16em;color:#a8552b;font-weight:800;
-  margin-bottom:9px;padding-bottom:7px;border-bottom:2px dashed rgba(196,106,58,.35);
+  font-family:'Caveat',cursive;
+  font-size:20px;
+  letter-spacing:.04em;
+  color:#8B5A2B;
+  font-weight:700;
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:2px dashed rgba(120,80,40,0.25);
+  text-transform:uppercase;
 }
+
 .shop-item{
-  display:flex;justify-content:space-between;gap:10px;padding:10px 12px;
-  background:linear-gradient(180deg,#fdf6e8,#f2e3c8);
-  border:2px solid var(--edge-soft);
-  border-radius:15px 18px 13px 16px / 18px 13px 16px 15px;
-  margin-bottom:7px;font-size:12.5px;align-items:center;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.85),0 2px 0 -1px rgba(122,88,58,.22);
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 13px;
+  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
+  border-radius:14px;
+  margin-bottom:8px;
+  font-size:13px;
+  align-items:center;
+  box-shadow:inset 2px 2px 3px rgba(255,250,235,0.6),inset -2px -2px 3px rgba(120,80,40,0.15),0 2px 0 #A88660;
+  filter:url(#clay-soft);
 }
+
 .shop-item-info{flex:1;min-width:0}
-.shop-item-name{color:#3d2b1c;font-weight:800;word-break:break-word}
-.shop-item-current{font-size:10.5px;color:#b04a35;margin-top:3px;font-weight:700}
-.shop-item-qty{font-size:13px;font-weight:800;color:#4f6740;white-space:nowrap;font-variant-numeric:tabular-nums}
-.shop-empty{text-align:center;padding:32px 12px;color:var(--ink-3);font-size:13px;font-weight:700}
-.shop-empty-icon{font-size:44px;margin-bottom:10px;opacity:.7}
+.shop-item-name{color:#2E1A0F;font-weight:800;word-break:break-word}
+.shop-item-current{font-size:12px;color:#6B4423;margin-top:3px;font-family:'Caveat',cursive;font-size:15px}
+.shop-item-qty{font-size:14px;font-weight:800;color:#2E6A42;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.shop-empty{text-align:center;padding:30px 12px;color:#6B4423;font-size:14px;font-family:'Caveat',cursive;font-size:20px}
+.shop-empty-icon{font-size:42px;margin-bottom:12px;opacity:.6}
 
 /* ============ TOAST ============ */
 .toast{
-  position:fixed;left:50%;bottom:calc(112px + env(safe-area-inset-bottom));
+  position:fixed;
+  left:50%;
+  bottom:calc(110px + env(safe-area-inset-bottom));
   transform:translate(-50%,16px);
-  background:linear-gradient(180deg,#e8905c,#c46a3a 60%,#b05a2e);
-  color:#fff6ea;
+  background:linear-gradient(180deg,#E6C55E,#C9A227);
+  color:#3D2817;
   padding:13px 22px;
-  border-radius:22px 26px 20px 24px / 26px 20px 24px 22px;
-  font-size:13px;font-weight:800;z-index:300;opacity:0;pointer-events:none;
-  transition:opacity .22s,transform .22s;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 6px 0 -2px #8a4622,0 18px 30px -12px rgba(50,25,10,.85);
-  max-width:calc(100vw - 40px);text-align:center;
-  text-shadow:0 1px 0 rgba(110,45,15,.35);
+  border-radius:999px;
+  font-size:14px;
+  font-weight:800;
+  z-index:300;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .25s steps(4),transform .25s steps(4);
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,180,0.6),
+    inset 0 -2px 3px rgba(100,60,0,0.4),
+    0 4px 0 #8B6914,
+    0 10px 28px -8px rgba(80,50,25,0.45);
+  max-width:calc(100vw - 40px);
+  text-align:center;
+  filter:url(#clay-soft);
 }
+
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
-/* ============ MISC ============ */
-.view{display:none;animation:fade .25s ease}
+/* ============ VIEWS ============ */
+.view{display:none;animation:fade .3s steps(4)}
 .view.active{display:block}
-.divider{
-  height:2px;border:0;margin:16px 0;
-  background:repeating-linear-gradient(90deg,rgba(138,104,68,.3) 0 9px,transparent 9px 18px);
+.divider{height:2px;background:rgba(120,80,40,0.2);margin:16px 0;border-radius:2px}
+
+.range-label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:12px;
+  color:#6B4423;
+  letter-spacing:.03em;
+  margin-bottom:8px;
+  font-weight:700;
 }
-.range-label{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);letter-spacing:.03em;margin-bottom:6px;font-weight:800}
-.range-label svg{color:#a8552b;flex-shrink:0}
+
+.range-label svg{color:#8B5A2B;flex-shrink:0}
+
+/* ============ SCROLLBAR ============ */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:rgba(120,80,40,0.1);border-radius:10px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#C9A227,#8B6914);border-radius:10px;border:2px solid rgba(0,0,0,0)}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#E6C55E,#C9A227)}
+
+/* ============ ANIMACIONES STOP-MOTION ============ */
+@keyframes stopShake{
+  0%,100%{transform:rotate(0deg) translate(0,0)}
+  25%{transform:rotate(-0.3deg) translate(0.5px,0)}
+  75%{transform:rotate(0.3deg) translate(-0.5px,0)}
+}
+
+.card:hover{animation:stopShake 0.6s steps(4) infinite}
+
+/* Marca de dedo que aparece al hover */
+.row:hover::before,
+.hist-item:hover::before{
+  content:"";
+  position:absolute;
+  top:8px;
+  right:50px;
+  width:14px;
+  height:10px;
+  background:radial-gradient(ellipse, rgba(120,80,40,0.15), transparent 70%);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.row,.hist-item{position:relative}
+
+/* Efecto de "presionar" plastilina en botones activos */
+.btn:active,
+.icon-btn:active,
+.chip:active,
+.variant:active{
+  filter:url(#clay-rough) !important;
+}
+
 </style>
 </head>
 <body>
+
 <div class="wrap">
 
   <header class="topbar">
+
     <div class="brand">
-      <span class="brand-kicker">AION PERFUMERÍA</span>
+
+      <span class="brand-kicker">AION Perfumería</span>
+
       <h1>Gestor <i>v4.2</i></h1>
+
       <span class="brand-sub">EXTRAIT 42% · ISF 0.2 · Control financiero</span>
+
     </div>
+
     <div class="topstat"><span class="dot"></span><span id="statTot">0 esencias</span></div>
+
   </header>
 
   <main>
+
     <!-- ================= INVENTARIO ================= -->
+
     <section id="view-inv" class="view active">
 
+      <!-- ESENCIAS -->
+
       <div class="card" id="card-ess">
+
         <div class="card-head">
-          <h2>Esencias</h2>
+
+          <h2>✦ Esencias</h2>
+
           <div class="card-head-right">
+
             <span class="badge" id="countEss">0</span>
+
             <button class="collapse-btn" id="tog-ess" onclick="toggleCard('ess')" title="Minimizar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
             </button>
+
           </div>
+
         </div>
+
         <div class="card-body" id="body-ess">
+
           <label class="label">Nombre</label>
-          <input id="essName" class="input" placeholder="Ej: Baccarat Rouge" autocomplete="off" style="margin-bottom:10px">
-          <div class="grid2" style="margin-bottom:10px">
+
+          <input id="essName" class="input" placeholder="Ej: Baccarat Rouge" autocomplete="off" style="margin-bottom:12px">
+
+          <div class="grid2" style="margin-bottom:12px">
+
             <div><label class="label">Stock (ml)</label><input id="essMl" class="input" type="number" inputmode="decimal" value="100"></div>
+
             <div><label class="label">Costo $/ml</label><input id="essCosto" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01"></div>
+
           </div>
-          <button class="btn btn-block" onclick="addEsencia()">+ Añadir esencia</button>
-          <div id="listEss" style="margin-top:12px"></div>
+
+          <button class="btn btn-block" onclick="addEsencia()">✦ Añadir esencia</button>
+
+          <div id="listEss" style="margin-top:14px"></div>
+
         </div>
+
       </div>
+
+      <!-- LÍQUIDOS -->
 
       <div class="card" id="card-liq">
+
         <div class="card-head">
-          <h2>Líquidos base</h2>
+
+          <h2>✦ Líquidos base</h2>
+
           <div class="card-head-right">
+
             <button class="collapse-btn" id="tog-liq" onclick="toggleCard('liq')" title="Minimizar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
             </button>
+
           </div>
+
         </div>
+
         <div class="card-body" id="body-liq">
-          <p class="card-sub">Introduce el costo por ml una sola vez. Se usará para calcular el costo de cada producción.</p>
+
+          <p class="card-sub">💡 Introduce el costo por ml una sola vez. Se usará para calcular el costo de cada producción.</p>
+
           <div class="grid2" id="liqGrid"></div>
+
         </div>
+
       </div>
+
+      <!-- FRASCOS -->
 
       <div class="card" id="card-bot">
+
         <div class="card-head">
-          <h2>Frascos</h2>
+
+          <h2>✦ Frascos</h2>
+
           <div class="card-head-right">
+
             <span class="badge" id="countBot">0</span>
+
             <button class="collapse-btn" id="tog-bot" onclick="toggleCard('bot')" title="Minimizar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
             </button>
+
           </div>
+
         </div>
+
         <div class="card-body" id="body-bot">
-          <p class="card-sub">Un modelo puede tener varios tamaños. Si el modelo ya existe, se añade el nuevo tamaño.</p>
+
+          <p class="card-sub">📦 Un modelo puede tener varios tamaños. Si el modelo ya existe, se añade el nuevo tamaño.</p>
+
           <label class="label">Modelo</label>
-          <input id="botModelo" class="input" placeholder="Ej: Cilíndrica dorada" autocomplete="off" style="margin-bottom:10px">
-          <div class="grid3" style="margin-bottom:10px">
+
+          <input id="botModelo" class="input" placeholder="Ej: Cilíndrica dorada" autocomplete="off" style="margin-bottom:12px">
+
+          <div class="grid3" style="margin-bottom:12px">
+
             <div><label class="label">Tamaño (ml)</label><input id="botTam" class="input" type="number" inputmode="decimal" value="50"></div>
+
             <div><label class="label">Stock (u)</label><input id="botStock" class="input" type="number" inputmode="numeric" value="10"></div>
+
             <div><label class="label">Costo $/u</label><input id="botCosto" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01"></div>
+
           </div>
-          <button class="btn btn-block" onclick="addFrasco()">+ Añadir frasco</button>
-          <div id="listBot" style="margin-top:12px"></div>
+
+          <button class="btn btn-block" onclick="addFrasco()">✦ Añadir frasco</button>
+
+          <div id="listBot" style="margin-top:14px"></div>
+
         </div>
+
       </div>
 
+      <!-- ATOMIZADORES -->
+
       <div class="card" id="card-ato">
+
         <div class="card-head">
-          <h2>Atomizadores</h2>
+
+          <h2>✦ Atomizadores</h2>
+
           <div class="card-head-right">
+
             <span class="badge" id="countAto">0</span>
+
             <button class="collapse-btn" id="tog-ato" onclick="toggleCard('ato')" title="Minimizar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+
             </button>
+
           </div>
+
         </div>
+
         <div class="card-body" id="body-ato">
+
           <label class="label">Modelo</label>
-          <input id="atoModelo" class="input" placeholder="Ej: Atomizador negro premium" autocomplete="off" style="margin-bottom:10px">
-          <div class="grid2" style="margin-bottom:10px">
+
+          <input id="atoModelo" class="input" placeholder="Ej: Atomizador negro premium" autocomplete="off" style="margin-bottom:12px">
+
+          <div class="grid2" style="margin-bottom:12px">
+
             <div><label class="label">Stock (u)</label><input id="atoStock" class="input" type="number" inputmode="numeric" value="20"></div>
+
             <div><label class="label">Costo $/u</label><input id="atoCosto" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01"></div>
+
           </div>
-          <button class="btn btn-block" onclick="addAtom()">+ Añadir atomizador</button>
-          <div id="listAto" style="margin-top:12px"></div>
+
+          <button class="btn btn-block" onclick="addAtom()">✦ Añadir atomizador</button>
+
+          <div id="listAto" style="margin-top:14px"></div>
+
         </div>
+
       </div>
+
     </section>
 
     <!-- ================= VENTA ================= -->
+
     <section id="view-venta" class="view">
-      <div class="card" style="border-color:rgba(196,106,58,.5)">
-        <div class="brand-kicker" style="margin-bottom:8px">FÓRMULA EXTRAIT 42% · MDDP ISF 0.2</div>
-        <h2 style="font-size:24px;margin-bottom:16px;color:#3d2b1c">Registrar venta / producción</h2>
+
+      <div class="card" style="background:linear-gradient(180deg,#F8E8C8 0%,#E8D4B0 100%)">
+
+        <div class="brand-kicker" style="margin-bottom:8px">✦ FÓRMULA EXTRAIT 42% · MDDP ISF 0.2</div>
+
+        <h2 style="font-size:26px;margin-bottom:18px">Registrar venta / producción</h2>
 
         <label class="label">Cliente / Referencia (opcional)</label>
-        <input id="vCliente" class="input" placeholder="Ej: María · pedido Instagram" autocomplete="off" style="margin-bottom:14px">
+
+        <input id="vCliente" class="input" placeholder="Ej: María · pedido Instagram" autocomplete="off" style="margin-bottom:16px">
 
         <label class="label">Esencia utilizada</label>
-        <div id="ss-vEsencia" style="margin-bottom:14px"></div>
+
+        <div id="ss-vEsencia" style="margin-bottom:16px"></div>
 
         <label class="label">Tamaño por frasco</label>
-        <div class="chips" id="vTamChips" style="margin-bottom:8px"></div>
-        <input id="vTamCustom" class="input" type="number" inputmode="decimal" placeholder="ml personalizado" style="display:none;margin-bottom:14px">
+
+        <div class="chips" id="vTamChips" style="margin-bottom:10px"></div>
+
+        <input id="vTamCustom" class="input" type="number" inputmode="decimal" placeholder="ml personalizado" style="display:none;margin-bottom:16px">
 
         <label class="label">Cantidad de piezas</label>
-        <input id="vCant" class="input" type="number" inputmode="numeric" value="1" min="1" style="margin-bottom:14px">
+
+        <input id="vCant" class="input" type="number" inputmode="numeric" value="1" min="1" style="margin-bottom:16px">
 
         <div class="precio-box">
+
           <div class="precio-title">💰 PRECIO DE VENTA</div>
+
           <label class="label">Precio total de la venta ($ · opcional)</label>
+
           <input id="vPrecio" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01">
+
           <div class="precio-unit" id="vPrecioUnit"></div>
+
         </div>
 
         <div class="formula-box">
-          <div class="formula-title">AJUSTE DE FÓRMULA (EDITABLE)</div>
+
+          <div class="formula-title">⚗ Ajuste de fórmula (editable)</div>
+
           <div class="grid4">
+
             <div><label class="label">% Esencia</label><input id="pctEss" class="input" type="number" inputmode="decimal" step="0.1" value="42"></div>
+
             <div><label class="label">% Musk</label><input id="pctMusk" class="input" type="number" inputmode="decimal" step="0.05" value="0.25"></div>
+
             <div><label class="label">% IPM</label><input id="pctIpm" class="input" type="number" inputmode="decimal" step="0.05" value="0.8"></div>
+
             <div><label class="label">% DPG</label><input id="pctDpg" class="input" type="number" inputmode="decimal" step="0.05" value="0"></div>
+
           </div>
+
           <div class="alc-box">
+
             <div>
+
               <div class="alc-label">% PERFUMOL / ALCOHOL (AUTO)</div>
+
               <div class="alc-val" id="pctAlc">56.95%</div>
+
             </div>
+
             <div style="text-align:right">
+
               <div class="alc-label">FIJADORES TOTALES</div>
+
               <div class="fij-val" id="fijTot">1.05%</div>
+
               <div class="alert-txt" id="alertAlc"></div>
+
             </div>
+
           </div>
+
         </div>
 
-        <div class="grid2" style="margin-top:16px">
+        <div class="grid2" style="margin-top:18px">
+
           <div><label class="label">Modelo de frasco</label><div id="ss-vBotellaModelo"></div></div>
+
           <div><label class="label">Tamaño del frasco</label><select id="vBotellaTam" class="input"></select></div>
+
         </div>
 
-        <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2);white-space:nowrap;font-weight:800">
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+
+          <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:#3D2817;white-space:nowrap;font-weight:700">
+
             <input type="checkbox" id="vUsaAtom" checked> Atomizador
+
           </label>
+
           <div id="ss-vAtom" style="flex:1;min-width:0"></div>
+
         </div>
 
         <div id="preview" class="preview">
-          <div style="font-size:12px;color:var(--ink-3);text-align:center;padding:8px 0;font-weight:700">Selecciona esencia, tamaño y cantidad para ver el consumo</div>
+
+          <div style="font-size:14px;color:#6B4423;text-align:center;padding:10px 0;font-family:'Caveat',cursive;font-size:18px">Selecciona esencia, tamaño y cantidad para ver el consumo</div>
+
         </div>
 
-        <button class="btn btn-block btn-lg" style="margin-top:16px" onclick="registrarVenta()">REGISTRAR Y DESCONTAR INVENTARIO</button>
+        <button class="btn btn-block btn-lg" style="margin-top:18px" onclick="registrarVenta()">✦ REGISTRAR Y DESCONTAR INVENTARIO</button>
+
       </div>
+
     </section>
 
     <!-- ================= HISTORIAL ================= -->
+
     <section id="view-hist" class="view">
+
       <div class="card">
-        <div class="card-head"><h2>Historial de producción</h2></div>
+
+        <div class="card-head"><h2>✦ Historial de producción</h2></div>
+
         <div class="stats" id="stats"></div>
-        <div class="grid2" style="margin-bottom:10px">
+
+        <div class="grid2" style="margin-bottom:12px">
+
           <select id="fEss" class="input"></select>
+
           <input id="fSearch" class="input" placeholder="Buscar..." autocomplete="off">
-        </div>
-        <div class="range-label">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-          </svg>
-          <span>Filtrar por rango de fechas</span>
-        </div>
-        <div class="grid2" style="margin-bottom:14px">
-          <div><label class="label">Desde</label><input id="fDesde" class="input" type="date"></div>
-          <div><label class="label">Hasta</label><input id="fHasta" class="input" type="date"></div>
+
         </div>
 
-        <button class="btn btn-shopping btn-block" style="margin-bottom:10px" onclick="abrirListaCompras()">
+        <div class="range-label">
+
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+
+          </svg>
+
+          <span>Filtrar por rango de fechas</span>
+
+        </div>
+
+        <div class="grid2" style="margin-bottom:16px">
+
+          <div>
+
+            <label class="label">Desde</label>
+
+            <input id="fDesde" class="input" type="date">
+
+          </div>
+
+          <div>
+
+            <label class="label">Hasta</label>
+
+            <input id="fHasta" class="input" type="date">
+
+          </div>
+
+        </div>
+
+        <button class="btn btn-shopping btn-block" style="margin-bottom:12px" onclick="abrirListaCompras()">
+
           🛒 Generar lista de compras sugerida
+
         </button>
-        <div class="grid2" style="margin-bottom:8px">
-          <button class="btn" onclick="exportPDF()">📄 PDF historial</button>
-          <button class="btn" onclick="exportHistExcel()">📊 Excel historial</button>
-        </div>
-        <div class="grid2" style="margin-bottom:8px">
-          <button class="btn btn-ghost" onclick="exportInvPDF()">📄 PDF inventario</button>
-          <button class="btn btn-ghost" onclick="exportInvExcel()">📊 Excel inventario</button>
-        </div>
+
         <div class="grid2" style="margin-bottom:10px">
-          <button class="btn btn-money" onclick="exportFinPDF()">💰 PDF financiero</button>
-          <button class="btn btn-money" onclick="exportFinExcel()">💰 Excel financiero</button>
+
+          <button class="btn" onclick="exportPDF()">📄 PDF historial</button>
+
+          <button class="btn" onclick="exportHistExcel()">📊 Excel historial</button>
+
         </div>
+
+        <div class="grid2" style="margin-bottom:10px">
+
+          <button class="btn btn-ghost" onclick="exportInvPDF()">📄 PDF inventario</button>
+
+          <button class="btn btn-ghost" onclick="exportInvExcel()">📊 Excel inventario</button>
+
+        </div>
+
+        <div class="grid2" style="margin-bottom:12px">
+
+          <button class="btn btn-money" onclick="exportFinPDF()">💰 PDF financiero</button>
+
+          <button class="btn btn-money" onclick="exportFinExcel()">💰 Excel financiero</button>
+
+        </div>
+
         <div class="grid2">
+
           <button class="btn btn-ghost btn-sm" onclick="clearHist()">Borrar historial</button>
+
           <button class="btn btn-danger btn-sm" onclick="clearAll()">Borrar todo</button>
+
         </div>
 
         <div class="divider"></div>
-        <div id="listHist" style="display:grid;gap:10px"></div>
+
+        <div id="listHist" style="display:grid;gap:12px"></div>
+
       </div>
+
     </section>
+
   </main>
+
 </div>
 
 <nav class="bottom">
+
   <div class="bottom-inner">
+
     <button id="tab-inv" class="tab active" onclick="switchTab('inv')">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
+
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
+
       <span>INVENTARIO</span>
+
     </button>
+
     <button id="tab-venta" class="tab" onclick="switchTab('venta')">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+
       <span>VENTA</span>
+
     </button>
+
     <button id="tab-hist" class="tab" onclick="switchTab('hist')">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l3.5-3.5L13 14l4-6"/></svg>
+
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l3.5-3.5L13 14l4-6"/></svg>
+
       <span>HISTORIAL</span>
+
     </button>
+
   </div>
+
 </nav>
 
 <div class="backdrop" id="modalBackdrop">
+
   <div class="modal" id="modalBox">
+
     <h3 id="modalTitle">Editar</h3>
+
     <div id="modalBody"></div>
+
     <div class="modal-actions">
+
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+
       <button class="btn" id="modalOk">Guardar</button>
+
     </div>
+
   </div>
+
 </div>
 
 <div class="backdrop" id="shopBackdrop">
+
   <div class="modal modal-lg">
+
     <h3 id="shopTitle">🛒 Lista de compras sugerida</h3>
+
     <div id="shopBody"></div>
+
     <div class="modal-actions">
+
       <button class="btn btn-ghost" onclick="closeShopModal()">Cerrar</button>
+
       <button class="btn" id="shopExportPdf">📄 PDF</button>
+
       <button class="btn btn-money" id="shopExportXls">📊 Excel</button>
+
     </div>
+
   </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -870,6 +1688,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--terra);cursor:poi
 /* =========================================================
    UTILIDADES
    ========================================================= */
+
 const $  = id => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -879,7 +1698,6 @@ const fmt = n => (Math.round(n * 100) / 100).toLocaleString('es-ES');
 const money = n => '$' + fmt(n || 0);
 const pct = n => (Math.round(n * 10) / 10) + '%';
 function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
-
 let toastTimer;
 function toast(msg){
   const t = $('toast');
@@ -888,7 +1706,6 @@ function toast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
-
 function fillSelect(el, html, keep = true) {
   const prev = keep ? el.value : null;
   el.innerHTML = html;
@@ -898,10 +1715,14 @@ function fillSelect(el, html, keep = true) {
 /* =========================================================
    COLLAPSE CARDS
    ========================================================= */
-const LS_UI = 'aion_ui_v4';
-function getUIState(){ try { return JSON.parse(localStorage.getItem(LS_UI)) || {}; } catch(e){ return {}; } }
-function saveUIState(st){ try { localStorage.setItem(LS_UI, JSON.stringify(st)); } catch(e){} }
 
+const LS_UI = 'aion_ui_v4';
+function getUIState(){
+  try { return JSON.parse(localStorage.getItem(LS_UI)) || {}; } catch(e){ return {}; }
+}
+function saveUIState(st){
+  try { localStorage.setItem(LS_UI, JSON.stringify(st)); } catch(e){}
+}
 function toggleCard(key){
   const body = $('body-' + key);
   const btn  = $('tog-' + key);
@@ -914,7 +1735,6 @@ function toggleCard(key){
   st[key] = collapsed;
   saveUIState(st);
 }
-
 function restoreCollapseState(){
   const st = getUIState();
   ['ess','liq','bot','ato'].forEach(k => {
@@ -931,6 +1751,7 @@ function restoreCollapseState(){
 /* =========================================================
    SEARCH SELECT
    ========================================================= */
+
 function createSearchSelect(rootId, placeholder, onChange) {
   const root = $(rootId);
   if (!root) return null;
@@ -938,14 +1759,13 @@ function createSearchSelect(rootId, placeholder, onChange) {
   root.innerHTML = `
     <input class="input ss-input" placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false">
     <svg class="ss-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
-      <path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M1 1.5 6 6.5l5-5"/>
+      <path stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M1 1.5 6 6.5l5-5"/>
     </svg>
     <div class="ss-dropdown" role="listbox"></div>
   `;
   const input = root.querySelector('.ss-input');
   const dropdown = root.querySelector('.ss-dropdown');
   const state = { options: [], value: '', filtered: [], activeIndex: -1, onChange: onChange || null };
-
   function renderDropdown() {
     const q = norm(input.value);
     state.filtered = state.options.filter(o => !q || norm(o.label).includes(q) || norm(o.sub).includes(q));
@@ -967,7 +1787,6 @@ function createSearchSelect(rootId, placeholder, onChange) {
       el.addEventListener('mousedown', e => { e.preventDefault(); selectValue(el.dataset.value); });
     });
   }
-
   function selectValue(v) {
     const opt = state.options.find(o => o.value === v);
     if (!opt || opt.disabled) return;
@@ -980,7 +1799,6 @@ function createSearchSelect(rootId, placeholder, onChange) {
   function openDropdown() { root.classList.add('open'); state.activeIndex = -1; input.value = ''; renderDropdown(); }
   function closeDropdown() { root.classList.remove('open'); state.activeIndex = -1; }
   function syncInput() { const opt = state.options.find(o => o.value === state.value); input.value = opt ? opt.label : ''; }
-
   input.addEventListener('focus', openDropdown);
   input.addEventListener('input', () => {
     if (!root.classList.contains('open')) root.classList.add('open');
@@ -1006,9 +1824,10 @@ function createSearchSelect(rootId, placeholder, onChange) {
       else if (state.filtered.length === 1) selectValue(state.filtered[0].value);
     } else if (e.key === 'Escape') { input.blur(); closeDropdown(); }
   });
-  input.addEventListener('blur', () => { setTimeout(() => { closeDropdown(); syncInput(); }, 130); });
+  input.addEventListener('blur', () => {
+    setTimeout(() => { closeDropdown(); syncInput(); }, 130);
+  });
   document.addEventListener('click', e => { if (!root.contains(e.target)) closeDropdown(); });
-
   return {
     setOptions(options) {
       state.options = Array.isArray(options) ? options : [];
@@ -1024,6 +1843,7 @@ function createSearchSelect(rootId, placeholder, onChange) {
 /* =========================================================
    DATOS
    ========================================================= */
+
 const LS_INV   = 'aion_inventory_v4';
 const LS_SALES = 'aion_sales_v4';
 const LIQUIDOS = [
@@ -1032,14 +1852,12 @@ const LIQUIDOS = [
   { key:'ipm',      label:'Miristato Isopropilo (IPM)' },
   { key:'dpg',      label:'DPG' }
 ];
-
 const UMBRAL = {
   esenciaMl: 50,    sugeridoEsenciaMl: 100,
   liquidoMl: 200,   sugeridoLiquidoMl: 500,
   frascoU: 5,       sugeridoFrascoU: 10,
   atomU: 5,         sugeridoAtomU: 20
 };
-
 const DEFAULT_INV = {
   esencias: [
     { id:'e1', nombre:'Aventus Creed', stockMl:200, costoMl:2.50 },
@@ -1060,7 +1878,6 @@ const DEFAULT_INV = {
     { id:'a1', modelo:'Atomizador negro premium', stock:40, costo:1.20 }
   ]
 };
-
 let inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
 let sales = [];
 let ssEsencia = null, ssBotModelo = null, ssAtom = null;
@@ -1112,6 +1929,7 @@ function loadData() {
 /* =========================================================
    RENDER INVENTARIO
    ========================================================= */
+
 function renderAll() {
   renderEsencias(); renderLiquidos(); renderBotellas(); renderAtomizadores();
   syncSelects(); calcFormula(); renderHistorial();
@@ -1122,7 +1940,7 @@ function renderAll() {
 function renderEsencias() {
   $('countEss').textContent = inventory.esencias.length;
   const wrap = $('listEss');
-  if (!inventory.esencias.length) { wrap.innerHTML = '<p class="empty">Sin esencias registradas</p>'; return; }
+  if (!inventory.esencias.length) { wrap.innerHTML = '<p class="empty">🌿 Sin esencias registradas</p>'; return; }
   wrap.innerHTML = inventory.esencias.map(e => {
     const valor = e.stockMl * (e.costoMl || 0);
     return `
@@ -1180,7 +1998,7 @@ function renderLiquidos() {
   if (!g.dataset.built) {
     g.innerHTML = LIQUIDOS.map(l => `
       <div class="liq">
-        <div class="liq-name">${esc(l.label)}</div>
+        <div class="liq-name">💧 ${esc(l.label)}</div>
         <div class="liq-row">
           <input id="liq-${l.key}" class="input" type="number" inputmode="decimal" value="0" placeholder="ml">
           <button class="btn btn-sm" onclick="addLiq('${l.key}')">+</button>
@@ -1222,7 +2040,7 @@ function setCostoLiq(key, val) {
 function renderBotellas() {
   $('countBot').textContent = inventory.botellas.length;
   const wrap = $('listBot');
-  if (!inventory.botellas.length) { wrap.innerHTML = '<p class="empty">Sin frascos. Añade tu primer modelo.</p>'; return; }
+  if (!inventory.botellas.length) { wrap.innerHTML = '<p class="empty">🧴 Sin frascos. Añade tu primer modelo.</p>'; return; }
   wrap.innerHTML = inventory.botellas.map(b => `
     <div class="row">
       <div class="row-main">
@@ -1233,7 +2051,7 @@ function renderBotellas() {
                 <button class="variant ${v.stock < UMBRAL.frascoU ? 'low' : ''}" onclick="editVariante('${b.id}','${v.id}')">
                   ${v.tamano} ml · ${v.stock} u · ${money(v.costo || 0)}
                 </button>`).join('')
-            : '<span class="row-sub" style="color:rgba(74,53,36,.4)">Sin tamaños</span>'}
+            : '<span class="row-sub" style="color:rgba(61,40,23,0.5)">Sin tamaños</span>'}
         </div>
       </div>
       <div class="row-actions">
@@ -1324,7 +2142,7 @@ function delModelo(bid) {
 function renderAtomizadores() {
   $('countAto').textContent = inventory.atomizadores.length;
   const wrap = $('listAto');
-  if (!inventory.atomizadores.length) { wrap.innerHTML = '<p class="empty">Sin atomizadores registrados</p>'; return; }
+  if (!inventory.atomizadores.length) { wrap.innerHTML = '<p class="empty">💨 Sin atomizadores registrados</p>'; return; }
   wrap.innerHTML = inventory.atomizadores.map(a => {
     const valor = a.stock * (a.costo || 0);
     return `
@@ -1379,6 +2197,7 @@ function delAtom(id) {
 /* =========================================================
    SELECTS DE VENTA
    ========================================================= */
+
 function syncSelects() {
   if (ssEsencia) {
     ssEsencia.setOptions(inventory.esencias.map(e => ({
@@ -1389,7 +2208,6 @@ function syncSelects() {
   fillSelect($('fEss'),
     '<option value="all">Todas las esencias</option>' +
     inventory.esencias.map(e => `<option value="${esc(e.nombre)}">${esc(e.nombre)}</option>`).join(''), true);
-
   if (ssBotModelo) {
     ssBotModelo.setOptions([
       { value: 'sin', label: 'Sin frasco', sub: '' },
@@ -1424,6 +2242,7 @@ function renderVariantesVenta() {
 /* =========================================================
    FÓRMULA
    ========================================================= */
+
 const TAMANOS = [10, 30, 50, 60, 100, 120, 320];
 const tamState = { value: 50, custom: false };
 
@@ -1432,6 +2251,7 @@ function renderTamChips() {
     TAMANOS.map(t => `<button type="button" class="chip ${(!tamState.custom && tamState.value === t) ? 'active' : ''}" onclick="setTam(${t})">${t} ml</button>`).join('') +
     `<button type="button" class="chip ${tamState.custom ? 'active' : ''}" onclick="setCustom()">Otro</button>`;
 }
+
 function setTam(v) { tamState.value = v; tamState.custom = false; $('vTamCustom').style.display = 'none'; renderTamChips(); calcFormula(); }
 function setCustom() { tamState.custom = true; $('vTamCustom').style.display = 'block'; tamState.value = num($('vTamCustom').value); renderTamChips(); calcFormula(); }
 function getTamano() { return tamState.custom ? num($('vTamCustom').value) : tamState.value; }
@@ -1456,16 +2276,14 @@ function calcFormula() {
   const sum = pctEss + pctMusk + pctIpm + pctDpg;
   const pctAlc = Math.max(0, 100 - sum);
   const fij = pctMusk + pctIpm + pctDpg;
-
   $('pctAlc').textContent = pctAlc.toFixed(2) + '%';
   $('fijTot').textContent = fij.toFixed(2) + '%';
-
   const alertEl = $('alertAlc');
-  if (sum > 100) { alertEl.textContent = '⚠ La fórmula supera el 100%'; alertEl.style.color = '#b04a35'; }
-  else if (pctAlc < 50) { alertEl.textContent = '⚠ Alcohol <50% · riesgo de sofocación'; alertEl.style.color = '#b04a35'; }
-  else if (fij > 8) { alertEl.textContent = '⚠ Fijadores >8% · no permitido'; alertEl.style.color = '#b04a35'; }
-  else if (fij > 4) { alertEl.textContent = 'Nota: fijadores >4% solo perfiles volátiles'; alertEl.style.color = '#9a6f16'; }
-  else { alertEl.textContent = '✓ ISF 0.2 OK · fijación mínima'; alertEl.style.color = '#4f6740'; }
+  if (sum > 100) { alertEl.textContent = '⚠ La fórmula supera el 100%'; alertEl.style.color = '#8B3A2A'; }
+  else if (pctAlc < 50) { alertEl.textContent = '⚠ Alcohol <50% · riesgo de sofocación'; alertEl.style.color = '#8B3A2A'; }
+  else if (fij > 8) { alertEl.textContent = '⚠ Fijadores >8% · no permitido'; alertEl.style.color = '#8B3A2A'; }
+  else if (fij > 4) { alertEl.textContent = 'Nota: fijadores >4% solo perfiles volátiles'; alertEl.style.color = '#8B5A2B'; }
+  else { alertEl.textContent = '✓ ISF 0.2 OK · fijación mínima'; alertEl.style.color = '#2E6A42'; }
 
   const tam = getTamano();
   const cant = parseInt($('vCant').value, 10) || 0;
@@ -1484,13 +2302,12 @@ function calcFormula() {
 
   const prev = $('preview');
   if (!tam || !cant) {
-    prev.innerHTML = '<div style="font-size:12px;color:var(--ink-3);text-align:center;padding:8px 0;font-weight:700">Selecciona tamaño y cantidad para ver el consumo</div>';
+    prev.innerHTML = '<div style="font-size:14px;color:#6B4423;text-align:center;padding:10px 0;font-family:Caveat,cursive;font-size:18px">Selecciona tamaño y cantidad para ver el consumo</div>';
     return;
   }
 
   const per = { es: tam*pctEss/100, musk: tam*pctMusk/100, ipm: tam*pctIpm/100, dpg: tam*pctDpg/100, alc: tam*pctAlc/100 };
   const tot = { es: per.es*cant, musk: per.musk*cant, ipm: per.ipm*cant, dpg: per.dpg*cant, alc: per.alc*cant };
-
   const ck = {
     es: ess ? ess.stockMl >= tot.es : false,
     alc: inventory.liquidos.perfumol >= tot.alc,
@@ -1508,27 +2325,27 @@ function calcFormula() {
 
   const econHtml = `
     <div class="pv-econ">
-      <div class="pv-econ-title">ANÁLISIS ECONÓMICO</div>
+      <div class="pv-econ-title">💰 Análisis económico</div>
       <div class="pv-econ-line"><span>Esencia</span><b>${money(cos.es)}</b></div>
       <div class="pv-econ-line"><span>Alcohol</span><b>${money(cos.alc)}</b></div>
       <div class="pv-econ-line"><span>Musk + IPM + DPG</span><b>${money(cos.musk + cos.ipm + cos.dpg)}</b></div>
       ${cos.frasco > 0 ? `<div class="pv-econ-line"><span>Frascos</span><b>${money(cos.frasco)}</b></div>` : ''}
       ${cos.atom > 0 ? `<div class="pv-econ-line"><span>Atomizadores</span><b>${money(cos.atom)}</b></div>` : ''}
-      <div class="pv-econ-line" style="border-top:2px dashed rgba(196,106,58,.35);padding-top:9px;margin-top:6px">
+      <div class="pv-econ-line" style="border-top:2px dashed rgba(120,80,40,0.25);padding-top:8px;margin-top:6px">
         <span>Costo de producción</span><b class="gold">${money(cos.total)}</b>
       </div>
       ${precioTotal > 0 ? `
         <div class="pv-econ-line"><span>Precio de venta</span><b>${money(precioTotal)}</b></div>
         <div class="pv-econ-line big"><span>Ganancia</span><b class="${ganancia >= 0 ? 'ok' : 'bad'}">${money(ganancia)}</b></div>
         <div class="pv-econ-line"><span>Margen</span><b class="${ganancia >= 0 ? 'ok' : 'bad'}">${pct(margen)}</b></div>
-      ` : `<div class="pv-econ-line"><span style="color:var(--ink-3);font-style:italic">Introduce un precio de venta para ver la ganancia</span></div>`}
+      ` : `<div class="pv-econ-line"><span style="color:#6B4423;font-style:italic;font-family:Caveat,cursive;font-size:16px">Introduce un precio de venta para ver la ganancia</span></div>`}
     </div>`;
 
   prev.innerHTML = `
-    <div class="pv-head">CONSUMO ESTIMADO ${ess ? '· ' + esc(ess.nombre).toUpperCase() : ''}</div>
+    <div class="pv-head">Consumo estimado ${ess ? '· ' + esc(ess.nombre).toUpperCase() : ''}</div>
     <div class="pv-grid">
       <div>
-        <div class="pv-col-title">POR FRASCO · ${tam} ML</div>
+        <div class="pv-col-title">Por frasco · ${tam} ml</div>
         <div class="pv-line"><span>Esencia</span><b>${r2(per.es)} ml</b></div>
         <div class="pv-line"><span>Perfumol</span><b>${r2(per.alc)} ml</b></div>
         <div class="pv-line"><span>Musk</span><b>${r2(per.musk)} ml</b></div>
@@ -1536,7 +2353,7 @@ function calcFormula() {
         <div class="pv-line"><span>DPG</span><b>${r2(per.dpg)} ml</b></div>
       </div>
       <div>
-        <div class="pv-col-title">TOTAL ×${cant} · ${(tam * cant).toFixed(0)} ML</div>
+        <div class="pv-col-title">Total ×${cant} · ${(tam * cant).toFixed(0)} ml</div>
         <div class="pv-line"><span>Esencia</span><b class="${cls(ck.es)}">${r2(tot.es)} ml${ess ? ' / ' + fmt(ess.stockMl) : ''}</b></div>
         <div class="pv-line"><span>Perfumol</span><b class="${cls(ck.alc)}">${r2(tot.alc)} ml / ${fmt(inventory.liquidos.perfumol)}</b></div>
         <div class="pv-line"><span>Musk</span><b class="${cls(ck.musk)}">${r2(tot.musk)} ml</b></div>
@@ -1555,34 +2372,29 @@ function calcFormula() {
 /* =========================================================
    REGISTRAR VENTA
    ========================================================= */
+
 function registrarVenta() {
   const cliente = $('vCliente').value.trim();
   const essId = ssEsencia ? ssEsencia.getValue() : '';
   const ess = inventory.esencias.find(e => e.id === essId);
   if (!ess) return toast('Selecciona una esencia');
-
   const tam = getTamano();
   const cant = parseInt($('vCant').value, 10) || 0;
   if (tam <= 0) return toast('Tamaño no válido');
   if (cant <= 0) return toast('Cantidad no válida');
-
   const pctEss = num($('pctEss').value), pctMusk = num($('pctMusk').value);
   const pctIpm = num($('pctIpm').value), pctDpg = num($('pctDpg').value);
   const pctAlc = 100 - (pctEss + pctMusk + pctIpm + pctDpg);
   const precioVenta = num($('vPrecio').value);
-
   if (pctAlc < 0) return toast('La fórmula supera el 100%');
   if (pctAlc < 50 && !confirm('Alcohol por debajo del 50%. ¿Continuar de todas formas?')) return;
-
   const botId = ssBotModelo ? ssBotModelo.getValue() : '';
   const botM = inventory.botellas.find(b => b.id === botId);
   const botV = botM ? botM.variantes.find(v => v.id === $('vBotellaTam').value) : null;
   const usaAtom = $('vUsaAtom').checked;
   const atomId = ssAtom ? ssAtom.getValue() : '';
   const atom = inventory.atomizadores.find(a => a.id === atomId);
-
   const tot = { es: tam*pctEss/100*cant, musk: tam*pctMusk/100*cant, ipm: tam*pctIpm/100*cant, dpg: tam*pctDpg/100*cant, alc: tam*pctAlc/100*cant };
-
   if (ess.stockMl < tot.es) return toast('Esencia insuficiente');
   if (inventory.liquidos.perfumol < tot.alc) return toast('Perfumol insuficiente');
   if (inventory.liquidos.musk < tot.musk) return toast('Musk insuficiente');
@@ -1591,11 +2403,9 @@ function registrarVenta() {
   if (botM && botM.id !== 'sin' && !botV) return toast('Selecciona un tamaño de frasco');
   if (botV && botV.stock < cant) return toast('Frascos insuficientes');
   if (usaAtom && atom && atom.stock < cant) return toast('Atomizadores insuficientes');
-
   const cos = calcularCostos(ess, tot, botV, cant, usaAtom, atom);
   const ganancia = precioVenta - cos.total;
   const margen = precioVenta > 0 ? (ganancia / precioVenta) * 100 : 0;
-
   ess.stockMl -= tot.es;
   inventory.liquidos.perfumol -= tot.alc;
   inventory.liquidos.musk -= tot.musk;
@@ -1603,7 +2413,6 @@ function registrarVenta() {
   inventory.liquidos.dpg -= tot.dpg;
   if (botV) botV.stock -= cant;
   if (usaAtom && atom) atom.stock -= cant;
-
   sales.unshift({
     id: uid(), fecha: new Date().toISOString(), cliente,
     esenciaId: ess.id, esenciaNombre: ess.nombre,
@@ -1628,7 +2437,6 @@ function registrarVenta() {
     },
     totalMlProducido: tam * cant
   });
-
   saveInv();
   saveSales();
   toast('Venta registrada ✓');
@@ -1641,6 +2449,7 @@ function registrarVenta() {
 /* =========================================================
    HISTORIAL
    ========================================================= */
+
 function getFiltered() {
   const fEss = $('fEss').value;
   const fSearch = $('fSearch').value.trim().toLowerCase();
@@ -1667,19 +2476,16 @@ function renderHistorial() {
   const totalGananc = totalVenta - totalCosto;
   const conPrecio = list.filter(s => (s.precioVenta || 0) > 0);
   const margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
-
   $('stats').innerHTML = `
-    <div class="stat"><div class="stat-label">VENTAS</div><div class="stat-val serif">${list.length}</div></div>
-    <div class="stat"><div class="stat-label">ESENCIA</div><div class="stat-val serif">${totalEss.toFixed(1)}<span style="font-size:12px"> ml</span></div></div>
-    <div class="stat"><div class="stat-label">FRASCOS</div><div class="stat-val serif">${totalBot}</div></div>
-    <div class="stat"><div class="stat-label">INGRESOS</div><div class="stat-val money">${money(totalVenta)}</div></div>
-    <div class="stat"><div class="stat-label">COSTOS</div><div class="stat-val red">${money(totalCosto)}</div></div>
-    <div class="stat"><div class="stat-label">GANANCIA</div><div class="stat-val ${totalGananc >= 0 ? 'money' : 'red'}">${money(totalGananc)}</div></div>
-    <div class="stat"><div class="stat-label">MARGEN</div><div class="stat-val gold">${conPrecio.length ? pct(margenProm) : '—'}</div></div>`;
-
+    <div class="stat"><div class="stat-label">Ventas</div><div class="stat-val serif">${list.length}</div></div>
+    <div class="stat"><div class="stat-label">Esencia</div><div class="stat-val serif">${totalEss.toFixed(1)}<span style="font-size:12px"> ml</span></div></div>
+    <div class="stat"><div class="stat-label">Frascos</div><div class="stat-val serif">${totalBot}</div></div>
+    <div class="stat"><div class="stat-label">Ingresos</div><div class="stat-val money">${money(totalVenta)}</div></div>
+    <div class="stat"><div class="stat-label">Costos</div><div class="stat-val red">${money(totalCosto)}</div></div>
+    <div class="stat"><div class="stat-label">Ganancia</div><div class="stat-val ${totalGananc >= 0 ? 'money' : 'red'}">${money(totalGananc)}</div></div>
+    <div class="stat"><div class="stat-label">Margen</div><div class="stat-val gold">${conPrecio.length ? pct(margenProm) : '—'}</div></div>`;
   const wrap = $('listHist');
-  if (!list.length) { wrap.innerHTML = '<p class="empty">Sin registros que coincidan</p>'; return; }
-
+  if (!list.length) { wrap.innerHTML = '<p class="empty">📭 Sin registros que coincidan</p>'; return; }
   wrap.innerHTML = list.map(s => {
     const c = s.consumo || {};
     const fecha = new Date(s.fecha).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
@@ -1698,24 +2504,24 @@ function renderHistorial() {
         </div>
         <div class="hist-detail">
           <div class="hist-box">
-            <strong>CONSUMO</strong>
+            <strong>Consumo</strong>
             Esencia: ${c.esenciaMl ?? '—'} ml (${s.pctEsencia}%)<br>
             Alcohol: ${c.alcoholMl ?? '—'} ml (${Number(s.pctAlcohol || 0).toFixed(1)}%)<br>
             Musk ${c.muskMl ?? '—'} · IPM ${c.ipmMl ?? '—'} · DPG ${c.dpgMl ?? '—'}
           </div>
           ${conP ? `
           <div class="hist-box money">
-            <strong>ECONÓMICO</strong>
+            <strong>Económico</strong>
             <div class="line"><span>Venta</span><b>${money(s.precioVenta)}</b></div>
-            <div class="line"><span>Costo</span><b style="color:#b04a35">${money(s.costoTotal)}</b></div>
+            <div class="line"><span>Costo</span><b style="color:#8B3A2A">${money(s.costoTotal)}</b></div>
             <div class="line ${gan < 0 ? 'loss' : ''}"><span>Ganancia</span><b>${money(gan)}</b></div>
             <div class="line"><span>Margen</span><b>${pct(s.margen)}</b></div>
           </div>` : `
           <div class="hist-box">
-            <strong>ENVASE</strong>
+            <strong>Envase</strong>
             ${esc(c.botellaModelo || 'Sin frasco')}<br>
             ${esc(c.atomizadorModelo || 'Sin atomizador')}<br>
-            <span style="color:var(--ink-3)">Costo: ${money(s.costoTotal)}</span>
+            <span style="color:#6B4423">Costo: ${money(s.costoTotal)}</span>
           </div>`}
         </div>
       </div>`;
@@ -1725,9 +2531,9 @@ function renderHistorial() {
 /* =========================================================
    LISTA DE COMPRAS SUGERIDA
    ========================================================= */
+
 function calcularListaCompras() {
   const lista = [];
-
   const esenciasBajas = inventory.esencias
     .filter(e => e.stockMl < UMBRAL.esenciaMl)
     .sort((a, b) => a.stockMl - b.stockMl);
@@ -1742,7 +2548,6 @@ function calcularListaCompras() {
       }))
     });
   }
-
   const liqBajos = LIQUIDOS.filter(l => inventory.liquidos[l.key] < UMBRAL.liquidoMl);
   if (liqBajos.length) {
     lista.push({
@@ -1755,7 +2560,6 @@ function calcularListaCompras() {
       }))
     });
   }
-
   const frascosBajos = [];
   inventory.botellas.forEach(b => {
     b.variantes.forEach(v => {
@@ -1770,7 +2574,6 @@ function calcularListaCompras() {
     });
   });
   if (frascosBajos.length) lista.push({ titulo: 'Frascos', items: frascosBajos });
-
   const atoBajos = inventory.atomizadores
     .filter(a => a.stock < UMBRAL.atomU)
     .sort((a, b) => a.stock - b.stock);
@@ -1791,13 +2594,12 @@ function calcularListaCompras() {
 function abrirListaCompras() {
   const lista = calcularListaCompras();
   const body = $('shopBody');
-
   if (!lista.length) {
     body.innerHTML = `
       <div class="shop-empty">
         <div class="shop-empty-icon">🎉</div>
         <div>¡Todo en orden!</div>
-        <div style="margin-top:8px;font-size:12px;color:var(--ink-3)">No hay insumos con stock bajo en este momento.</div>
+        <div style="margin-top:10px;font-size:15px;color:#6B4423">No hay insumos con stock bajo en este momento.</div>
       </div>`;
     $('shopExportPdf').style.display = 'none';
     $('shopExportXls').style.display = 'none';
@@ -1805,14 +2607,14 @@ function abrirListaCompras() {
     const totalItems = lista.reduce((a, c) => a + c.items.length, 0);
     const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
     body.innerHTML = `
-      <div style="font-size:12px;color:var(--ink-2);margin-bottom:14px;line-height:1.6;font-weight:700">
-        Se detectaron <b style="color:#b04a35">${totalItems}</b> insumo${totalItems === 1 ? '' : 's'} con stock bajo.
-        ${totalCosto > 0 ? `Costo estimado: <b style="color:#4f6740">${money(totalCosto)}</b>` : ''}
+      <div style="font-size:13px;color:#6B4423;margin-bottom:16px;line-height:1.5;font-weight:600">
+        Se detectaron <b style="color:#8B3A2A">${totalItems}</b> insumo${totalItems === 1 ? '' : 's'} con stock bajo.
+        ${totalCosto > 0 ? `Costo estimado: <b style="color:#2E6A42">${money(totalCosto)}</b>` : ''}
       </div>
       <div class="shop-list">
         ${lista.map(cat => `
           <div class="shop-cat">
-            <div class="shop-cat-title">${esc(cat.titulo)} · ${cat.items.length}</div>
+            <div class="shop-cat-title">✦ ${esc(cat.titulo)} · ${cat.items.length}</div>
             ${cat.items.map(it => `
               <div class="shop-item">
                 <div class="shop-item-info">
@@ -1826,7 +2628,6 @@ function abrirListaCompras() {
     $('shopExportPdf').style.display = 'inline-flex';
     $('shopExportXls').style.display = 'inline-flex';
   }
-
   $('shopBackdrop').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
@@ -1848,16 +2649,14 @@ function exportShopPDF() {
   doc.text('Generado: ' + new Date().toLocaleString('es-ES'), marginX, 25);
   const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
   doc.text('Insumos con stock bajo · Costo estimado: ' + money(totalCosto), marginX, 31);
-
   let y = 40;
-  const HEAD = { fillColor: [207, 154, 52], textColor: [58, 39, 8], fontStyle: 'bold' };
+  const HEAD = { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' };
   const BASE = {
     margin: { left: marginX, right: marginX },
     styles: { fontSize: 9, cellPadding: 2.4 },
     headStyles: HEAD,
-    alternateRowStyles: { fillColor: [245, 236, 217] }
+    alternateRowStyles: { fillColor: [250, 240, 220] }
   };
-
   lista.forEach(cat => {
     doc.setFontSize(12);
     doc.text(cat.titulo, marginX, y);
@@ -1877,7 +2676,6 @@ function exportShopPDF() {
     y = doc.lastAutoTable.finalY + 11;
     if (y > 260) { doc.addPage(); y = 22; }
   });
-
   doc.save('AION_ListaCompras_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('Lista PDF exportada');
 }
@@ -1895,7 +2693,6 @@ function exportShopExcel() {
   const ws = XLSX.utils.aoa_to_sheet(allRows);
   ws['!cols'] = [{ wch: 18 }, { wch: 34 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(wb, ws, 'Lista de compras');
-
   const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
   const resumen = [
     ['Métrica', 'Valor'],
@@ -1923,6 +2720,7 @@ $('shopBackdrop').addEventListener('click', e => { if (e.target === $('shopBackd
 /* =========================================================
    EXPORTAR — PDF HISTORIAL
    ========================================================= */
+
 function exportPDF() {
   const list = getFiltered();
   if (!list.length) return toast('Nada que exportar');
@@ -1934,7 +2732,6 @@ function exportPDF() {
   doc.text('Exportado: ' + new Date().toLocaleString('es-ES'), 14, 25);
   const filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
   doc.text(`Filtro: ${filtro}  |  Registros: ${list.length}`, 14, 31);
-
   const rows = list.map(s => [
     new Date(s.fecha).toLocaleDateString('es-ES'), s.cliente || '—', s.esenciaNombre,
     s.tamanoMl + ' ml', s.cantidad, s.consumo?.esenciaMl ?? '—', s.consumo?.alcoholMl ?? '—',
@@ -1946,8 +2743,8 @@ function exportPDF() {
     head: [['Fecha','Cliente','Esencia','Tam.','Cant.','Ess ml','Alcohol','Frasco','Venta','Costo','Ganancia','Margen']],
     body: rows,
     styles: { fontSize: 7.5, cellPadding: 1.8 },
-    headStyles: { fillColor: [196, 106, 58], textColor: [255, 246, 234], fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [245, 236, 217] }
+    headStyles: { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 240, 220] }
   });
   doc.save('AION_Historial_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('PDF exportado');
@@ -1956,6 +2753,7 @@ function exportPDF() {
 /* =========================================================
    EXPORTAR — PDF INVENTARIO
    ========================================================= */
+
 function exportInvPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -1964,12 +2762,10 @@ function exportInvPDF() {
   doc.text('AION PERFUMES · Inventario actual', marginX, 18);
   doc.setFontSize(10);
   doc.text('Fecha: ' + new Date().toLocaleString('es-ES'), marginX, 25);
-
   let y = 33;
-  const HEAD = { fillColor: [196, 106, 58], textColor: [255, 246, 234], fontStyle: 'bold' };
-  const BASE = { margin: { left: marginX, right: marginX }, styles: { fontSize: 8.5, cellPadding: 2.2 }, headStyles: HEAD, alternateRowStyles: { fillColor: [245, 236, 217] } };
+  const HEAD = { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' };
+  const BASE = { margin: { left: marginX, right: marginX }, styles: { fontSize: 8.5, cellPadding: 2.2 }, headStyles: HEAD, alternateRowStyles: { fillColor: [250, 240, 220] } };
   const checkPage = (need = 40) => { if (y > 297 - need) { doc.addPage(); y = 22; } };
-
   doc.setFontSize(12); doc.text('Esencias', marginX, y);
   doc.autoTable({
     ...BASE, startY: y + 3,
@@ -1979,12 +2775,11 @@ function exportInvPDF() {
       : [['—', 'Sin esencias registradas', '—', '—', '—', '—']],
     columnStyles: { 0:{cellWidth:10,halign:'center'},2:{halign:'right',cellWidth:24},3:{halign:'right',cellWidth:24},4:{halign:'right',cellWidth:28},5:{cellWidth:20,halign:'center'} },
     didParseCell: d => {
-      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [176, 74, 53]; d.cell.styles.fontStyle = 'bold'; }
+      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
     }
   });
   y = doc.lastAutoTable.finalY + 11;
   checkPage();
-
   doc.setFontSize(12); doc.text('Líquidos base', marginX, y);
   doc.autoTable({
     ...BASE, startY: y + 3,
@@ -1994,7 +2789,6 @@ function exportInvPDF() {
   });
   y = doc.lastAutoTable.finalY + 11;
   checkPage();
-
   doc.setFontSize(12); doc.text('Frascos', marginX, y);
   const frascosBody = [];
   if (!inventory.botellas.length) frascosBody.push(['—', 'Sin frascos registrados', '—', '—', '—', '—', '—']);
@@ -2010,13 +2804,12 @@ function exportInvPDF() {
     body: frascosBody,
     columnStyles: { 0:{cellWidth:45},1:{halign:'right',cellWidth:20},2:{halign:'right',cellWidth:20},3:{halign:'right',cellWidth:22},4:{halign:'right',cellWidth:26},5:{cellWidth:20,halign:'center'},6:{halign:'right',cellWidth:26} },
     didParseCell: d => {
-      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [176, 74, 53]; d.cell.styles.fontStyle = 'bold'; }
-      if (d.section === 'body' && d.column.index === 0 && d.cell.raw === '↳') { d.cell.styles.textColor = [150, 120, 90]; }
+      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
+      if (d.section === 'body' && d.column.index === 0 && d.cell.raw === '↳') { d.cell.styles.textColor = [150, 150, 150]; }
     }
   });
   y = doc.lastAutoTable.finalY + 11;
   checkPage();
-
   doc.setFontSize(12); doc.text('Atomizadores', marginX, y);
   doc.autoTable({
     ...BASE, startY: y + 3,
@@ -2026,10 +2819,9 @@ function exportInvPDF() {
       : [['Sin atomizadores registrados', '—', '—', '—', '—']],
     columnStyles: { 1:{halign:'right',cellWidth:24},2:{halign:'right',cellWidth:26},3:{halign:'right',cellWidth:30},4:{cellWidth:22,halign:'center'} },
     didParseCell: d => {
-      if (d.section === 'body' && d.column.index === 4 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [176, 74, 53]; d.cell.styles.fontStyle = 'bold'; }
+      if (d.section === 'body' && d.column.index === 4 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
     }
   });
-
   doc.save('AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('Inventario PDF exportado');
 }
@@ -2037,10 +2829,10 @@ function exportInvPDF() {
 /* =========================================================
    EXPORTAR — EXCEL HISTORIAL
    ========================================================= */
+
 function exportHistExcel() {
   const list = getFiltered();
   if (!list.length) return toast('Nada que exportar');
-
   const header = ['Fecha','Cliente','Esencia','Tamaño (ml)','Cantidad','% Esencia','% Musk','% IPM','% DPG','% Alcohol','Esencia (ml)','Musk (ml)','IPM (ml)','DPG (ml)','Alcohol (ml)','Frasco','Atomizador','Total producido (ml)','Precio venta ($)','Precio unitario ($)','Costo total ($)','Costo esencia ($)','Costo alcohol ($)','Costo musk ($)','Costo IPM ($)','Costo DPG ($)','Costo frascos ($)','Costo atomizadores ($)','Ganancia ($)','Margen (%)'];
   const rows = list.map(s => [
     new Date(s.fecha).toLocaleString('es-ES'), s.cliente || '', s.esenciaNombre, s.tamanoMl, s.cantidad,
@@ -2051,16 +2843,13 @@ function exportHistExcel() {
     s.desgloseCosto?.esencia || 0, s.desgloseCosto?.alcohol || 0, s.desgloseCosto?.musk || 0, s.desgloseCosto?.ipm || 0, s.desgloseCosto?.dpg || 0,
     s.desgloseCosto?.frascos || 0, s.desgloseCosto?.atomizadores || 0, s.ganancia || 0, s.margen || 0
   ]);
-
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
   ws['!cols'] = header.map(h => ({ wch: Math.max(12, Math.min(24, h.length + 4)) }));
   XLSX.utils.book_append_sheet(wb, ws, 'Historial');
-
   const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
   const totalCosto = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
   const totalGananc = totalVenta - totalCosto;
-
   const resumen = [
     ['Métrica','Valor'], ['Total registros', list.length],
     ['Total piezas', list.reduce((a, s) => a + (s.cantidad || 0), 0)],
@@ -2082,22 +2871,20 @@ function exportHistExcel() {
 /* =========================================================
    EXPORTAR — EXCEL INVENTARIO
    ========================================================= */
+
 function exportInvExcel() {
   const wb = XLSX.utils.book_new();
-
   const essRows = [['Nombre','Stock (ml)','Costo $/ml','Valor total ($)','Estado']];
   inventory.esencias.forEach(e => essRows.push([e.nombre, e.stockMl, e.costoMl || 0, r2(e.stockMl * (e.costoMl || 0)), e.stockMl < UMBRAL.esenciaMl ? 'Bajo' : 'OK']));
   if (!inventory.esencias.length) essRows.push(['Sin esencias','','','','']);
   const wsEss = XLSX.utils.aoa_to_sheet(essRows);
   wsEss['!cols'] = [{wch:30},{wch:12},{wch:12},{wch:16},{wch:10}];
   XLSX.utils.book_append_sheet(wb, wsEss, 'Esencias');
-
   const liqRows = [['Líquido','Stock (ml)','Costo $/ml','Valor total ($)']];
   LIQUIDOS.forEach(l => liqRows.push([l.label, inventory.liquidos[l.key], inventory.costosLiquidos[l.key] || 0, r2(inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0))]));
   const wsLiq = XLSX.utils.aoa_to_sheet(liqRows);
   wsLiq['!cols'] = [{wch:34},{wch:12},{wch:12},{wch:16}];
   XLSX.utils.book_append_sheet(wb, wsLiq, 'Líquidos');
-
   const botRows = [['Modelo','Tamaño (ml)','Stock (u)','Costo $/u','Valor total ($)','Capacidad total (ml)','Estado']];
   inventory.botellas.forEach(b => {
     if (!b.variantes.length) botRows.push([b.modelo,'','','','','','']);
@@ -2107,20 +2894,17 @@ function exportInvExcel() {
   const wsBot = XLSX.utils.aoa_to_sheet(botRows);
   wsBot['!cols'] = [{wch:26},{wch:12},{wch:11},{wch:12},{wch:16},{wch:18},{wch:10}];
   XLSX.utils.book_append_sheet(wb, wsBot, 'Frascos');
-
   const atoRows = [['Modelo','Stock (u)','Costo $/u','Valor total ($)','Estado']];
   inventory.atomizadores.forEach(a => atoRows.push([a.modelo, a.stock, a.costo || 0, r2((a.costo || 0) * a.stock), a.stock < UMBRAL.atomU ? 'Bajo' : 'OK']));
   if (!inventory.atomizadores.length) atoRows.push(['Sin atomizadores','','','','']);
   const wsAto = XLSX.utils.aoa_to_sheet(atoRows);
   wsAto['!cols'] = [{wch:30},{wch:11},{wch:12},{wch:16},{wch:10}];
   XLSX.utils.book_append_sheet(wb, wsAto, 'Atomizadores');
-
   const valorEs = inventory.esencias.reduce((a, e) => a + e.stockMl * (e.costoMl || 0), 0);
   const valorLiq = LIQUIDOS.reduce((a, l) => a + inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0), 0);
   const valorBot = inventory.botellas.reduce((a, b) => a + b.variantes.reduce((s, v) => s + v.stock * (v.costo || 0), 0), 0);
   const valorAto = inventory.atomizadores.reduce((a, x) => a + x.stock * (x.costo || 0), 0);
   const valorTotal = valorEs + valorLiq + valorBot + valorAto;
-
   const resumen = [
     ['Categoría','Valor ($)'], ['Esencias', r2(valorEs)], ['Líquidos base', r2(valorLiq)],
     ['Frascos', r2(valorBot)], ['Atomizadores', r2(valorAto)], ['',''],
@@ -2140,6 +2924,7 @@ function exportInvExcel() {
 /* =========================================================
    EXPORTAR — REPORTE FINANCIERO PDF
    ========================================================= */
+
 function exportFinPDF() {
   const list = getFiltered().filter(s => (s.precioVenta || 0) > 0);
   if (!list.length) return toast('No hay ventas con precio registrado');
@@ -2151,22 +2936,19 @@ function exportFinPDF() {
   doc.text('Generado: ' + new Date().toLocaleString('es-ES'), 14, 25);
   const filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
   doc.text(`Filtro: ${filtro}  |  Ventas con precio: ${list.length}`, 14, 31);
-
   const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
   const totalCosto = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
   const totalGananc = totalVenta - totalCosto;
   const margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
-
   doc.autoTable({
     startY: 40,
     head: [['Métrica','Valor']],
     body: [['Total ingresos', money(totalVenta)],['Total costos de producción', money(totalCosto)],['Ganancia neta', money(totalGananc)],['Margen promedio', pct(margenProm)],['Número de ventas', list.length],['Ticket promedio', money(totalVenta / list.length)]],
     styles: { fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: [110, 139, 90], textColor: [246, 255, 240], fontStyle: 'bold' },
+    headStyles: { fillColor: [168, 232, 189], textColor: [26, 58, 37], fontStyle: 'bold' },
     columnStyles: { 0: { cellWidth: 90, fontStyle: 'bold' }, 1: { cellWidth: 50, halign: 'right' } },
     tableWidth: 140
   });
-
   const yDespues = doc.lastAutoTable.finalY + 10;
   doc.setFontSize(11); doc.text('Detalle por venta', 14, yDespues);
   const rows = list.map(s => [
@@ -2178,17 +2960,16 @@ function exportFinPDF() {
     head: [['Fecha','Cliente','Esencia','Producto','Precio venta','Costo producción','Ganancia','Margen']],
     body: rows,
     styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [196, 106, 58], textColor: [255, 246, 234], fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [245, 236, 217] },
+    headStyles: { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 240, 220] },
     columnStyles: { 4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'} },
     didParseCell: d => {
       if (d.section === 'body' && d.column.index === 6) {
         const txt = String(d.cell.raw || '');
-        if (txt.startsWith('$-')) { d.cell.styles.textColor = [176, 74, 53]; d.cell.styles.fontStyle = 'bold'; }
+        if (txt.startsWith('$-')) { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
       }
     }
   });
-
   const totalEss = list.reduce((a, s) => a + (s.desgloseCosto?.esencia || 0), 0);
   const totalAlc = list.reduce((a, s) => a + (s.desgloseCosto?.alcohol || 0), 0);
   const totalMus = list.reduce((a, s) => a + (s.desgloseCosto?.musk || 0), 0);
@@ -2196,11 +2977,9 @@ function exportFinPDF() {
   const totalDpg = list.reduce((a, s) => a + (s.desgloseCosto?.dpg || 0), 0);
   const totalFra = list.reduce((a, s) => a + (s.desgloseCosto?.frascos || 0), 0);
   const totalAto = list.reduce((a, s) => a + (s.desgloseCosto?.atomizadores || 0), 0);
-
   const y2 = doc.lastAutoTable.finalY + 10;
   if (y2 > 180) doc.addPage();
   const yFin = y2 > 180 ? 20 : y2;
-
   doc.setFontSize(11); doc.text('Desglose de costos por categoría', 14, yFin);
   doc.autoTable({
     startY: yFin + 4,
@@ -2216,11 +2995,10 @@ function exportFinPDF() {
       ['TOTAL', money(totalCosto), '100%']
     ],
     styles: { fontSize: 9, cellPadding: 2.4 },
-    headStyles: { fillColor: [196, 106, 58], textColor: [255, 246, 234], fontStyle: 'bold' },
+    headStyles: { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' },
     columnStyles: { 1:{halign:'right',cellWidth:32},2:{halign:'right',cellWidth:28} },
     tableWidth: 200
   });
-
   doc.save('AION_Financiero_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('Reporte financiero PDF exportado');
 }
@@ -2228,10 +3006,10 @@ function exportFinPDF() {
 /* =========================================================
    EXPORTAR — REPORTE FINANCIERO EXCEL
    ========================================================= */
+
 function exportFinExcel() {
   const list = getFiltered().filter(s => (s.precioVenta || 0) > 0);
   if (!list.length) return toast('No hay ventas con precio registrado');
-
   const wb = XLSX.utils.book_new();
   const header = ['Fecha','Cliente','Esencia','Tamaño (ml)','Cantidad','Precio venta ($)','Precio unitario ($)','Costo producción ($)','Ganancia ($)','Margen (%)'];
   const rows = list.map(s => [
@@ -2241,12 +3019,10 @@ function exportFinExcel() {
   const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
   ws['!cols'] = header.map(h => ({ wch: Math.max(12, h.length + 4) }));
   XLSX.utils.book_append_sheet(wb, ws, 'Detalle');
-
   const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
   const totalCosto = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
   const totalGananc = totalVenta - totalCosto;
   const margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
-
   const resumen = [
     ['Métrica','Valor'], ['Número de ventas', list.length],
     ['Total ingresos ($)', r2(totalVenta)], ['Total costos ($)', r2(totalCosto)],
@@ -2257,7 +3033,6 @@ function exportFinExcel() {
   const ws2 = XLSX.utils.aoa_to_sheet(resumen);
   ws2['!cols'] = [{wch:30},{wch:22}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
-
   const totalEss = list.reduce((a, s) => a + (s.desgloseCosto?.esencia || 0), 0);
   const totalAlc = list.reduce((a, s) => a + (s.desgloseCosto?.alcohol || 0), 0);
   const totalMus = list.reduce((a, s) => a + (s.desgloseCosto?.musk || 0), 0);
@@ -2265,7 +3040,6 @@ function exportFinExcel() {
   const totalDpg = list.reduce((a, s) => a + (s.desgloseCosto?.dpg || 0), 0);
   const totalFra = list.reduce((a, s) => a + (s.desgloseCosto?.frascos || 0), 0);
   const totalAto = list.reduce((a, s) => a + (s.desgloseCosto?.atomizadores || 0), 0);
-
   const desglose = [
     ['Categoría','Costo total ($)','% del total'],
     ['Esencia', r2(totalEss), totalCosto > 0 ? r2(totalEss/totalCosto*100) : 0],
@@ -2280,7 +3054,6 @@ function exportFinExcel() {
   const ws3 = XLSX.utils.aoa_to_sheet(desglose);
   ws3['!cols'] = [{wch:22},{wch:18},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws3, 'Desglose costos');
-
   const porEsencia = {};
   list.forEach(s => {
     if (!porEsencia[s.esenciaNombre]) porEsencia[s.esenciaNombre] = { cant: 0, ingreso: 0, costo: 0, ganancia: 0 };
@@ -2297,7 +3070,6 @@ function exportFinExcel() {
   const ws4 = XLSX.utils.aoa_to_sheet(porEsenciaRows);
   ws4['!cols'] = [{wch:26},{wch:10},{wch:14},{wch:12},{wch:14},{wch:12}];
   XLSX.utils.book_append_sheet(wb, ws4, 'Por esencia');
-
   XLSX.writeFile(wb, 'AION_Financiero_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   toast('Reporte financiero Excel exportado');
 }
@@ -2305,6 +3077,7 @@ function exportFinExcel() {
 /* =========================================================
    RESET
    ========================================================= */
+
 function clearHist() {
   if (!sales.length) return toast('El historial ya está vacío');
   if (!confirm('¿Borrar todo el historial de producción?')) return;
@@ -2324,6 +3097,7 @@ function clearAll() {
 /* =========================================================
    MODAL
    ========================================================= */
+
 function openModal(title, fields, onSave, opts = {}) {
   $('modalBox').classList.toggle('modal-lg', !!opts.large);
   $('modalTitle').textContent = title;
@@ -2336,7 +3110,6 @@ function openModal(title, fields, onSave, opts = {}) {
              ${f.type === 'number' ? 'inputmode="decimal"' : 'autocomplete="off"'}>
     </label>`).join('') +
     (opts.onDelete ? `<button class="btn btn-danger btn-block btn-sm" id="modalDelete" style="margin-top:6px">Eliminar este tamaño</button>` : '');
-
   $('modalOk').textContent = opts.okText || 'Guardar';
   $('modalOk').onclick = () => {
     const data = {};
@@ -2345,14 +3118,12 @@ function openModal(title, fields, onSave, opts = {}) {
     });
     if (onSave(data) !== false) closeModal();
   };
-
   if (opts.onDelete) {
     $('modalDelete').onclick = () => {
       if (!confirm('¿Eliminar este tamaño?')) return;
       opts.onDelete(); closeModal();
     };
   }
-
   $('modalBackdrop').classList.add('show');
   document.body.style.overflow = 'hidden';
   if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
@@ -2377,6 +3148,7 @@ document.addEventListener('keydown', e => {
 /* =========================================================
    TABS
    ========================================================= */
+
 function switchTab(t) {
   ['inv', 'venta', 'hist'].forEach(k => {
     $('view-' + k).classList.toggle('active', k === t);
@@ -2390,6 +3162,7 @@ function switchTab(t) {
 /* =========================================================
    EVENTOS
    ========================================================= */
+
 function bindEvents() {
   ['pctEss','pctMusk','pctIpm','pctDpg','vCant','vPrecio'].forEach(id => {
     const el = $(id);
@@ -2419,6 +3192,7 @@ function bindEvents() {
 /* =========================================================
    INICIALIZACIÓN
    ========================================================= */
+
 (function init() {
   loadData();
   ssEsencia = createSearchSelect('ss-vEsencia', 'Buscar esencia…', () => calcFormula());
@@ -2432,5 +3206,6 @@ function bindEvents() {
   renderAll();
 })();
 </script>
+
 </body>
 </html>
