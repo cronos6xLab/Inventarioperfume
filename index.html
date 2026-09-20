@@ -108,6 +108,72 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
 .field:last-child{margin-bottom:0}
 .label{display:block;font-size:11px;color:rgba(245,241,232,.5);margin-bottom:6px;letter-spacing:.03em}
 
+/* ============ SEARCH SELECT ============ */
+.search-select{position:relative}
+.search-select .ss-input{
+  padding-right:38px;
+  cursor:text;
+}
+.search-select .ss-arrow{
+  position:absolute;right:13px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:rgba(245,241,232,.35);
+  transition:transform .2s ease,color .2s ease;
+}
+.search-select.open .ss-arrow{transform:translateY(-50%) rotate(180deg);color:#D4AF37}
+.search-select .ss-dropdown{
+  position:absolute;top:calc(100% + 5px);left:0;right:0;
+  background:#151515;
+  border:1px solid rgba(212,175,55,.25);
+  border-radius:14px;
+  max-height:280px;overflow-y:auto;
+  z-index:100;
+  display:none;
+  padding:5px;
+  box-shadow:0 18px 48px -12px rgba(0,0,0,.95);
+  -webkit-overflow-scrolling:touch;
+}
+.search-select.open .ss-dropdown{
+  display:block;
+  animation:ssFade .16s ease;
+}
+@keyframes ssFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.ss-option{
+  padding:10px 12px;
+  border-radius:9px;
+  font-size:13px;
+  cursor:pointer;
+  color:rgba(245,241,232,.78);
+  display:flex;justify-content:space-between;gap:10px;align-items:center;
+  transition:background .12s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.ss-option:hover,
+.ss-option.active{background:rgba(212,175,55,.1);color:#D4AF37}
+.ss-option.selected{background:rgba(212,175,55,.16);color:#D4AF37;font-weight:600}
+.ss-option.disabled{opacity:.35;pointer-events:none}
+.ss-option-main{
+  flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ss-option-sub{
+  font-size:10.5px;color:rgba(245,241,232,.4);
+  white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.ss-option.selected .ss-option-sub{color:rgba(212,175,55,.75)}
+.ss-empty{
+  padding:16px 12px;text-align:center;
+  font-size:12px;color:rgba(245,241,232,.4);
+  font-style:italic;
+}
+.ss-count{
+  padding:6px 12px 8px;font-size:10px;
+  color:rgba(245,241,232,.3);
+  letter-spacing:.06em;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  margin-bottom:4px;
+}
+
+/* ============ BOTONES ============ */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
@@ -333,7 +399,6 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
 .view.active{display:block}
 
 .divider{height:1px;background:rgba(255,255,255,.07);margin:14px 0}
-.divider-gold{height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.3),transparent);margin:14px 0}
 </style>
 </head>
 <body>
@@ -342,7 +407,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
   <header class="topbar">
     <div class="brand">
       <span class="brand-kicker">AION PERFUMERÍA</span>
-      <h1>Gestor <i>v4.0</i></h1>
+      <h1>Gestor <i>v4.1</i></h1>
       <span class="brand-sub">EXTRAIT 42% · ISF 0.2 · Control financiero</span>
     </div>
     <div class="topstat"><span class="dot"></span><span id="statTot">0 esencias</span></div>
@@ -442,7 +507,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
         <input id="vCliente" class="input" placeholder="Ej: María · pedido Instagram" autocomplete="off" style="margin-bottom:14px">
 
         <label class="label">Esencia utilizada</label>
-        <select id="vEsencia" class="input" style="margin-bottom:14px"></select>
+        <div id="ss-vEsencia" style="margin-bottom:14px"></div>
 
         <label class="label">Tamaño por frasco</label>
         <div class="chips" id="vTamChips" style="margin-bottom:8px"></div>
@@ -486,7 +551,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
         <div class="grid2" style="margin-top:16px">
           <div>
             <label class="label">Modelo de frasco</label>
-            <select id="vBotellaModelo" class="input"></select>
+            <div id="ss-vBotellaModelo"></div>
           </div>
           <div>
             <label class="label">Tamaño del frasco</label>
@@ -498,7 +563,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
           <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:rgba(245,241,232,.7);white-space:nowrap">
             <input type="checkbox" id="vUsaAtom" checked> Atomizador
           </label>
-          <select id="vAtom" class="input" style="flex:1;min-width:0"></select>
+          <div id="ss-vAtom" style="flex:1;min-width:0"></div>
         </div>
 
         <div id="preview" class="preview">
@@ -602,6 +667,15 @@ const fmt = n => (Math.round(n * 100) / 100).toLocaleString('es-ES');
 const money = n => '$' + fmt(n || 0);
 const pct = n => (Math.round(n * 10) / 10) + '%';
 
+/* Normaliza texto: minúsculas y sin acentos (para búsqueda) */
+function norm(s) {
+  return String(s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 let toastTimer;
 function toast(msg) {
   const t = $('toast');
@@ -615,6 +689,164 @@ function fillSelect(el, html, keep = true) {
   const prev = keep ? el.value : null;
   el.innerHTML = html;
   if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+}
+
+/* =========================================================
+   SEARCH SELECT (buscador con dropdown)
+   ========================================================= */
+function createSearchSelect(rootId, placeholder, onChange) {
+  const root = $(rootId);
+  if (!root) return null;
+  root.className = 'search-select';
+  root.innerHTML = `
+    <input class="input ss-input" placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false">
+    <svg class="ss-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
+      <path stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M1 1.5 6 6.5l5-5"/>
+    </svg>
+    <div class="ss-dropdown" role="listbox"></div>
+  `;
+
+  const input = root.querySelector('.ss-input');
+  const dropdown = root.querySelector('.ss-dropdown');
+
+  const state = {
+    options: [],
+    value: '',
+    filtered: [],
+    activeIndex: -1,
+    onChange: onChange || null
+  };
+
+  function renderDropdown() {
+    const q = norm(input.value);
+    state.filtered = state.options.filter(o => {
+      if (!q) return true;
+      return norm(o.label).includes(q) || norm(o.sub).includes(q);
+    });
+
+    if (!state.filtered.length) {
+      dropdown.innerHTML = '<div class="ss-empty">Sin resultados para "' + esc(input.value) + '"</div>';
+      return;
+    }
+
+    let html = '';
+    if (q) {
+      html += `<div class="ss-count">${state.filtered.length} resultado${state.filtered.length === 1 ? '' : 's'}</div>`;
+    }
+    html += state.filtered.map((o, i) => `
+      <div class="ss-option ${o.value === state.value ? 'selected' : ''} ${i === state.activeIndex ? 'active' : ''} ${o.disabled ? 'disabled' : ''}"
+           data-value="${esc(o.value)}" data-index="${i}" role="option">
+        <div class="ss-option-main">${esc(o.label)}</div>
+        ${o.sub ? `<div class="ss-option-sub">${esc(o.sub)}</div>` : ''}
+      </div>
+    `).join('');
+    dropdown.innerHTML = html;
+
+    dropdown.querySelectorAll('.ss-option').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        selectValue(el.dataset.value);
+      });
+    });
+  }
+
+  function selectValue(v) {
+    const opt = state.options.find(o => o.value === v);
+    if (!opt || opt.disabled) return;
+    state.value = v;
+    input.value = opt.label;
+    input.blur();
+    closeDropdown();
+    if (state.onChange) state.onChange(v);
+  }
+
+  function openDropdown() {
+    root.classList.add('open');
+    state.activeIndex = -1;
+    input.value = '';           // limpiar para mostrar todas las opciones
+    renderDropdown();
+  }
+
+  function closeDropdown() {
+    root.classList.remove('open');
+    state.activeIndex = -1;
+  }
+
+  function syncInput() {
+    const opt = state.options.find(o => o.value === state.value);
+    input.value = opt ? opt.label : '';
+  }
+
+  input.addEventListener('focus', () => {
+    openDropdown();
+  });
+
+  input.addEventListener('input', () => {
+    if (!root.classList.contains('open')) root.classList.add('open');
+    state.activeIndex = -1;
+    renderDropdown();
+  });
+
+  input.addEventListener('keydown', e => {
+    if (!root.classList.contains('open') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      openDropdown();
+      return;
+    }
+    if (!root.classList.contains('open')) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      state.activeIndex = Math.min(state.activeIndex + 1, state.filtered.length - 1);
+      renderDropdown();
+      const active = dropdown.querySelector('.ss-option.active');
+      if (active) active.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      state.activeIndex = Math.max(state.activeIndex - 1, 0);
+      renderDropdown();
+      const active = dropdown.querySelector('.ss-option.active');
+      if (active) active.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (state.activeIndex >= 0 && state.filtered[state.activeIndex]) {
+        selectValue(state.filtered[state.activeIndex].value);
+      } else if (state.filtered.length === 1) {
+        selectValue(state.filtered[0].value);
+      }
+    } else if (e.key === 'Escape') {
+      input.blur();
+      closeDropdown();
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    // Pequeño delay para permitir que el mousedown del option se dispare antes
+    setTimeout(() => {
+      closeDropdown();
+      syncInput();
+    }, 130);
+  });
+
+  // Cerrar al hacer click fuera
+  document.addEventListener('click', e => {
+    if (!root.contains(e.target)) closeDropdown();
+  });
+
+  return {
+    setOptions(options) {
+      state.options = Array.isArray(options) ? options : [];
+      if (state.value && !state.options.find(o => o.value === state.value)) {
+        state.value = '';
+      }
+      syncInput();
+    },
+    getValue() { return state.value; },
+    setValue(v) {
+      state.value = v || '';
+      syncInput();
+    },
+    root, input
+  };
 }
 
 /* =========================================================
@@ -654,7 +886,11 @@ const DEFAULT_INV = {
 let inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
 let sales = [];
 
-/* ---------- Migración ---------- */
+/* Instancias de los search-selects */
+let ssEsencia = null;
+let ssBotModelo = null;
+let ssAtom = null;
+
 function migrate(inv) {
   if (!inv.esencias) inv.esencias = [];
   if (!inv.atomizadores) inv.atomizadores = [];
@@ -718,7 +954,6 @@ function renderAll() {
   $('statTot').textContent = n + (n === 1 ? ' esencia' : ' esencias');
 }
 
-/* ---------- Esencias ---------- */
 function renderEsencias() {
   $('countEss').textContent = inventory.esencias.length;
   const wrap = $('listEss');
@@ -787,7 +1022,6 @@ function delEsencia(id) {
   saveInv(); toast('Esencia eliminada');
 }
 
-/* ---------- Líquidos ---------- */
 function renderLiquidos() {
   const g = $('liqGrid');
   if (!g.dataset.built) {
@@ -832,7 +1066,6 @@ function setCostoLiq(key, val) {
   calcFormula();
 }
 
-/* ---------- Frascos ---------- */
 function renderBotellas() {
   $('countBot').textContent = inventory.botellas.length;
   const wrap = $('listBot');
@@ -943,7 +1176,6 @@ function delModelo(bid) {
   saveInv(); toast('Modelo eliminado');
 }
 
-/* ---------- Atomizadores ---------- */
 function renderAtomizadores() {
   $('countAto').textContent = inventory.atomizadores.length;
   const wrap = $('listAto');
@@ -987,8 +1219,8 @@ function editAtom(id) {
   const a = inventory.atomizadores.find(x => x.id === id);
   if (!a) return;
   openModal('Editar atomizador', [
-    { key:'modelo', label:'Modelo',         type:'text',   value:a.modelo },
-    { key:'stock',  label:'Stock',          type:'number', value:a.stock, step:'1' },
+    { key:'modelo', label:'Modelo',           type:'text',   value:a.modelo },
+    { key:'stock',  label:'Stock',            type:'number', value:a.stock, step:'1' },
     { key:'costo',  label:'Costo ($/unidad)', type:'number', value:a.costo || 0, step:'0.01' }
   ], d => {
     if (!d.modelo) return toast('Modelo requerido'), false;
@@ -1008,32 +1240,53 @@ function delAtom(id) {
 }
 
 /* =========================================================
-   SELECTS DE VENTA
+   SELECTS DE VENTA (con búsqueda)
    ========================================================= */
 function syncSelects() {
-  fillSelect($('vEsencia'),
-    '<option value="">Selecciona esencia…</option>' +
-    inventory.esencias.map(e =>
-      `<option value="${e.id}">${esc(e.nombre)} — ${fmt(e.stockMl)} ml · ${money(e.costoMl)}/ml</option>`).join(''), true);
+  // Esencia (search-select)
+  if (ssEsencia) {
+    ssEsencia.setOptions(inventory.esencias.map(e => ({
+      value: e.id,
+      label: e.nombre,
+      sub: fmt(e.stockMl) + ' ml · ' + money(e.costoMl) + '/ml'
+    })));
+  }
 
+  // Filtro de esencia en historial (select normal)
   fillSelect($('fEss'),
     '<option value="all">Todas las esencias</option>' +
     inventory.esencias.map(e => `<option value="${esc(e.nombre)}">${esc(e.nombre)}</option>`).join(''), true);
 
-  fillSelect($('vBotellaModelo'),
-    '<option value="sin">Sin frasco</option>' +
-    inventory.botellas.map(b => `<option value="${b.id}">${esc(b.modelo)}</option>`).join(''), true);
+  // Modelo de frasco (search-select)
+  if (ssBotModelo) {
+    ssBotModelo.setOptions([
+      { value: 'sin', label: 'Sin frasco', sub: '' },
+      ...inventory.botellas.map(b => ({
+        value: b.id,
+        label: b.modelo,
+        sub: b.variantes.length
+          ? b.variantes.length + ' tamaño' + (b.variantes.length === 1 ? '' : 's') + ' · ' + b.variantes.reduce((a, v) => a + v.stock, 0) + ' u'
+          : 'Sin tamaños'
+      }))
+    ]);
+  }
 
   renderVariantesVenta();
 
-  fillSelect($('vAtom'),
-    inventory.atomizadores.length
-      ? inventory.atomizadores.map(a => `<option value="${a.id}">${esc(a.modelo)} (${a.stock}u)</option>`).join('')
-      : '<option value="">Sin atomizadores</option>', true);
+  // Atomizador (search-select)
+  if (ssAtom) {
+    ssAtom.setOptions(
+      inventory.atomizadores.map(a => ({
+        value: a.id,
+        label: a.modelo,
+        sub: a.stock + ' u · ' + money(a.costo || 0)
+      }))
+    );
+  }
 }
 
 function renderVariantesVenta() {
-  const modelId = $('vBotellaModelo').value;
+  const modelId = ssBotModelo ? ssBotModelo.getValue() : '';
   const sel = $('vBotellaTam');
   const m = inventory.botellas.find(b => b.id === modelId);
   if (!m) { sel.innerHTML = '<option value="">—</option>'; sel.disabled = true; return; }
@@ -1103,13 +1356,15 @@ function calcFormula() {
 
   const tam  = getTamano();
   const cant = parseInt($('vCant').value, 10) || 0;
-  const ess  = inventory.esencias.find(e => e.id === $('vEsencia').value);
-  const botM = inventory.botellas.find(b => b.id === $('vBotellaModelo').value);
+  const essId = ssEsencia ? ssEsencia.getValue() : '';
+  const ess  = inventory.esencias.find(e => e.id === essId);
+  const botId = ssBotModelo ? ssBotModelo.getValue() : '';
+  const botM = inventory.botellas.find(b => b.id === botId);
   const botV = botM ? botM.variantes.find(v => v.id === $('vBotellaTam').value) : null;
   const usaAtom = $('vUsaAtom').checked;
-  const atom = inventory.atomizadores.find(a => a.id === $('vAtom').value);
+  const atomId = ssAtom ? ssAtom.getValue() : '';
+  const atom = inventory.atomizadores.find(a => a.id === atomId);
 
-  // Precio unitario
   const precioTotal = num($('vPrecio').value);
   if (precioTotal > 0 && cant > 0) {
     $('vPrecioUnit').textContent = `≈ ${money(precioTotal / cant)} por unidad`;
@@ -1145,13 +1400,12 @@ function calcFormula() {
     musk: inventory.liquidos.musk >= tot.musk,
     ipm:  inventory.liquidos.ipm  >= tot.ipm,
     dpg:  inventory.liquidos.dpg  >= tot.dpg,
-    bot:  !botM || (botV ? botV.stock >= cant : false),
+    bot:  !botM || botM.id === 'sin' || (botV ? botV.stock >= cant : false),
     ato:  !usaAtom || !atom || atom.stock >= cant
   };
   const allOk = !!ess && Object.values(ck).every(Boolean);
   const cls = ok => ok ? 'ok' : 'bad';
 
-  // Costos
   const cos = calcularCostos(ess, tot, botV, cant, usaAtom, atom);
   const ganancia = precioTotal - cos.total;
   const margen = precioTotal > 0 ? (ganancia / precioTotal) * 100 : 0;
@@ -1207,7 +1461,8 @@ function calcFormula() {
    ========================================================= */
 function registrarVenta() {
   const cliente = $('vCliente').value.trim();
-  const ess = inventory.esencias.find(e => e.id === $('vEsencia').value);
+  const essId = ssEsencia ? ssEsencia.getValue() : '';
+  const ess = inventory.esencias.find(e => e.id === essId);
   if (!ess) return toast('Selecciona una esencia');
 
   const tam  = getTamano();
@@ -1225,10 +1480,12 @@ function registrarVenta() {
   if (pctAlc < 0) return toast('La fórmula supera el 100%');
   if (pctAlc < 50 && !confirm('Alcohol por debajo del 50%. ¿Continuar de todas formas?')) return;
 
-  const botM = inventory.botellas.find(b => b.id === $('vBotellaModelo').value);
+  const botId = ssBotModelo ? ssBotModelo.getValue() : '';
+  const botM = inventory.botellas.find(b => b.id === botId);
   const botV = botM ? botM.variantes.find(v => v.id === $('vBotellaTam').value) : null;
   const usaAtom = $('vUsaAtom').checked;
-  const atom = inventory.atomizadores.find(a => a.id === $('vAtom').value);
+  const atomId = ssAtom ? ssAtom.getValue() : '';
+  const atom = inventory.atomizadores.find(a => a.id === atomId);
 
   const tot = {
     es:   tam * pctEss  / 100 * cant,
@@ -1243,7 +1500,7 @@ function registrarVenta() {
   if (inventory.liquidos.musk < tot.musk)      return toast('Musk insuficiente');
   if (inventory.liquidos.ipm  < tot.ipm)       return toast('IPM insuficiente');
   if (inventory.liquidos.dpg  < tot.dpg)       return toast('DPG insuficiente');
-  if (botM && !botV)                           return toast('Selecciona un tamaño de frasco');
+  if (botM && botM.id !== 'sin' && !botV)      return toast('Selecciona un tamaño de frasco');
   if (botV && botV.stock < cant)               return toast('Frascos insuficientes');
   if (usaAtom && atom && atom.stock < cant)    return toast('Atomizadores insuficientes');
 
@@ -1620,7 +1877,6 @@ function exportHistExcel() {
   ws['!cols'] = header.map(h => ({ wch: Math.max(12, Math.min(24, h.length + 4)) }));
   XLSX.utils.book_append_sheet(wb, ws, 'Historial');
 
-  // Resumen
   const totalVenta  = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
   const totalCosto  = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
   const totalGananc = totalVenta - totalCosto;
@@ -1654,7 +1910,6 @@ function exportHistExcel() {
 function exportInvExcel() {
   const wb = XLSX.utils.book_new();
 
-  /* ESENCIAS */
   const essRows = [['Nombre', 'Stock (ml)', 'Costo $/ml', 'Valor total ($)', 'Estado']];
   inventory.esencias.forEach(e =>
     essRows.push([e.nombre, e.stockMl, e.costoMl || 0, r2(e.stockMl * (e.costoMl || 0)), e.stockMl < 50 ? 'Bajo' : 'OK']));
@@ -1663,14 +1918,12 @@ function exportInvExcel() {
   wsEss['!cols'] = [{ wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, wsEss, 'Esencias');
 
-  /* LÍQUIDOS */
   const liqRows = [['Líquido', 'Stock (ml)', 'Costo $/ml', 'Valor total ($)']];
   LIQUIDOS.forEach(l => liqRows.push([l.label, inventory.liquidos[l.key], inventory.costosLiquidos[l.key] || 0, r2(inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0))]));
   const wsLiq = XLSX.utils.aoa_to_sheet(liqRows);
   wsLiq['!cols'] = [{ wch: 34 }, { wch: 12 }, { wch: 12 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, wsLiq, 'Líquidos');
 
-  /* FRASCOS */
   const botRows = [['Modelo', 'Tamaño (ml)', 'Stock (u)', 'Costo $/u', 'Valor total ($)', 'Capacidad total (ml)', 'Estado']];
   inventory.botellas.forEach(b => {
     if (!b.variantes.length) botRows.push([b.modelo, '', '', '', '', '', '']);
@@ -1682,7 +1935,6 @@ function exportInvExcel() {
   wsBot['!cols'] = [{ wch: 26 }, { wch: 12 }, { wch: 11 }, { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, wsBot, 'Frascos');
 
-  /* ATOMIZADORES */
   const atoRows = [['Modelo', 'Stock (u)', 'Costo $/u', 'Valor total ($)', 'Estado']];
   inventory.atomizadores.forEach(a =>
     atoRows.push([a.modelo, a.stock, a.costo || 0, r2((a.costo || 0) * a.stock), a.stock < 5 ? 'Bajo' : 'OK']));
@@ -1691,7 +1943,6 @@ function exportInvExcel() {
   wsAto['!cols'] = [{ wch: 30 }, { wch: 11 }, { wch: 12 }, { wch: 16 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, wsAto, 'Atomizadores');
 
-  /* RESUMEN */
   const valorEs = inventory.esencias.reduce((a, e) => a + e.stockMl * (e.costoMl || 0), 0);
   const valorLiq = LIQUIDOS.reduce((a, l) => a + inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0), 0);
   const valorBot = inventory.botellas.reduce((a, b) => a + b.variantes.reduce((s, v) => s + v.stock * (v.costo || 0), 0), 0);
@@ -1737,7 +1988,6 @@ function exportFinPDF() {
   const filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
   doc.text(`Filtro: ${filtro}  |  Ventas con precio: ${list.length}`, 14, 31);
 
-  // Totales
   const totalVenta  = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
   const totalCosto  = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
   const totalGananc = totalVenta - totalCosto;
@@ -1797,7 +2047,6 @@ function exportFinPDF() {
     }
   });
 
-  // Desglose de costos agregado
   const totalEss = list.reduce((a, s) => a + (s.desgloseCosto?.esencia || 0), 0);
   const totalAlc = list.reduce((a, s) => a + (s.desgloseCosto?.alcohol || 0), 0);
   const totalMus = list.reduce((a, s) => a + (s.desgloseCosto?.musk || 0), 0);
@@ -1848,7 +2097,6 @@ function exportFinExcel() {
 
   const wb = XLSX.utils.book_new();
 
-  /* --- Hoja 1: Detalle --- */
   const header = ['Fecha', 'Cliente', 'Esencia', 'Tamaño (ml)', 'Cantidad', 'Precio venta ($)', 'Precio unitario ($)', 'Costo producción ($)', 'Ganancia ($)', 'Margen (%)'];
   const rows = list.map(s => [
     new Date(s.fecha).toLocaleString('es-ES'),
@@ -1866,7 +2114,6 @@ function exportFinExcel() {
   ws['!cols'] = header.map(h => ({ wch: Math.max(12, h.length + 4) }));
   XLSX.utils.book_append_sheet(wb, ws, 'Detalle');
 
-  /* --- Hoja 2: Resumen --- */
   const totalVenta  = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
   const totalCosto  = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
   const totalGananc = totalVenta - totalCosto;
@@ -1887,7 +2134,6 @@ function exportFinExcel() {
   ws2['!cols'] = [{ wch: 30 }, { wch: 22 }];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
 
-  /* --- Hoja 3: Desglose de costos --- */
   const totalEss = list.reduce((a, s) => a + (s.desgloseCosto?.esencia || 0), 0);
   const totalAlc = list.reduce((a, s) => a + (s.desgloseCosto?.alcohol || 0), 0);
   const totalMus = list.reduce((a, s) => a + (s.desgloseCosto?.musk || 0), 0);
@@ -1911,7 +2157,6 @@ function exportFinExcel() {
   ws3['!cols'] = [{ wch: 22 }, { wch: 18 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, ws3, 'Desglose costos');
 
-  /* --- Hoja 4: Por esencia --- */
   const porEsencia = {};
   list.forEach(s => {
     if (!porEsencia[s.esenciaNombre]) porEsencia[s.esenciaNombre] = { cant: 0, ingreso: 0, costo: 0, ganancia: 0 };
@@ -2039,17 +2284,11 @@ function bindEvents() {
     calcFormula();
   });
 
-  $('vEsencia').addEventListener('change', calcFormula);
   $('vBotellaTam').addEventListener('change', calcFormula);
-  $('vAtom').addEventListener('change', calcFormula);
-
-  $('vBotellaModelo').addEventListener('change', () => {
-    renderVariantesVenta();
-    calcFormula();
-  });
 
   $('vUsaAtom').addEventListener('change', () => {
-    $('vAtom').style.display = $('vUsaAtom').checked ? 'block' : 'none';
+    const ssRoot = $('ss-vAtom');
+    if (ssRoot) ssRoot.style.display = $('vUsaAtom').checked ? 'block' : 'none';
     calcFormula();
   });
 
@@ -2072,8 +2311,20 @@ function bindEvents() {
    ========================================================= */
 (function init() {
   loadData();
+
+  // Crear los buscadores
+  ssEsencia = createSearchSelect('ss-vEsencia', 'Buscar esencia…', () => calcFormula());
+  ssBotModelo = createSearchSelect('ss-vBotellaModelo', 'Buscar modelo…', () => {
+    renderVariantesVenta();
+    calcFormula();
+  });
+  ssAtom = createSearchSelect('ss-vAtom', 'Buscar atomizador…', () => calcFormula());
+
   renderTamChips();
-  $('vAtom').style.display = $('vUsaAtom').checked ? 'block' : 'none';
+
+  const ssAtomRoot = $('ss-vAtom');
+  if (ssAtomRoot) ssAtomRoot.style.display = $('vUsaAtom').checked ? 'block' : 'none';
+
   bindEvents();
   renderAll();
 })();
