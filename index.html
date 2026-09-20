@@ -38,7 +38,7 @@ header.topbar{padding:22px 0 14px;display:flex;justify-content:space-between;ali
 .card-head h2{font-size:19px;letter-spacing:-.01em;flex:1}
 .card-head-right{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .card-sub{font-size:11px;color:rgba(245,241,232,.4);margin:-8px 0 12px}
-.card-body{overflow:hidden;transition:opacity .25s ease}
+.card-body{transition:opacity .25s ease}
 .card-body.hidden{display:none}
 
 .collapse-btn{
@@ -51,7 +51,6 @@ header.topbar{padding:22px 0 14px;display:flex;justify-content:space-between;ali
 .collapse-btn:hover{background:rgba(212,175,55,.15);color:#D4AF37;border-color:rgba(212,175,55,.3)}
 .collapse-btn svg{transition:transform .25s ease}
 .collapse-btn.collapsed svg{transform:rotate(-90deg)}
-.card-body.hidden{display:none}
 .card.collapsed .card-head{margin-bottom:0}
 
 .badge{font-size:10px;font-weight:600;padding:4px 10px;border-radius:999px;color:#D4AF37;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.22);letter-spacing:.04em}
@@ -238,7 +237,7 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
   <header class="topbar">
     <div class="brand">
       <span class="brand-kicker">AION PERFUMERÍA</span>
-      <h1>Gestor <i>v4.2</i></h1>
+      <h1>Gestor <i>v4.3</i></h1>
       <span class="brand-sub">EXTRAIT 42% · ISF 0.2 · Control financiero</span>
     </div>
     <div class="topstat"><span class="dot"></span><span id="statTot">0 esencias</span></div>
@@ -248,7 +247,6 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
     <!-- ================= INVENTARIO ================= -->
     <section id="view-inv" class="view active">
 
-      <!-- ESENCIAS -->
       <div class="card" id="card-ess">
         <div class="card-head">
           <h2>Esencias</h2>
@@ -271,7 +269,6 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
         </div>
       </div>
 
-      <!-- LÍQUIDOS -->
       <div class="card" id="card-liq">
         <div class="card-head">
           <h2>Líquidos base</h2>
@@ -287,7 +284,6 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
         </div>
       </div>
 
-      <!-- FRASCOS -->
       <div class="card" id="card-bot">
         <div class="card-head">
           <h2>Frascos</h2>
@@ -312,7 +308,6 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
         </div>
       </div>
 
-      <!-- ATOMIZADORES -->
       <div class="card" id="card-ato">
         <div class="card-head">
           <h2>Atomizadores</h2>
@@ -421,14 +416,8 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
           <span>Filtrar por rango de fechas</span>
         </div>
         <div class="grid2" style="margin-bottom:14px">
-          <div>
-            <label class="label">Desde</label>
-            <input id="fDesde" class="input" type="date">
-          </div>
-          <div>
-            <label class="label">Hasta</label>
-            <input id="fHasta" class="input" type="date">
-          </div>
+          <div><label class="label">Desde</label><input id="fDesde" class="input" type="date"></div>
+          <div><label class="label">Hasta</label><input id="fHasta" class="input" type="date"></div>
         </div>
 
         <button class="btn btn-shopping btn-block" style="margin-bottom:10px" onclick="abrirListaCompras()">
@@ -506,35 +495,36 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;
 /* =========================================================
    UTILIDADES
    ========================================================= */
-const $  = id => document.getElementById(id);
-const uid = () => Math.random().toString(36).slice(2, 9);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-const r2  = n => Math.round(n * 100) / 100;
-const fmt = n => (Math.round(n * 100) / 100).toLocaleString('es-ES');
-const money = n => '$' + fmt(n || 0);
-const pct = n => (Math.round(n * 10) / 10) + '%';
-function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+function $(id){ return document.getElementById(id); }
+function uid(){ return Math.random().toString(36).slice(2, 9); }
+function esc(s){ s = (s == null) ? '' : String(s); return s.replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function r2(n){ return Math.round(n * 100) / 100; }
+function fmt(n){ return (Math.round(n * 100) / 100).toLocaleString('es-ES'); }
+function money(n){ return '$' + fmt(n || 0); }
+function pct(n){ return (Math.round(n * 10) / 10) + '%'; }
+function norm(s){ return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
 
-let toastTimer;
+var toastTimer;
 function toast(msg){
-  const t = $('toast');
+  var t = $('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
 }
 
-function fillSelect(el, html, keep = true) {
-  const prev = keep ? el.value : null;
+function fillSelect(el, html, keep){
+  keep = (keep === undefined) ? true : keep;
+  var prev = keep ? el.value : null;
   el.innerHTML = html;
-  if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+  if (prev && Array.prototype.some.call(el.options, function(o){ return o.value === prev; })) el.value = prev;
 }
 
 /* =========================================================
-   COLLAPSE CARDS (inventario minimizable)
+   COLLAPSE CARDS
    ========================================================= */
-const LS_UI = 'aion_ui_v4';
+var LS_UI = 'aion_ui_v4';
 
 function getUIState(){
   try { return JSON.parse(localStorage.getItem(LS_UI)) || {}; } catch(e){ return {}; }
@@ -544,25 +534,25 @@ function saveUIState(st){
 }
 
 function toggleCard(key){
-  const body = $('body-' + key);
-  const btn  = $('tog-' + key);
-  const card = $('card-' + key);
+  var body = $('body-' + key);
+  var btn  = $('tog-' + key);
+  var card = $('card-' + key);
   if (!body || !btn) return;
-  const collapsed = body.classList.toggle('hidden');
+  var collapsed = body.classList.toggle('hidden');
   btn.classList.toggle('collapsed', collapsed);
   if (card) card.classList.toggle('collapsed', collapsed);
-  const st = getUIState();
+  var st = getUIState();
   st[key] = collapsed;
   saveUIState(st);
 }
 
 function restoreCollapseState(){
-  const st = getUIState();
-  ['ess','liq','bot','ato'].forEach(k => {
+  var st = getUIState();
+  ['ess','liq','bot','ato'].forEach(function(k){
     if (!st[k]) return;
-    const body = $('body-' + k);
-    const btn  = $('tog-' + k);
-    const card = $('card-' + k);
+    var body = $('body-' + k);
+    var btn  = $('tog-' + k);
+    var card = $('card-' + k);
     if (body) body.classList.add('hidden');
     if (btn) btn.classList.add('collapsed');
     if (card) card.classList.add('collapsed');
@@ -573,44 +563,46 @@ function restoreCollapseState(){
    SEARCH SELECT
    ========================================================= */
 function createSearchSelect(rootId, placeholder, onChange) {
-  const root = $(rootId);
+  var root = $(rootId);
   if (!root) return null;
   root.className = 'search-select';
-  root.innerHTML = `
-    <input class="input ss-input" placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false">
-    <svg class="ss-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
-      <path stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M1 1.5 6 6.5l5-5"/>
-    </svg>
-    <div class="ss-dropdown" role="listbox"></div>
-  `;
-  const input = root.querySelector('.ss-input');
-  const dropdown = root.querySelector('.ss-dropdown');
-  const state = { options: [], value: '', filtered: [], activeIndex: -1, onChange: onChange || null };
+  root.innerHTML =
+    '<input class="input ss-input" placeholder="' + esc(placeholder) + '" autocomplete="off" spellcheck="false">' +
+    '<svg class="ss-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">' +
+      '<path stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M1 1.5 6 6.5l5-5"/>' +
+    '</svg>' +
+    '<div class="ss-dropdown" role="listbox"></div>';
+
+  var input = root.querySelector('.ss-input');
+  var dropdown = root.querySelector('.ss-dropdown');
+  var state = { options: [], value: '', filtered: [], activeIndex: -1, onChange: onChange || null };
 
   function renderDropdown() {
-    const q = norm(input.value);
-    state.filtered = state.options.filter(o => !q || norm(o.label).includes(q) || norm(o.sub).includes(q));
+    var q = norm(input.value);
+    state.filtered = state.options.filter(function(o){
+      return !q || norm(o.label).indexOf(q) >= 0 || norm(o.sub).indexOf(q) >= 0;
+    });
     if (!state.filtered.length) {
       dropdown.innerHTML = '<div class="ss-empty">Sin resultados para "' + esc(input.value) + '"</div>';
       return;
     }
-    let html = '';
-    if (q) html += `<div class="ss-count">${state.filtered.length} resultado${state.filtered.length === 1 ? '' : 's'}</div>`;
-    html += state.filtered.map((o, i) => `
-      <div class="ss-option ${o.value === state.value ? 'selected' : ''} ${i === state.activeIndex ? 'active' : ''} ${o.disabled ? 'disabled' : ''}"
-           data-value="${esc(o.value)}" data-index="${i}" role="option">
-        <div class="ss-option-main">${esc(o.label)}</div>
-        ${o.sub ? `<div class="ss-option-sub">${esc(o.sub)}</div>` : ''}
-      </div>
-    `).join('');
+    var html = '';
+    if (q) html += '<div class="ss-count">' + state.filtered.length + ' resultado' + (state.filtered.length === 1 ? '' : 's') + '</div>';
+    html += state.filtered.map(function(o, i){
+      return '<div class="ss-option ' + (o.value === state.value ? 'selected' : '') + ' ' + (i === state.activeIndex ? 'active' : '') + ' ' + (o.disabled ? 'disabled' : '') + '"' +
+             ' data-value="' + esc(o.value) + '" data-index="' + i + '" role="option">' +
+        '<div class="ss-option-main">' + esc(o.label) + '</div>' +
+        (o.sub ? '<div class="ss-option-sub">' + esc(o.sub) + '</div>' : '') +
+      '</div>';
+    }).join('');
     dropdown.innerHTML = html;
-    dropdown.querySelectorAll('.ss-option').forEach(el => {
-      el.addEventListener('mousedown', e => { e.preventDefault(); selectValue(el.dataset.value); });
+    Array.prototype.forEach.call(dropdown.querySelectorAll('.ss-option'), function(el){
+      el.addEventListener('mousedown', function(e){ e.preventDefault(); selectValue(el.dataset.value); });
     });
   }
 
   function selectValue(v) {
-    const opt = state.options.find(o => o.value === v);
+    var opt = state.options.filter(function(o){ return o.value === v; })[0];
     if (!opt || opt.disabled) return;
     state.value = v;
     input.value = opt.label;
@@ -621,72 +613,74 @@ function createSearchSelect(rootId, placeholder, onChange) {
 
   function openDropdown() { root.classList.add('open'); state.activeIndex = -1; input.value = ''; renderDropdown(); }
   function closeDropdown() { root.classList.remove('open'); state.activeIndex = -1; }
-  function syncInput() { const opt = state.options.find(o => o.value === state.value); input.value = opt ? opt.label : ''; }
+  function syncInput() {
+    var opt = state.options.filter(function(o){ return o.value === state.value; })[0];
+    input.value = opt ? opt.label : '';
+  }
 
   input.addEventListener('focus', openDropdown);
-  input.addEventListener('input', () => {
+  input.addEventListener('input', function(){
     if (!root.classList.contains('open')) root.classList.add('open');
     state.activeIndex = -1;
     renderDropdown();
   });
-  input.addEventListener('keydown', e => {
+  input.addEventListener('keydown', function(e){
     if (!root.classList.contains('open') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { openDropdown(); return; }
     if (!root.classList.contains('open')) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       state.activeIndex = Math.min(state.activeIndex + 1, state.filtered.length - 1);
       renderDropdown();
-      const a = dropdown.querySelector('.ss-option.active'); if (a) a.scrollIntoView({ block: 'nearest' });
+      var a = dropdown.querySelector('.ss-option.active'); if (a) a.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       state.activeIndex = Math.max(state.activeIndex - 1, 0);
       renderDropdown();
-      const a = dropdown.querySelector('.ss-option.active'); if (a) a.scrollIntoView({ block: 'nearest' });
+      var a2 = dropdown.querySelector('.ss-option.active'); if (a2) a2.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (state.activeIndex >= 0 && state.filtered[state.activeIndex]) selectValue(state.filtered[state.activeIndex].value);
       else if (state.filtered.length === 1) selectValue(state.filtered[0].value);
     } else if (e.key === 'Escape') { input.blur(); closeDropdown(); }
   });
-  input.addEventListener('blur', () => {
-    setTimeout(() => { closeDropdown(); syncInput(); }, 130);
+  input.addEventListener('blur', function(){
+    setTimeout(function(){ closeDropdown(); syncInput(); }, 130);
   });
-  document.addEventListener('click', e => { if (!root.contains(e.target)) closeDropdown(); });
+  document.addEventListener('click', function(e){ if (!root.contains(e.target)) closeDropdown(); });
 
   return {
-    setOptions(options) {
+    setOptions: function(options) {
       state.options = Array.isArray(options) ? options : [];
-      if (state.value && !state.options.find(o => o.value === state.value)) state.value = '';
+      if (state.value && !state.options.filter(function(o){ return o.value === state.value; })[0]) state.value = '';
       syncInput();
     },
-    getValue() { return state.value; },
-    setValue(v) { state.value = v || ''; syncInput(); },
-    root, input
+    getValue: function(){ return state.value; },
+    setValue: function(v){ state.value = v || ''; syncInput(); },
+    root: root, input: input
   };
 }
 
 /* =========================================================
    DATOS
    ========================================================= */
-const LS_INV   = 'aion_inventory_v4';
-const LS_SALES = 'aion_sales_v4';
+var LS_INV   = 'aion_inventory_v4';
+var LS_SALES = 'aion_sales_v4';
 
-const LIQUIDOS = [
+var LIQUIDOS = [
   { key:'perfumol', label:'Perfumol / Alcohol' },
   { key:'musk',     label:'Perpetual Musk' },
   { key:'ipm',      label:'Miristato Isopropilo (IPM)' },
   { key:'dpg',      label:'DPG' }
 ];
 
-/* Umbrales para detectar stock bajo y sugerir cantidad */
-const UMBRAL = {
+var UMBRAL = {
   esenciaMl: 50,    sugeridoEsenciaMl: 100,
   liquidoMl: 200,   sugeridoLiquidoMl: 500,
   frascoU: 5,       sugeridoFrascoU: 10,
   atomU: 5,         sugeridoAtomU: 20
 };
 
-const DEFAULT_INV = {
+var DEFAULT_INV = {
   esencias: [
     { id:'e1', nombre:'Aventus Creed', stockMl:200, costoMl:2.50 },
     { id:'e2', nombre:'Sauvage',       stockMl:150, costoMl:2.00 }
@@ -707,35 +701,36 @@ const DEFAULT_INV = {
   ]
 };
 
-let inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
-let sales = [];
-let ssEsencia = null, ssBotModelo = null, ssAtom = null;
+var inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
+var sales = [];
+var ssEsencia = null, ssBotModelo = null, ssAtom = null;
 
 function migrate(inv) {
   if (!inv.esencias) inv.esencias = [];
   if (!inv.atomizadores) inv.atomizadores = [];
   if (!inv.liquidos) inv.liquidos = { perfumol:0, musk:0, ipm:0, dpg:0 };
   if (!inv.costosLiquidos) inv.costosLiquidos = { perfumol:0, musk:0, ipm:0, dpg:0 };
-  LIQUIDOS.forEach(l => {
+  LIQUIDOS.forEach(function(l){
     if (typeof inv.liquidos[l.key] !== 'number') inv.liquidos[l.key] = 0;
     if (typeof inv.costosLiquidos[l.key] !== 'number') inv.costosLiquidos[l.key] = 0;
   });
-  inv.esencias.forEach(e => { if (typeof e.costoMl !== 'number') e.costoMl = 0; });
+  inv.esencias.forEach(function(e){ if (typeof e.costoMl !== 'number') e.costoMl = 0; });
   if (!Array.isArray(inv.botellas)) inv.botellas = [];
-  const migradas = [];
-  inv.botellas.forEach(b => {
+  var migradas = [];
+  inv.botellas.forEach(function(b){
     if (Array.isArray(b.variantes)) {
-      b.variantes.forEach(v => { if (typeof v.costo !== 'number') v.costo = 0; });
+      b.variantes.forEach(function(v){ if (typeof v.costo !== 'number') v.costo = 0; });
       migradas.push(b); return;
     }
-    const key = String(b.modelo || '').toLowerCase().trim();
-    let g = migradas.find(x => x.modelo.toLowerCase().trim() === key);
+    var key = String(b.modelo || '').toLowerCase().trim();
+    var g = null;
+    for (var i = 0; i < migradas.length; i++) { if (migradas[i].modelo.toLowerCase().trim() === key) { g = migradas[i]; break; } }
     if (!g) { g = { id: b.id || uid(), modelo: b.modelo || 'Sin nombre', variantes: [] }; migradas.push(g); }
     g.variantes.push({ id: uid(), tamano: Number(b.tamano) || 0, stock: Number(b.stock) || 0, costo: 0 });
   });
-  migradas.forEach(b => b.variantes.sort((a, c) => a.tamano - c.tamano));
+  migradas.forEach(function(b){ b.variantes.sort(function(a, c){ return a.tamano - c.tamano; }); });
   inv.botellas = migradas;
-  inv.atomizadores.forEach(a => { if (typeof a.costo !== 'number') a.costo = 0; });
+  inv.atomizadores.forEach(function(a){ if (typeof a.costo !== 'number') a.costo = 0; });
   return inv;
 }
 
@@ -745,9 +740,9 @@ function saveInvSilent() { localStorage.setItem(LS_INV, JSON.stringify(inventory
 
 function loadData() {
   try {
-    const ri = localStorage.getItem(LS_INV);
+    var ri = localStorage.getItem(LS_INV);
     inventory = ri ? migrate(JSON.parse(ri)) : JSON.parse(JSON.stringify(DEFAULT_INV));
-    const rs = localStorage.getItem(LS_SALES);
+    var rs = localStorage.getItem(LS_SALES);
     sales = rs ? JSON.parse(rs) : [];
   } catch (e) {
     inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
@@ -761,38 +756,37 @@ function loadData() {
 function renderAll() {
   renderEsencias(); renderLiquidos(); renderBotellas(); renderAtomizadores();
   syncSelects(); calcFormula(); renderHistorial();
-  const n = inventory.esencias.length;
+  var n = inventory.esencias.length;
   $('statTot').textContent = n + (n === 1 ? ' esencia' : ' esencias');
 }
 
 function renderEsencias() {
   $('countEss').textContent = inventory.esencias.length;
-  const wrap = $('listEss');
+  var wrap = $('listEss');
   if (!inventory.esencias.length) { wrap.innerHTML = '<p class="empty">Sin esencias registradas</p>'; return; }
-  wrap.innerHTML = inventory.esencias.map(e => {
-    const valor = e.stockMl * (e.costoMl || 0);
-    return `
-    <div class="row">
-      <div class="row-main">
-        <div class="row-title">${esc(e.nombre)}</div>
-        <div class="row-sub ${e.stockMl < UMBRAL.esenciaMl ? 'is-low' : ''}">${fmt(e.stockMl)} ml${e.stockMl < UMBRAL.esenciaMl ? ' · stock bajo' : ''}</div>
-        <div class="row-sub2">${money(e.costoMl)}/ml · Valor: ${money(valor)}</div>
-      </div>
-      <div class="row-actions">
-        <button class="icon-btn" onclick="editEsencia('${e.id}')" title="Editar">✎</button>
-        <button class="icon-btn danger" onclick="delEsencia('${e.id}')" title="Eliminar">✕</button>
-      </div>
-    </div>`;
+  wrap.innerHTML = inventory.esencias.map(function(e){
+    var valor = e.stockMl * (e.costoMl || 0);
+    return '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + esc(e.nombre) + '</div>' +
+        '<div class="row-sub ' + (e.stockMl < UMBRAL.esenciaMl ? 'is-low' : '') + '">' + fmt(e.stockMl) + ' ml' + (e.stockMl < UMBRAL.esenciaMl ? ' · stock bajo' : '') + '</div>' +
+        '<div class="row-sub2">' + money(e.costoMl) + '/ml · Valor: ' + money(valor) + '</div>' +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="icon-btn" onclick="editEsencia(\'' + e.id + '\')" title="Editar">✎</button>' +
+        '<button class="icon-btn danger" onclick="delEsencia(\'' + e.id + '\')" title="Eliminar">✕</button>' +
+      '</div></div>';
   }).join('');
 }
 
 function addEsencia() {
-  const n  = $('essName').value.trim();
-  const ml = num($('essMl').value);
-  const co = num($('essCosto').value);
+  var n  = $('essName').value.trim();
+  var ml = num($('essMl').value);
+  var co = num($('essCosto').value);
   if (!n) return toast('Escribe el nombre de la esencia');
   if (ml <= 0) return toast('Introduce un stock válido');
-  const ex = inventory.esencias.find(e => e.nombre.toLowerCase() === n.toLowerCase());
+  var ex = null;
+  for (var i = 0; i < inventory.esencias.length; i++) { if (inventory.esencias[i].nombre.toLowerCase() === n.toLowerCase()) { ex = inventory.esencias[i]; break; } }
   if (ex) { ex.stockMl += ml; if (co > 0) ex.costoMl = co; }
   else inventory.esencias.push({ id: uid(), nombre: n, stockMl: ml, costoMl: co });
   $('essName').value = ''; $('essMl').value = 100; $('essCosto').value = '';
@@ -801,224 +795,236 @@ function addEsencia() {
 }
 
 function editEsencia(id) {
-  const e = inventory.esencias.find(x => x.id === id);
+  var e = null;
+  for (var i = 0; i < inventory.esencias.length; i++) { if (inventory.esencias[i].id === id) { e = inventory.esencias[i]; break; } }
   if (!e) return;
   openModal('Editar esencia', [
     { key:'nombre',  label:'Nombre',       type:'text',   value:e.nombre },
     { key:'stockMl', label:'Stock (ml)',   type:'number', value:e.stockMl, step:'0.01' },
     { key:'costoMl', label:'Costo ($/ml)', type:'number', value:e.costoMl || 0, step:'0.01' }
-  ], d => {
-    if (!d.nombre) return toast('Nombre requerido'), false;
+  ], function(d){
+    if (!d.nombre) { toast('Nombre requerido'); return false; }
     e.nombre = d.nombre; e.stockMl = num(d.stockMl); e.costoMl = num(d.costoMl);
     saveInv(); toast('Esencia actualizada');
   });
 }
 
 function delEsencia(id) {
-  const e = inventory.esencias.find(x => x.id === id);
-  if (!e || !confirm(`¿Eliminar "${e.nombre}" del inventario?`)) return;
-  inventory.esencias = inventory.esencias.filter(x => x.id !== id);
+  var e = null;
+  for (var i = 0; i < inventory.esencias.length; i++) { if (inventory.esencias[i].id === id) { e = inventory.esencias[i]; break; } }
+  if (!e || !confirm('¿Eliminar "' + e.nombre + '" del inventario?')) return;
+  inventory.esencias = inventory.esencias.filter(function(x){ return x.id !== id; });
   saveInv(); toast('Esencia eliminada');
 }
 
 function renderLiquidos() {
-  const g = $('liqGrid');
+  var g = $('liqGrid');
   if (!g.dataset.built) {
-    g.innerHTML = LIQUIDOS.map(l => `
-      <div class="liq">
-        <div class="liq-name">${esc(l.label)}</div>
-        <div class="liq-row">
-          <input id="liq-${l.key}" class="input" type="number" inputmode="decimal" value="0" placeholder="ml">
-          <button class="btn btn-sm" onclick="addLiq('${l.key}')">+</button>
-        </div>
-        <div class="liq-cost-label">Costo $/ml</div>
-        <input id="costo-${l.key}" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01"
-               oninput="setCostoLiq('${l.key}', this.value)">
-        <div class="liq-stock" id="stock-${l.key}">0 ml</div>
-      </div>`).join('');
+    g.innerHTML = LIQUIDOS.map(function(l){
+      return '<div class="liq">' +
+        '<div class="liq-name">' + esc(l.label) + '</div>' +
+        '<div class="liq-row">' +
+          '<input id="liq-' + l.key + '" class="input" type="number" inputmode="decimal" value="0" placeholder="ml">' +
+          '<button class="btn btn-sm" onclick="addLiq(\'' + l.key + '\')">+</button>' +
+        '</div>' +
+        '<div class="liq-cost-label">Costo $/ml</div>' +
+        '<input id="costo-' + l.key + '" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01" oninput="setCostoLiq(\'' + l.key + '\', this.value)">' +
+        '<div class="liq-stock" id="stock-' + l.key + '">0 ml</div>' +
+      '</div>';
+    }).join('');
     g.dataset.built = '1';
-    LIQUIDOS.forEach(l => { $('costo-' + l.key).value = inventory.costosLiquidos[l.key] || ''; });
+    LIQUIDOS.forEach(function(l){ $('costo-' + l.key).value = inventory.costosLiquidos[l.key] || ''; });
   }
-  LIQUIDOS.forEach(l => {
-    const c = inventory.costosLiquidos[l.key] || 0;
-    const v = inventory.liquidos[l.key] * c;
+  LIQUIDOS.forEach(function(l){
+    var c = inventory.costosLiquidos[l.key] || 0;
+    var v = inventory.liquidos[l.key] * c;
     $('stock-' + l.key).textContent = fmt(inventory.liquidos[l.key]) + ' ml · ' + money(c) + '/ml · ' + money(v);
   });
 }
 
 function addLiq(key) {
-  const v = num($('liq-' + key).value);
+  var v = num($('liq-' + key).value);
   if (v <= 0) return toast('Cantidad no válida');
   inventory.liquidos[key] += v;
   $('liq-' + key).value = 0;
   saveInv();
-  const lbl = (LIQUIDOS.find(l => l.key === key) || {}).label || key;
-  toast(`${lbl} +${fmt(v)} ml`);
+  var lbl = ''; LIQUIDOS.forEach(function(l){ if (l.key === key) lbl = l.label; });
+  toast(lbl + ' +' + fmt(v) + ' ml');
 }
 
 function setCostoLiq(key, val) {
   inventory.costosLiquidos[key] = num(val);
   saveInvSilent();
-  const c = num(val);
-  const v = inventory.liquidos[key] * c;
+  var c = num(val);
+  var v = inventory.liquidos[key] * c;
   $('stock-' + key).textContent = fmt(inventory.liquidos[key]) + ' ml · ' + money(c) + '/ml · ' + money(v);
   calcFormula();
 }
 
 function renderBotellas() {
   $('countBot').textContent = inventory.botellas.length;
-  const wrap = $('listBot');
+  var wrap = $('listBot');
   if (!inventory.botellas.length) { wrap.innerHTML = '<p class="empty">Sin frascos. Añade tu primer modelo.</p>'; return; }
-  wrap.innerHTML = inventory.botellas.map(b => `
-    <div class="row">
-      <div class="row-main">
-        <div class="row-title">${esc(b.modelo)}</div>
-        <div class="chips chips-mini">
-          ${b.variantes.length
-            ? b.variantes.map(v => `
-                <button class="variant ${v.stock < UMBRAL.frascoU ? 'low' : ''}" onclick="editVariante('${b.id}','${v.id}')">
-                  ${v.tamano} ml · ${v.stock} u · ${money(v.costo || 0)}
-                </button>`).join('')
-            : '<span class="row-sub" style="color:rgba(245,241,232,.35)">Sin tamaños</span>'}
-        </div>
-      </div>
-      <div class="row-actions">
-        <button class="icon-btn" onclick="addVariante('${b.id}')" title="Añadir tamaño">+</button>
-        <button class="icon-btn" onclick="editModelo('${b.id}')" title="Renombrar">✎</button>
-        <button class="icon-btn danger" onclick="delModelo('${b.id}')" title="Eliminar modelo">✕</button>
-      </div>
-    </div>`).join('');
+  wrap.innerHTML = inventory.botellas.map(function(b){
+    var varHtml = b.variantes.length
+      ? b.variantes.map(function(v){
+          return '<button class="variant ' + (v.stock < UMBRAL.frascoU ? 'low' : '') + '" onclick="editVariante(\'' + b.id + '\',\'' + v.id + '\')">' +
+            v.tamano + ' ml · ' + v.stock + ' u · ' + money(v.costo || 0) +
+          '</button>';
+        }).join('')
+      : '<span class="row-sub" style="color:rgba(245,241,232,.35)">Sin tamaños</span>';
+    return '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + esc(b.modelo) + '</div>' +
+        '<div class="chips chips-mini">' + varHtml + '</div>' +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="icon-btn" onclick="addVariante(\'' + b.id + '\')" title="Añadir tamaño">+</button>' +
+        '<button class="icon-btn" onclick="editModelo(\'' + b.id + '\')" title="Renombrar">✎</button>' +
+        '<button class="icon-btn danger" onclick="delModelo(\'' + b.id + '\')" title="Eliminar">✕</button>' +
+      '</div></div>';
+  }).join('');
 }
 
 function addFrasco() {
-  const modelo = $('botModelo').value.trim();
-  const tam = num($('botTam').value);
-  const stock = num($('botStock').value);
-  const costo = num($('botCosto').value);
+  var modelo = $('botModelo').value.trim();
+  var tam = num($('botTam').value);
+  var stock = num($('botStock').value);
+  var costo = num($('botCosto').value);
   if (!modelo) return toast('Escribe el modelo del frasco');
   if (tam <= 0) return toast('Tamaño no válido');
   if (stock < 0) return toast('Stock no válido');
-  let b = inventory.botellas.find(x => x.modelo.toLowerCase() === modelo.toLowerCase());
-  let existia = !!b;
-  if (!b) { b = { id: uid(), modelo, variantes: [] }; inventory.botellas.push(b); }
-  const v = b.variantes.find(x => x.tamano === tam);
+  var b = null;
+  for (var i = 0; i < inventory.botellas.length; i++) { if (inventory.botellas[i].modelo.toLowerCase() === modelo.toLowerCase()) { b = inventory.botellas[i]; break; } }
+  var existia = !!b;
+  if (!b) { b = { id: uid(), modelo: modelo, variantes: [] }; inventory.botellas.push(b); }
+  var v = null;
+  for (var j = 0; j < b.variantes.length; j++) { if (b.variantes[j].tamano === tam) { v = b.variantes[j]; break; } }
   if (v) { v.stock += stock; if (costo > 0) v.costo = costo; }
-  else b.variantes.push({ id: uid(), tamano: tam, stock, costo });
-  b.variantes.sort((a, c) => a.tamano - c.tamano);
+  else b.variantes.push({ id: uid(), tamano: tam, stock: stock, costo: costo });
+  b.variantes.sort(function(a, c){ return a.tamano - c.tamano; });
   $('botModelo').value = ''; $('botCosto').value = '';
   saveInv();
   toast(existia ? (v ? 'Stock actualizado' : 'Tamaño añadido') : 'Modelo añadido');
 }
 
 function addVariante(bid) {
-  const b = inventory.botellas.find(x => x.id === bid);
+  var b = null;
+  for (var i = 0; i < inventory.botellas.length; i++) { if (inventory.botellas[i].id === bid) { b = inventory.botellas[i]; break; } }
   if (!b) return;
-  openModal(`Nuevo tamaño · ${b.modelo}`, [
+  openModal('Nuevo tamaño · ' + b.modelo, [
     { key:'tamano', label:'Tamaño (ml)',       type:'number', value:50, step:'1' },
     { key:'stock',  label:'Unidades en stock', type:'number', value:10, step:'1' },
     { key:'costo',  label:'Costo ($/unidad)',  type:'number', value:0, step:'0.01' }
-  ], d => {
-    const t = num(d.tamano), s = num(d.stock), c = num(d.costo);
-    if (t <= 0) return toast('Tamaño no válido'), false;
-    const ex = b.variantes.find(v => v.tamano === t);
+  ], function(d){
+    var t = num(d.tamano), s = num(d.stock), c = num(d.costo);
+    if (t <= 0) { toast('Tamaño no válido'); return false; }
+    var ex = null;
+    for (var k = 0; k < b.variantes.length; k++) { if (b.variantes[k].tamano === t) { ex = b.variantes[k]; break; } }
     if (ex) { ex.stock += s; if (c > 0) ex.costo = c; }
     else b.variantes.push({ id: uid(), tamano: t, stock: s, costo: c });
-    b.variantes.sort((a, c2) => a.tamano - c2.tamano);
+    b.variantes.sort(function(a, c2){ return a.tamano - c2.tamano; });
     saveInv(); toast('Tamaño guardado');
   });
 }
 
 function editVariante(bid, vid) {
-  const b = inventory.botellas.find(x => x.id === bid);
-  const v = b && b.variantes.find(x => x.id === vid);
+  var b = null;
+  for (var i = 0; i < inventory.botellas.length; i++) { if (inventory.botellas[i].id === bid) { b = inventory.botellas[i]; break; } }
+  if (!b) return;
+  var v = null;
+  for (var j = 0; j < b.variantes.length; j++) { if (b.variantes[j].id === vid) { v = b.variantes[j]; break; } }
   if (!v) return;
-  openModal(`Editar ${v.tamano} ml · ${b.modelo}`, [
+  openModal('Editar ' + v.tamano + ' ml · ' + b.modelo, [
     { key:'tamano', label:'Tamaño (ml)',       type:'number', value:v.tamano, step:'1' },
     { key:'stock',  label:'Unidades en stock', type:'number', value:v.stock,  step:'1' },
     { key:'costo',  label:'Costo ($/unidad)',  type:'number', value:v.costo || 0, step:'0.01' }
-  ], d => {
-    const t = num(d.tamano), s = num(d.stock), c = num(d.costo);
-    if (t <= 0) return toast('Tamaño no válido'), false;
+  ], function(d){
+    var t = num(d.tamano), s = num(d.stock), c = num(d.costo);
+    if (t <= 0) { toast('Tamaño no válido'); return false; }
     v.tamano = t; v.stock = s; v.costo = c;
-    b.variantes.sort((a, c2) => a.tamano - c2.tamano);
+    b.variantes.sort(function(a, c2){ return a.tamano - c2.tamano; });
     saveInv(); toast('Tamaño actualizado');
-  }, { okText:'Guardar', onDelete: () => {
-      b.variantes = b.variantes.filter(x => x.id !== vid);
+  }, { okText:'Guardar', onDelete: function(){
+      b.variantes = b.variantes.filter(function(x){ return x.id !== vid; });
       saveInv(); toast('Tamaño eliminado');
   }});
 }
 
 function editModelo(bid) {
-  const b = inventory.botellas.find(x => x.id === bid);
+  var b = null;
+  for (var i = 0; i < inventory.botellas.length; i++) { if (inventory.botellas[i].id === bid) { b = inventory.botellas[i]; break; } }
   if (!b) return;
   openModal('Renombrar modelo', [
     { key:'modelo', label:'Nombre del modelo', type:'text', value:b.modelo }
-  ], d => {
-    if (!d.modelo) return toast('Nombre requerido'), false;
+  ], function(d){
+    if (!d.modelo) { toast('Nombre requerido'); return false; }
     b.modelo = d.modelo;
     saveInv(); toast('Modelo actualizado');
   });
 }
 
 function delModelo(bid) {
-  const b = inventory.botellas.find(x => x.id === bid);
-  if (!b || !confirm(`¿Eliminar "${b.modelo}" y todos sus tamaños?`)) return;
-  inventory.botellas = inventory.botellas.filter(x => x.id !== bid);
+  var b = null;
+  for (var i = 0; i < inventory.botellas.length; i++) { if (inventory.botellas[i].id === bid) { b = inventory.botellas[i]; break; } }
+  if (!b || !confirm('¿Eliminar "' + b.modelo + '" y todos sus tamaños?')) return;
+  inventory.botellas = inventory.botellas.filter(function(x){ return x.id !== bid; });
   saveInv(); toast('Modelo eliminado');
 }
 
 function renderAtomizadores() {
   $('countAto').textContent = inventory.atomizadores.length;
-  const wrap = $('listAto');
+  var wrap = $('listAto');
   if (!inventory.atomizadores.length) { wrap.innerHTML = '<p class="empty">Sin atomizadores registrados</p>'; return; }
-  wrap.innerHTML = inventory.atomizadores.map(a => {
-    const valor = a.stock * (a.costo || 0);
-    return `
-    <div class="row">
-      <div class="row-main">
-        <div class="row-title">${esc(a.modelo)}</div>
-        <div class="row-sub ${a.stock < UMBRAL.atomU ? 'is-low' : ''}">${a.stock} u${a.stock < UMBRAL.atomU ? ' · stock bajo' : ''}</div>
-        <div class="row-sub2">${money(a.costo)}/u · Valor: ${money(valor)}</div>
-      </div>
-      <div class="row-actions">
-        <button class="icon-btn" onclick="editAtom('${a.id}')" title="Editar">✎</button>
-        <button class="icon-btn danger" onclick="delAtom('${a.id}')" title="Eliminar">✕</button>
-      </div>
-    </div>`;
+  wrap.innerHTML = inventory.atomizadores.map(function(a){
+    var valor = a.stock * (a.costo || 0);
+    return '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + esc(a.modelo) + '</div>' +
+        '<div class="row-sub ' + (a.stock < UMBRAL.atomU ? 'is-low' : '') + '">' + a.stock + ' u' + (a.stock < UMBRAL.atomU ? ' · stock bajo' : '') + '</div>' +
+        '<div class="row-sub2">' + money(a.costo) + '/u · Valor: ' + money(valor) + '</div>' +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="icon-btn" onclick="editAtom(\'' + a.id + '\')" title="Editar">✎</button>' +
+        '<button class="icon-btn danger" onclick="delAtom(\'' + a.id + '\')" title="Eliminar">✕</button>' +
+      '</div></div>';
   }).join('');
 }
 
 function addAtom() {
-  const modelo = $('atoModelo').value.trim();
-  const stock = num($('atoStock').value);
-  const costo = num($('atoCosto').value);
+  var modelo = $('atoModelo').value.trim();
+  var stock = num($('atoStock').value);
+  var costo = num($('atoCosto').value);
   if (!modelo) return toast('Escribe el modelo');
-  const ex = inventory.atomizadores.find(a => a.modelo.toLowerCase() === modelo.toLowerCase());
+  var ex = null;
+  for (var i = 0; i < inventory.atomizadores.length; i++) { if (inventory.atomizadores[i].modelo.toLowerCase() === modelo.toLowerCase()) { ex = inventory.atomizadores[i]; break; } }
   if (ex) { ex.stock += stock; if (costo > 0) ex.costo = costo; }
-  else inventory.atomizadores.push({ id: uid(), modelo, stock, costo });
+  else inventory.atomizadores.push({ id: uid(), modelo: modelo, stock: stock, costo: costo });
   $('atoModelo').value = ''; $('atoStock').value = 20; $('atoCosto').value = '';
   saveInv();
   toast(ex ? 'Stock actualizado' : 'Atomizador añadido');
 }
 
 function editAtom(id) {
-  const a = inventory.atomizadores.find(x => x.id === id);
+  var a = null;
+  for (var i = 0; i < inventory.atomizadores.length; i++) { if (inventory.atomizadores[i].id === id) { a = inventory.atomizadores[i]; break; } }
   if (!a) return;
   openModal('Editar atomizador', [
     { key:'modelo', label:'Modelo',           type:'text',   value:a.modelo },
     { key:'stock',  label:'Stock',            type:'number', value:a.stock, step:'1' },
     { key:'costo',  label:'Costo ($/unidad)', type:'number', value:a.costo || 0, step:'0.01' }
-  ], d => {
-    if (!d.modelo) return toast('Modelo requerido'), false;
+  ], function(d){
+    if (!d.modelo) { toast('Modelo requerido'); return false; }
     a.modelo = d.modelo; a.stock = num(d.stock); a.costo = num(d.costo);
     saveInv(); toast('Atomizador actualizado');
   });
 }
 
 function delAtom(id) {
-  const a = inventory.atomizadores.find(x => x.id === id);
-  if (!a || !confirm(`¿Eliminar "${a.modelo}"?`)) return;
-  inventory.atomizadores = inventory.atomizadores.filter(x => x.id !== id);
+  var a = null;
+  for (var i = 0; i < inventory.atomizadores.length; i++) { if (inventory.atomizadores[i].id === id) { a = inventory.atomizadores[i]; break; } }
+  if (!a || !confirm('¿Eliminar "' + a.modelo + '"?')) return;
+  inventory.atomizadores = inventory.atomizadores.filter(function(x){ return x.id !== id; });
   saveInv(); toast('Atomizador eliminado');
 }
 
@@ -1027,117 +1033,122 @@ function delAtom(id) {
    ========================================================= */
 function syncSelects() {
   if (ssEsencia) {
-    ssEsencia.setOptions(inventory.esencias.map(e => ({
-      value: e.id, label: e.nombre,
-      sub: fmt(e.stockMl) + ' ml · ' + money(e.costoMl) + '/ml'
-    })));
+    ssEsencia.setOptions(inventory.esencias.map(function(e){
+      return { value: e.id, label: e.nombre, sub: fmt(e.stockMl) + ' ml · ' + money(e.costoMl) + '/ml' };
+    }));
   }
   fillSelect($('fEss'),
     '<option value="all">Todas las esencias</option>' +
-    inventory.esencias.map(e => `<option value="${esc(e.nombre)}">${esc(e.nombre)}</option>`).join(''), true);
+    inventory.esencias.map(function(e){ return '<option value="' + esc(e.nombre) + '">' + esc(e.nombre) + '</option>'; }).join(''), true);
 
   if (ssBotModelo) {
-    ssBotModelo.setOptions([
-      { value: 'sin', label: 'Sin frasco', sub: '' },
-      ...inventory.botellas.map(b => ({
+    var modelOpts = [{ value: 'sin', label: 'Sin frasco', sub: '' }];
+    inventory.botellas.forEach(function(b){
+      var totalU = 0;
+      b.variantes.forEach(function(v){ totalU += v.stock; });
+      modelOpts.push({
         value: b.id, label: b.modelo,
-        sub: b.variantes.length
-          ? b.variantes.length + ' tamaño' + (b.variantes.length === 1 ? '' : 's') + ' · ' + b.variantes.reduce((a, v) => a + v.stock, 0) + ' u'
-          : 'Sin tamaños'
-      }))
-    ]);
+        sub: b.variantes.length ? b.variantes.length + ' tamaño' + (b.variantes.length === 1 ? '' : 's') + ' · ' + totalU + ' u' : 'Sin tamaños'
+      });
+    });
+    ssBotModelo.setOptions(modelOpts);
   }
   renderVariantesVenta();
   if (ssAtom) {
-    ssAtom.setOptions(inventory.atomizadores.map(a => ({
-      value: a.id, label: a.modelo,
-      sub: a.stock + ' u · ' + money(a.costo || 0)
-    })));
+    ssAtom.setOptions(inventory.atomizadores.map(function(a){
+      return { value: a.id, label: a.modelo, sub: a.stock + ' u · ' + money(a.costo || 0) };
+    }));
   }
 }
 
 function renderVariantesVenta() {
-  const modelId = ssBotModelo ? ssBotModelo.getValue() : '';
-  const sel = $('vBotellaTam');
-  const m = inventory.botellas.find(b => b.id === modelId);
+  var modelId = ssBotModelo ? ssBotModelo.getValue() : '';
+  var sel = $('vBotellaTam');
+  var m = null;
+  for (var i = 0; i < inventory.botellas.length; i++) { if (inventory.botellas[i].id === modelId) { m = inventory.botellas[i]; break; } }
   if (!m) { sel.innerHTML = '<option value="">—</option>'; sel.disabled = true; return; }
   sel.disabled = false;
   fillSelect(sel, m.variantes.length
-    ? m.variantes.map(v => `<option value="${v.id}">${v.tamano} ml · ${v.stock} u · ${money(v.costo)}</option>`).join('')
+    ? m.variantes.map(function(v){ return '<option value="' + v.id + '">' + v.tamano + ' ml · ' + v.stock + ' u · ' + money(v.costo) + '</option>'; }).join('')
     : '<option value="">Sin tamaños</option>', true);
 }
 
 /* =========================================================
    FÓRMULA
    ========================================================= */
-const TAMANOS = [10, 30, 50, 60, 100, 120, 320];
-const tamState = { value: 50, custom: false };
+var TAMANOS = [10, 30, 50, 60, 100, 120, 320];
+var tamState = { value: 50, custom: false };
 
 function renderTamChips() {
   $('vTamChips').innerHTML =
-    TAMANOS.map(t => `<button type="button" class="chip ${(!tamState.custom && tamState.value === t) ? 'active' : ''}" onclick="setTam(${t})">${t} ml</button>`).join('') +
-    `<button type="button" class="chip ${tamState.custom ? 'active' : ''}" onclick="setCustom()">Otro</button>`;
+    TAMANOS.map(function(t){
+      return '<button type="button" class="chip ' + ((!tamState.custom && tamState.value === t) ? 'active' : '') + '" onclick="setTam(' + t + ')">' + t + ' ml</button>';
+    }).join('') +
+    '<button type="button" class="chip ' + (tamState.custom ? 'active' : '') + '" onclick="setCustom()">Otro</button>';
 }
 function setTam(v) { tamState.value = v; tamState.custom = false; $('vTamCustom').style.display = 'none'; renderTamChips(); calcFormula(); }
 function setCustom() { tamState.custom = true; $('vTamCustom').style.display = 'block'; tamState.value = num($('vTamCustom').value); renderTamChips(); calcFormula(); }
 function getTamano() { return tamState.custom ? num($('vTamCustom').value) : tamState.value; }
 
 function calcularCostos(ess, tot, botV, cant, usaAtom, atom) {
-  const es   = tot.es   * (ess?.costoMl || 0);
-  const alc  = tot.alc  * (inventory.costosLiquidos.perfumol || 0);
-  const musk = tot.musk * (inventory.costosLiquidos.musk || 0);
-  const ipm  = tot.ipm  * (inventory.costosLiquidos.ipm || 0);
-  const dpg  = tot.dpg  * (inventory.costosLiquidos.dpg || 0);
-  const frasco = (botV && cant) ? cant * (botV.costo || 0) : 0;
-  const atomC  = (usaAtom && atom && cant) ? cant * (atom.costo || 0) : 0;
-  const total = es + alc + musk + ipm + dpg + frasco + atomC;
-  return { es, alc, musk, ipm, dpg, frasco, atom: atomC, total };
+  var es   = tot.es   * ((ess && ess.costoMl) || 0);
+  var alc  = tot.alc  * (inventory.costosLiquidos.perfumol || 0);
+  var musk = tot.musk * (inventory.costosLiquidos.musk || 0);
+  var ipm  = tot.ipm  * (inventory.costosLiquidos.ipm || 0);
+  var dpg  = tot.dpg  * (inventory.costosLiquidos.dpg || 0);
+  var frasco = (botV && cant) ? cant * (botV.costo || 0) : 0;
+  var atomC  = (usaAtom && atom && cant) ? cant * (atom.costo || 0) : 0;
+  var total = es + alc + musk + ipm + dpg + frasco + atomC;
+  return { es: es, alc: alc, musk: musk, ipm: ipm, dpg: dpg, frasco: frasco, atom: atomC, total: total };
 }
 
 function calcFormula() {
-  const pctEss  = num($('pctEss').value);
-  const pctMusk = num($('pctMusk').value);
-  const pctIpm  = num($('pctIpm').value);
-  const pctDpg  = num($('pctDpg').value);
-  const sum = pctEss + pctMusk + pctIpm + pctDpg;
-  const pctAlc = Math.max(0, 100 - sum);
-  const fij = pctMusk + pctIpm + pctDpg;
+  var pctEss  = num($('pctEss').value);
+  var pctMusk = num($('pctMusk').value);
+  var pctIpm  = num($('pctIpm').value);
+  var pctDpg  = num($('pctDpg').value);
+  var sum = pctEss + pctMusk + pctIpm + pctDpg;
+  var pctAlc = Math.max(0, 100 - sum);
+  var fij = pctMusk + pctIpm + pctDpg;
 
   $('pctAlc').textContent = pctAlc.toFixed(2) + '%';
   $('fijTot').textContent = fij.toFixed(2) + '%';
 
-  const alertEl = $('alertAlc');
+  var alertEl = $('alertAlc');
   if (sum > 100) { alertEl.textContent = '⚠ La fórmula supera el 100%'; alertEl.style.color = '#ff8a8a'; }
   else if (pctAlc < 50) { alertEl.textContent = '⚠ Alcohol <50% · riesgo de sofocación'; alertEl.style.color = '#ff8a8a'; }
   else if (fij > 8) { alertEl.textContent = '⚠ Fijadores >8% · no permitido'; alertEl.style.color = '#ff8a8a'; }
   else if (fij > 4) { alertEl.textContent = 'Nota: fijadores >4% solo perfiles volátiles'; alertEl.style.color = '#D4AF37'; }
   else { alertEl.textContent = '✓ ISF 0.2 OK · fijación mínima'; alertEl.style.color = '#7CFF9E'; }
 
-  const tam = getTamano();
-  const cant = parseInt($('vCant').value, 10) || 0;
-  const essId = ssEsencia ? ssEsencia.getValue() : '';
-  const ess = inventory.esencias.find(e => e.id === essId);
-  const botId = ssBotModelo ? ssBotModelo.getValue() : '';
-  const botM = inventory.botellas.find(b => b.id === botId);
-  const botV = botM ? botM.variantes.find(v => v.id === $('vBotellaTam').value) : null;
-  const usaAtom = $('vUsaAtom').checked;
-  const atomId = ssAtom ? ssAtom.getValue() : '';
-  const atom = inventory.atomizadores.find(a => a.id === atomId);
+  var tam = getTamano();
+  var cant = parseInt($('vCant').value, 10) || 0;
+  var essId = ssEsencia ? ssEsencia.getValue() : '';
+  var ess = null;
+  for (var i = 0; i < inventory.esencias.length; i++) { if (inventory.esencias[i].id === essId) { ess = inventory.esencias[i]; break; } }
+  var botId = ssBotModelo ? ssBotModelo.getValue() : '';
+  var botM = null;
+  for (var j = 0; j < inventory.botellas.length; j++) { if (inventory.botellas[j].id === botId) { botM = inventory.botellas[j]; break; } }
+  var botV = botM ? (function(){ for (var k = 0; k < botM.variantes.length; k++) { if (botM.variantes[k].id === $('vBotellaTam').value) return botM.variantes[k]; } return null; })() : null;
+  var usaAtom = $('vUsaAtom').checked;
+  var atomId = ssAtom ? ssAtom.getValue() : '';
+  var atom = null;
+  for (var m = 0; m < inventory.atomizadores.length; m++) { if (inventory.atomizadores[m].id === atomId) { atom = inventory.atomizadores[m]; break; } }
 
-  const precioTotal = num($('vPrecio').value);
-  if (precioTotal > 0 && cant > 0) $('vPrecioUnit').textContent = `≈ ${money(precioTotal / cant)} por unidad`;
+  var precioTotal = num($('vPrecio').value);
+  if (precioTotal > 0 && cant > 0) $('vPrecioUnit').textContent = '≈ ' + money(precioTotal / cant) + ' por unidad';
   else $('vPrecioUnit').textContent = '';
 
-  const prev = $('preview');
+  var prev = $('preview');
   if (!tam || !cant) {
     prev.innerHTML = '<div style="font-size:12px;color:rgba(245,241,232,.4);text-align:center;padding:8px 0">Selecciona tamaño y cantidad para ver el consumo</div>';
     return;
   }
 
-  const per = { es: tam*pctEss/100, musk: tam*pctMusk/100, ipm: tam*pctIpm/100, dpg: tam*pctDpg/100, alc: tam*pctAlc/100 };
-  const tot = { es: per.es*cant, musk: per.musk*cant, ipm: per.ipm*cant, dpg: per.dpg*cant, alc: per.alc*cant };
+  var per = { es: tam*pctEss/100, musk: tam*pctMusk/100, ipm: tam*pctIpm/100, dpg: tam*pctDpg/100, alc: tam*pctAlc/100 };
+  var tot = { es: per.es*cant, musk: per.musk*cant, ipm: per.ipm*cant, dpg: per.dpg*cant, alc: per.alc*cant };
 
-  const ck = {
+  var ck = {
     es: ess ? ess.stockMl >= tot.es : false,
     alc: inventory.liquidos.perfumol >= tot.alc,
     musk: inventory.liquidos.musk >= tot.musk,
@@ -1146,88 +1157,89 @@ function calcFormula() {
     bot: !botM || botM.id === 'sin' || (botV ? botV.stock >= cant : false),
     ato: !usaAtom || !atom || atom.stock >= cant
   };
-  const allOk = !!ess && Object.values(ck).every(Boolean);
-  const cls = ok => ok ? 'ok' : 'bad';
-  const cos = calcularCostos(ess, tot, botV, cant, usaAtom, atom);
-  const ganancia = precioTotal - cos.total;
-  const margen = precioTotal > 0 ? (ganancia / precioTotal) * 100 : 0;
+  var allOk = !!ess && Object.values(ck).every(Boolean);
+  var cls = function(ok){ return ok ? 'ok' : 'bad'; };
+  var cos = calcularCostos(ess, tot, botV, cant, usaAtom, atom);
+  var ganancia = precioTotal - cos.total;
+  var margen = precioTotal > 0 ? (ganancia / precioTotal) * 100 : 0;
 
-  const econHtml = `
-    <div class="pv-econ">
-      <div class="pv-econ-title">ANÁLISIS ECONÓMICO</div>
-      <div class="pv-econ-line"><span>Esencia</span><b>${money(cos.es)}</b></div>
-      <div class="pv-econ-line"><span>Alcohol</span><b>${money(cos.alc)}</b></div>
-      <div class="pv-econ-line"><span>Musk + IPM + DPG</span><b>${money(cos.musk + cos.ipm + cos.dpg)}</b></div>
-      ${cos.frasco > 0 ? `<div class="pv-econ-line"><span>Frascos</span><b>${money(cos.frasco)}</b></div>` : ''}
-      ${cos.atom > 0 ? `<div class="pv-econ-line"><span>Atomizadores</span><b>${money(cos.atom)}</b></div>` : ''}
-      <div class="pv-econ-line" style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;margin-top:6px">
-        <span>Costo de producción</span><b class="gold">${money(cos.total)}</b>
-      </div>
-      ${precioTotal > 0 ? `
-        <div class="pv-econ-line"><span>Precio de venta</span><b>${money(precioTotal)}</b></div>
-        <div class="pv-econ-line big"><span>Ganancia</span><b class="${ganancia >= 0 ? 'ok' : 'bad'}">${money(ganancia)}</b></div>
-        <div class="pv-econ-line"><span>Margen</span><b class="${ganancia >= 0 ? 'ok' : 'bad'}">${pct(margen)}</b></div>
-      ` : `<div class="pv-econ-line"><span style="color:rgba(245,241,232,.35);font-style:italic">Introduce un precio de venta para ver la ganancia</span></div>`}
-    </div>`;
+  var econHtml = '<div class="pv-econ">' +
+    '<div class="pv-econ-title">ANÁLISIS ECONÓMICO</div>' +
+    '<div class="pv-econ-line"><span>Esencia</span><b>' + money(cos.es) + '</b></div>' +
+    '<div class="pv-econ-line"><span>Alcohol</span><b>' + money(cos.alc) + '</b></div>' +
+    '<div class="pv-econ-line"><span>Musk + IPM + DPG</span><b>' + money(cos.musk + cos.ipm + cos.dpg) + '</b></div>' +
+    (cos.frasco > 0 ? '<div class="pv-econ-line"><span>Frascos</span><b>' + money(cos.frasco) + '</b></div>' : '') +
+    (cos.atom > 0 ? '<div class="pv-econ-line"><span>Atomizadores</span><b>' + money(cos.atom) + '</b></div>' : '') +
+    '<div class="pv-econ-line" style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;margin-top:6px">' +
+      '<span>Costo de producción</span><b class="gold">' + money(cos.total) + '</b></div>' +
+    (precioTotal > 0
+      ? '<div class="pv-econ-line"><span>Precio de venta</span><b>' + money(precioTotal) + '</b></div>' +
+        '<div class="pv-econ-line big"><span>Ganancia</span><b class="' + (ganancia >= 0 ? 'ok' : 'bad') + '">' + money(ganancia) + '</b></div>' +
+        '<div class="pv-econ-line"><span>Margen</span><b class="' + (ganancia >= 0 ? 'ok' : 'bad') + '">' + pct(margen) + '</b></div>'
+      : '<div class="pv-econ-line"><span style="color:rgba(245,241,232,.35);font-style:italic">Introduce un precio de venta para ver la ganancia</span></div>') +
+    '</div>';
 
-  prev.innerHTML = `
-    <div class="pv-head">CONSUMO ESTIMADO ${ess ? '· ' + esc(ess.nombre).toUpperCase() : ''}</div>
-    <div class="pv-grid">
-      <div>
-        <div class="pv-col-title">POR FRASCO · ${tam} ML</div>
-        <div class="pv-line"><span>Esencia</span><b>${r2(per.es)} ml</b></div>
-        <div class="pv-line"><span>Perfumol</span><b>${r2(per.alc)} ml</b></div>
-        <div class="pv-line"><span>Musk</span><b>${r2(per.musk)} ml</b></div>
-        <div class="pv-line"><span>IPM</span><b>${r2(per.ipm)} ml</b></div>
-        <div class="pv-line"><span>DPG</span><b>${r2(per.dpg)} ml</b></div>
-      </div>
-      <div>
-        <div class="pv-col-title">TOTAL ×${cant} · ${(tam * cant).toFixed(0)} ML</div>
-        <div class="pv-line"><span>Esencia</span><b class="${cls(ck.es)}">${r2(tot.es)} ml${ess ? ' / ' + fmt(ess.stockMl) : ''}</b></div>
-        <div class="pv-line"><span>Perfumol</span><b class="${cls(ck.alc)}">${r2(tot.alc)} ml / ${fmt(inventory.liquidos.perfumol)}</b></div>
-        <div class="pv-line"><span>Musk</span><b class="${cls(ck.musk)}">${r2(tot.musk)} ml</b></div>
-        <div class="pv-line"><span>IPM</span><b class="${cls(ck.ipm)}">${r2(tot.ipm)} ml</b></div>
-        <div class="pv-line"><span>DPG</span><b class="${cls(ck.dpg)}">${r2(tot.dpg)} ml</b></div>
-        ${botM ? `<div class="pv-line"><span>Frasco</span><b class="${cls(ck.bot)}">${esc(botM.modelo)}${botV ? ' ' + botV.tamano + 'ml' : ''} ×${cant}</b></div>` : ''}
-        ${usaAtom && atom ? `<div class="pv-line"><span>Atomizador</span><b class="${cls(ck.ato)}">×${cant} / ${atom.stock} u</b></div>` : ''}
-      </div>
-    </div>
-    ${econHtml}
-    <div class="pv-status ${allOk ? 'good' : 'bad'}">
-      ${allOk ? '✓ Stock suficiente para registrar' : '✗ Stock insuficiente o falta seleccionar esencia'}
-    </div>`;
+  prev.innerHTML =
+    '<div class="pv-head">CONSUMO ESTIMADO ' + (ess ? '· ' + esc(ess.nombre).toUpperCase() : '') + '</div>' +
+    '<div class="pv-grid">' +
+      '<div>' +
+        '<div class="pv-col-title">POR FRASCO · ' + tam + ' ML</div>' +
+        '<div class="pv-line"><span>Esencia</span><b>' + r2(per.es) + ' ml</b></div>' +
+        '<div class="pv-line"><span>Perfumol</span><b>' + r2(per.alc) + ' ml</b></div>' +
+        '<div class="pv-line"><span>Musk</span><b>' + r2(per.musk) + ' ml</b></div>' +
+        '<div class="pv-line"><span>IPM</span><b>' + r2(per.ipm) + ' ml</b></div>' +
+        '<div class="pv-line"><span>DPG</span><b>' + r2(per.dpg) + ' ml</b></div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="pv-col-title">TOTAL ×' + cant + ' · ' + (tam * cant).toFixed(0) + ' ML</div>' +
+        '<div class="pv-line"><span>Esencia</span><b class="' + cls(ck.es) + '">' + r2(tot.es) + ' ml' + (ess ? ' / ' + fmt(ess.stockMl) : '') + '</b></div>' +
+        '<div class="pv-line"><span>Perfumol</span><b class="' + cls(ck.alc) + '">' + r2(tot.alc) + ' ml / ' + fmt(inventory.liquidos.perfumol) + '</b></div>' +
+        '<div class="pv-line"><span>Musk</span><b class="' + cls(ck.musk) + '">' + r2(tot.musk) + ' ml</b></div>' +
+        '<div class="pv-line"><span>IPM</span><b class="' + cls(ck.ipm) + '">' + r2(tot.ipm) + ' ml</b></div>' +
+        '<div class="pv-line"><span>DPG</span><b class="' + cls(ck.dpg) + '">' + r2(tot.dpg) + ' ml</b></div>' +
+        (botM ? '<div class="pv-line"><span>Frasco</span><b class="' + cls(ck.bot) + '">' + esc(botM.modelo) + (botV ? ' ' + botV.tamano + 'ml' : '') + ' ×' + cant + '</b></div>' : '') +
+        (usaAtom && atom ? '<div class="pv-line"><span>Atomizador</span><b class="' + cls(ck.ato) + '">×' + cant + ' / ' + atom.stock + ' u</b></div>' : '') +
+      '</div>' +
+    '</div>' +
+    econHtml +
+    '<div class="pv-status ' + (allOk ? 'good' : 'bad') + '">' +
+      (allOk ? '✓ Stock suficiente para registrar' : '✗ Stock insuficiente o falta seleccionar esencia') +
+    '</div>';
 }
 
 /* =========================================================
    REGISTRAR VENTA
    ========================================================= */
 function registrarVenta() {
-  const cliente = $('vCliente').value.trim();
-  const essId = ssEsencia ? ssEsencia.getValue() : '';
-  const ess = inventory.esencias.find(e => e.id === essId);
+  var cliente = $('vCliente').value.trim();
+  var essId = ssEsencia ? ssEsencia.getValue() : '';
+  var ess = null;
+  for (var i = 0; i < inventory.esencias.length; i++) { if (inventory.esencias[i].id === essId) { ess = inventory.esencias[i]; break; } }
   if (!ess) return toast('Selecciona una esencia');
 
-  const tam = getTamano();
-  const cant = parseInt($('vCant').value, 10) || 0;
+  var tam = getTamano();
+  var cant = parseInt($('vCant').value, 10) || 0;
   if (tam <= 0) return toast('Tamaño no válido');
   if (cant <= 0) return toast('Cantidad no válida');
 
-  const pctEss = num($('pctEss').value), pctMusk = num($('pctMusk').value);
-  const pctIpm = num($('pctIpm').value), pctDpg = num($('pctDpg').value);
-  const pctAlc = 100 - (pctEss + pctMusk + pctIpm + pctDpg);
-  const precioVenta = num($('vPrecio').value);
+  var pctEss = num($('pctEss').value), pctMusk = num($('pctMusk').value);
+  var pctIpm = num($('pctIpm').value), pctDpg = num($('pctDpg').value);
+  var pctAlc = 100 - (pctEss + pctMusk + pctIpm + pctDpg);
+  var precioVenta = num($('vPrecio').value);
 
   if (pctAlc < 0) return toast('La fórmula supera el 100%');
   if (pctAlc < 50 && !confirm('Alcohol por debajo del 50%. ¿Continuar de todas formas?')) return;
 
-  const botId = ssBotModelo ? ssBotModelo.getValue() : '';
-  const botM = inventory.botellas.find(b => b.id === botId);
-  const botV = botM ? botM.variantes.find(v => v.id === $('vBotellaTam').value) : null;
-  const usaAtom = $('vUsaAtom').checked;
-  const atomId = ssAtom ? ssAtom.getValue() : '';
-  const atom = inventory.atomizadores.find(a => a.id === atomId);
+  var botId = ssBotModelo ? ssBotModelo.getValue() : '';
+  var botM = null;
+  for (var j = 0; j < inventory.botellas.length; j++) { if (inventory.botellas[j].id === botId) { botM = inventory.botellas[j]; break; } }
+  var botV = botM ? (function(){ for (var k = 0; k < botM.variantes.length; k++) { if (botM.variantes[k].id === $('vBotellaTam').value) return botM.variantes[k]; } return null; })() : null;
+  var usaAtom = $('vUsaAtom').checked;
+  var atomId = ssAtom ? ssAtom.getValue() : '';
+  var atom = null;
+  for (var m = 0; m < inventory.atomizadores.length; m++) { if (inventory.atomizadores[m].id === atomId) { atom = inventory.atomizadores[m]; break; } }
 
-  const tot = { es: tam*pctEss/100*cant, musk: tam*pctMusk/100*cant, ipm: tam*pctIpm/100*cant, dpg: tam*pctDpg/100*cant, alc: tam*pctAlc/100*cant };
+  var tot = { es: tam*pctEss/100*cant, musk: tam*pctMusk/100*cant, ipm: tam*pctIpm/100*cant, dpg: tam*pctDpg/100*cant, alc: tam*pctAlc/100*cant };
 
   if (ess.stockMl < tot.es) return toast('Esencia insuficiente');
   if (inventory.liquidos.perfumol < tot.alc) return toast('Perfumol insuficiente');
@@ -1238,9 +1250,9 @@ function registrarVenta() {
   if (botV && botV.stock < cant) return toast('Frascos insuficientes');
   if (usaAtom && atom && atom.stock < cant) return toast('Atomizadores insuficientes');
 
-  const cos = calcularCostos(ess, tot, botV, cant, usaAtom, atom);
-  const ganancia = precioVenta - cos.total;
-  const margen = precioVenta > 0 ? (ganancia / precioVenta) * 100 : 0;
+  var cos = calcularCostos(ess, tot, botV, cant, usaAtom, atom);
+  var ganancia = precioVenta - cos.total;
+  var margen = precioVenta > 0 ? (ganancia / precioVenta) * 100 : 0;
 
   ess.stockMl -= tot.es;
   inventory.liquidos.perfumol -= tot.alc;
@@ -1251,10 +1263,10 @@ function registrarVenta() {
   if (usaAtom && atom) atom.stock -= cant;
 
   sales.unshift({
-    id: uid(), fecha: new Date().toISOString(), cliente,
+    id: uid(), fecha: new Date().toISOString(), cliente: cliente,
     esenciaId: ess.id, esenciaNombre: ess.nombre,
     tamanoMl: tam, cantidad: cant,
-    pctEsencia: pctEss, pctMusk, pctIpm, pctDpg,
+    pctEsencia: pctEss, pctMusk: pctMusk, pctIpm: pctIpm, pctDpg: pctDpg,
     pctAlcohol: r2(pctAlc),
     precioVenta: r2(precioVenta),
     precioUnitario: precioVenta > 0 ? r2(precioVenta / cant) : 0,
@@ -1269,7 +1281,7 @@ function registrarVenta() {
     consumo: {
       esenciaMl: r2(tot.es), muskMl: r2(tot.musk), ipmMl: r2(tot.ipm),
       dpgMl: r2(tot.dpg), alcoholMl: r2(tot.alc),
-      botellaModelo: botV ? `${botM.modelo} ${botV.tamano}ml` : 'Sin frasco',
+      botellaModelo: botV ? (botM.modelo + ' ' + botV.tamano + 'ml') : 'Sin frasco',
       atomizadorModelo: usaAtom ? (atom ? atom.modelo : 'N/A') : 'Sin atomizador'
     },
     totalMlProducido: tam * cant
@@ -1288,15 +1300,15 @@ function registrarVenta() {
    HISTORIAL
    ========================================================= */
 function getFiltered() {
-  const fEss = $('fEss').value;
-  const fSearch = $('fSearch').value.trim().toLowerCase();
-  const fDesde = $('fDesde').value;
-  const fHasta = $('fHasta').value;
-  return sales.filter(s => {
+  var fEss = $('fEss').value;
+  var fSearch = $('fSearch').value.trim().toLowerCase();
+  var fDesde = $('fDesde').value;
+  var fHasta = $('fHasta').value;
+  return sales.filter(function(s){
     if (fEss !== 'all' && s.esenciaNombre !== fEss) return false;
     if (fSearch) {
-      const hay = (s.esenciaNombre || '') + ' ' + (s.cliente || '') + ' ' + ((s.consumo && s.consumo.botellaModelo) || '');
-      if (!hay.toLowerCase().includes(fSearch)) return false;
+      var hay = (s.esenciaNombre || '') + ' ' + (s.cliente || '') + ' ' + ((s.consumo && s.consumo.botellaModelo) || '');
+      if (hay.toLowerCase().indexOf(fSearch) < 0) return false;
     }
     if (fDesde && new Date(s.fecha) < new Date(fDesde + 'T00:00:00')) return false;
     if (fHasta && new Date(s.fecha) > new Date(fHasta + 'T23:59:59')) return false;
@@ -1305,66 +1317,60 @@ function getFiltered() {
 }
 
 function renderHistorial() {
-  const list = getFiltered();
-  const totalEss = list.reduce((a, s) => a + (s.consumo?.esenciaMl || 0), 0);
-  const totalBot = list.reduce((a, s) => a + (s.cantidad || 0), 0);
-  const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
-  const totalCosto = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
-  const totalGananc = totalVenta - totalCosto;
-  const conPrecio = list.filter(s => (s.precioVenta || 0) > 0);
-  const margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
+  var list = getFiltered();
+  var totalEss = list.reduce(function(a, s){ return a + ((s.consumo && s.consumo.esenciaMl) || 0); }, 0);
+  var totalBot = list.reduce(function(a, s){ return a + (s.cantidad || 0); }, 0);
+  var totalVenta = list.reduce(function(a, s){ return a + (s.precioVenta || 0); }, 0);
+  var totalCosto = list.reduce(function(a, s){ return a + (s.costoTotal || 0); }, 0);
+  var totalGananc = totalVenta - totalCosto;
+  var conPrecio = list.filter(function(s){ return (s.precioVenta || 0) > 0; });
+  var margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
 
-  $('stats').innerHTML = `
-    <div class="stat"><div class="stat-label">VENTAS</div><div class="stat-val serif">${list.length}</div></div>
-    <div class="stat"><div class="stat-label">ESENCIA</div><div class="stat-val serif">${totalEss.toFixed(1)}<span style="font-size:12px"> ml</span></div></div>
-    <div class="stat"><div class="stat-label">FRASCOS</div><div class="stat-val serif">${totalBot}</div></div>
-    <div class="stat"><div class="stat-label">INGRESOS</div><div class="stat-val money">${money(totalVenta)}</div></div>
-    <div class="stat"><div class="stat-label">COSTOS</div><div class="stat-val red">${money(totalCosto)}</div></div>
-    <div class="stat"><div class="stat-label">GANANCIA</div><div class="stat-val ${totalGananc >= 0 ? 'money' : 'red'}">${money(totalGananc)}</div></div>
-    <div class="stat"><div class="stat-label">MARGEN</div><div class="stat-val gold">${conPrecio.length ? pct(margenProm) : '—'}</div></div>`;
+  $('stats').innerHTML =
+    '<div class="stat"><div class="stat-label">VENTAS</div><div class="stat-val serif">' + list.length + '</div></div>' +
+    '<div class="stat"><div class="stat-label">ESENCIA</div><div class="stat-val serif">' + totalEss.toFixed(1) + '<span style="font-size:12px"> ml</span></div></div>' +
+    '<div class="stat"><div class="stat-label">FRASCOS</div><div class="stat-val serif">' + totalBot + '</div></div>' +
+    '<div class="stat"><div class="stat-label">INGRESOS</div><div class="stat-val money">' + money(totalVenta) + '</div></div>' +
+    '<div class="stat"><div class="stat-label">COSTOS</div><div class="stat-val red">' + money(totalCosto) + '</div></div>' +
+    '<div class="stat"><div class="stat-label">GANANCIA</div><div class="stat-val ' + (totalGananc >= 0 ? 'money' : 'red') + '">' + money(totalGananc) + '</div></div>' +
+    '<div class="stat"><div class="stat-label">MARGEN</div><div class="stat-val gold">' + (conPrecio.length ? pct(margenProm) : '—') + '</div></div>';
 
-  const wrap = $('listHist');
+  var wrap = $('listHist');
   if (!list.length) { wrap.innerHTML = '<p class="empty">Sin registros que coincidan</p>'; return; }
 
-  wrap.innerHTML = list.map(s => {
-    const c = s.consumo || {};
-    const fecha = new Date(s.fecha).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
-    const conP = (s.precioVenta || 0) > 0;
-    const gan = s.ganancia || 0;
-    const pillClass = !conP ? '' : (gan >= 0 ? 'money' : 'loss');
-    const pillTxt = conP ? money(s.precioVenta) : (s.totalMlProducido + ' ml');
-    return `
-      <div class="hist-item">
-        <div class="hist-top">
-          <div>
-            <div class="hist-title">${esc(s.esenciaNombre)} · ${s.tamanoMl} ml × ${s.cantidad}</div>
-            <div class="hist-date">${fecha}${s.cliente ? ' · ' + esc(s.cliente) : ''}</div>
-          </div>
-          <div class="pill ${pillClass}">${pillTxt}</div>
-        </div>
-        <div class="hist-detail">
-          <div class="hist-box">
-            <strong>CONSUMO</strong>
-            Esencia: ${c.esenciaMl ?? '—'} ml (${s.pctEsencia}%)<br>
-            Alcohol: ${c.alcoholMl ?? '—'} ml (${Number(s.pctAlcohol || 0).toFixed(1)}%)<br>
-            Musk ${c.muskMl ?? '—'} · IPM ${c.ipmMl ?? '—'} · DPG ${c.dpgMl ?? '—'}
-          </div>
-          ${conP ? `
-          <div class="hist-box money">
-            <strong>ECONÓMICO</strong>
-            <div class="line"><span>Venta</span><b>${money(s.precioVenta)}</b></div>
-            <div class="line"><span>Costo</span><b style="color:#ff8a8a">${money(s.costoTotal)}</b></div>
-            <div class="line ${gan < 0 ? 'loss' : ''}"><span>Ganancia</span><b>${money(gan)}</b></div>
-            <div class="line"><span>Margen</span><b>${pct(s.margen)}</b></div>
-          </div>` : `
-          <div class="hist-box">
-            <strong>ENVASE</strong>
-            ${esc(c.botellaModelo || 'Sin frasco')}<br>
-            ${esc(c.atomizadorModelo || 'Sin atomizador')}<br>
-            <span style="color:rgba(245,241,232,.4)">Costo: ${money(s.costoTotal)}</span>
-          </div>`}
-        </div>
-      </div>`;
+  wrap.innerHTML = list.map(function(s){
+    var c = s.consumo || {};
+    var fecha = new Date(s.fecha).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+    var conP = (s.precioVenta || 0) > 0;
+    var gan = s.ganancia || 0;
+    var pillClass = !conP ? '' : (gan >= 0 ? 'money' : 'loss');
+    var pillTxt = conP ? money(s.precioVenta) : (s.totalMlProducido + ' ml');
+    var econHtml = conP
+      ? '<div class="hist-box money">' +
+          '<strong>ECONÓMICO</strong>' +
+          '<div class="line"><span>Venta</span><b>' + money(s.precioVenta) + '</b></div>' +
+          '<div class="line"><span>Costo</span><b style="color:#ff8a8a">' + money(s.costoTotal) + '</b></div>' +
+          '<div class="line ' + (gan < 0 ? 'loss' : '') + '"><span>Ganancia</span><b>' + money(gan) + '</b></div>' +
+          '<div class="line"><span>Margen</span><b>' + pct(s.margen) + '</b></div>' +
+        '</div>'
+      : '<div class="hist-box"><strong>ENVASE</strong>' + esc(c.botellaModelo || 'Sin frasco') + '<br>' + esc(c.atomizadorModelo || 'Sin atomizador') + '<br><span style="color:rgba(245,241,232,.4)">Costo: ' + money(s.costoTotal) + '</span></div>';
+    return '<div class="hist-item">' +
+      '<div class="hist-top">' +
+        '<div>' +
+          '<div class="hist-title">' + esc(s.esenciaNombre) + ' · ' + s.tamanoMl + ' ml × ' + s.cantidad + '</div>' +
+          '<div class="hist-date">' + fecha + (s.cliente ? ' · ' + esc(s.cliente) : '') + '</div>' +
+        '</div>' +
+        '<div class="pill ' + pillClass + '">' + pillTxt + '</div>' +
+      '</div>' +
+      '<div class="hist-detail">' +
+        '<div class="hist-box">' +
+          '<strong>CONSUMO</strong>' +
+          'Esencia: ' + (c.esenciaMl != null ? c.esenciaMl : '—') + ' ml (' + s.pctEsencia + '%)<br>' +
+          'Alcohol: ' + (c.alcoholMl != null ? c.alcoholMl : '—') + ' ml (' + Number(s.pctAlcohol || 0).toFixed(1) + '%)<br>' +
+          'Musk ' + (c.muskMl != null ? c.muskMl : '—') + ' · IPM ' + (c.ipmMl != null ? c.ipmMl : '—') + ' · DPG ' + (c.dpgMl != null ? c.dpgMl : '—') +
+        '</div>' +
+        econHtml +
+      '</div></div>';
   }).join('');
 }
 
@@ -1372,67 +1378,47 @@ function renderHistorial() {
    LISTA DE COMPRAS SUGERIDA
    ========================================================= */
 function calcularListaCompras() {
-  const lista = [];
+  var lista = [];
 
-  // Esencias con stock bajo
-  const esenciasBajas = inventory.esencias
-    .filter(e => e.stockMl < UMBRAL.esenciaMl)
-    .sort((a, b) => a.stockMl - b.stockMl);
+  var esenciasBajas = inventory.esencias.filter(function(e){ return e.stockMl < UMBRAL.esenciaMl; })
+    .sort(function(a, b){ return a.stockMl - b.stockMl; });
   if (esenciasBajas.length) {
     lista.push({
       titulo: 'Esencias',
-      items: esenciasBajas.map(e => ({
-        nombre: e.nombre,
-        actual: `${fmt(e.stockMl)} ml`,
-        sugerido: `${UMBRAL.sugeridoEsenciaMl} ml`,
-        costo: (e.costoMl || 0) * UMBRAL.sugeridoEsenciaMl
-      }))
+      items: esenciasBajas.map(function(e){
+        return { nombre: e.nombre, actual: fmt(e.stockMl) + ' ml', sugerido: UMBRAL.sugeridoEsenciaMl + ' ml', costo: (e.costoMl || 0) * UMBRAL.sugeridoEsenciaMl };
+      })
     });
   }
 
-  // Líquidos base con stock bajo
-  const liqBajos = LIQUIDOS.filter(l => inventory.liquidos[l.key] < UMBRAL.liquidoMl);
+  var liqBajos = LIQUIDOS.filter(function(l){ return inventory.liquidos[l.key] < UMBRAL.liquidoMl; });
   if (liqBajos.length) {
     lista.push({
       titulo: 'Líquidos base',
-      items: liqBajos.map(l => ({
-        nombre: l.label,
-        actual: `${fmt(inventory.liquidos[l.key])} ml`,
-        sugerido: `${UMBRAL.sugeridoLiquidoMl} ml`,
-        costo: (inventory.costosLiquidos[l.key] || 0) * UMBRAL.sugeridoLiquidoMl
-      }))
+      items: liqBajos.map(function(l){
+        return { nombre: l.label, actual: fmt(inventory.liquidos[l.key]) + ' ml', sugerido: UMBRAL.sugeridoLiquidoMl + ' ml', costo: (inventory.costosLiquidos[l.key] || 0) * UMBRAL.sugeridoLiquidoMl };
+      })
     });
   }
 
-  // Frascos con stock bajo
-  const frascosBajos = [];
-  inventory.botellas.forEach(b => {
-    b.variantes.forEach(v => {
+  var frascosBajos = [];
+  inventory.botellas.forEach(function(b){
+    b.variantes.forEach(function(v){
       if (v.stock < UMBRAL.frascoU) {
-        frascosBajos.push({
-          nombre: `${b.modelo} · ${v.tamano} ml`,
-          actual: `${v.stock} u`,
-          sugerido: `${UMBRAL.sugeridoFrascoU} u`,
-          costo: (v.costo || 0) * UMBRAL.sugeridoFrascoU
-        });
+        frascosBajos.push({ nombre: b.modelo + ' · ' + v.tamano + ' ml', actual: v.stock + ' u', sugerido: UMBRAL.sugeridoFrascoU + ' u', costo: (v.costo || 0) * UMBRAL.sugeridoFrascoU });
       }
     });
   });
   if (frascosBajos.length) lista.push({ titulo: 'Frascos', items: frascosBajos });
 
-  // Atomizadores con stock bajo
-  const atoBajos = inventory.atomizadores
-    .filter(a => a.stock < UMBRAL.atomU)
-    .sort((a, b) => a.stock - b.stock);
+  var atoBajos = inventory.atomizadores.filter(function(a){ return a.stock < UMBRAL.atomU; })
+    .sort(function(a, b){ return a.stock - b.stock; });
   if (atoBajos.length) {
     lista.push({
       titulo: 'Atomizadores',
-      items: atoBajos.map(a => ({
-        nombre: a.modelo,
-        actual: `${a.stock} u`,
-        sugerido: `${UMBRAL.sugeridoAtomU} u`,
-        costo: (a.costo || 0) * UMBRAL.sugeridoAtomU
-      }))
+      items: atoBajos.map(function(a){
+        return { nombre: a.modelo, actual: a.stock + ' u', sugerido: UMBRAL.sugeridoAtomU + ' u', costo: (a.costo || 0) * UMBRAL.sugeridoAtomU };
+      })
     });
   }
 
@@ -1440,40 +1426,37 @@ function calcularListaCompras() {
 }
 
 function abrirListaCompras() {
-  const lista = calcularListaCompras();
-  const body = $('shopBody');
+  var lista = calcularListaCompras();
+  var body = $('shopBody');
 
   if (!lista.length) {
-    body.innerHTML = `
-      <div class="shop-empty">
-        <div class="shop-empty-icon">🎉</div>
-        <div>¡Todo en orden!</div>
-        <div style="margin-top:8px;font-size:12px;color:rgba(245,241,232,.3)">No hay insumos con stock bajo en este momento.</div>
-      </div>`;
+    body.innerHTML = '<div class="shop-empty"><div class="shop-empty-icon">🎉</div><div>¡Todo en orden!</div><div style="margin-top:8px;font-size:12px;color:rgba(245,241,232,.3)">No hay insumos con stock bajo en este momento.</div></div>';
     $('shopExportPdf').style.display = 'none';
     $('shopExportXls').style.display = 'none';
   } else {
-    const totalItems = lista.reduce((a, c) => a + c.items.length, 0);
-    const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
-    body.innerHTML = `
-      <div style="font-size:12px;color:rgba(245,241,232,.5);margin-bottom:14px;line-height:1.5">
-        Se detectaron <b style="color:#ff8a8a">${totalItems}</b> insumo${totalItems === 1 ? '' : 's'} con stock bajo.
-        ${totalCosto > 0 ? `Costo estimado: <b style="color:#7CFF9E">${money(totalCosto)}</b>` : ''}
-      </div>
-      <div class="shop-list">
-        ${lista.map(cat => `
-          <div class="shop-cat">
-            <div class="shop-cat-title">${esc(cat.titulo)} · ${cat.items.length}</div>
-            ${cat.items.map(it => `
-              <div class="shop-item">
-                <div class="shop-item-info">
-                  <div class="shop-item-name">${esc(it.nombre)}</div>
-                  <div class="shop-item-current">Actual: ${esc(it.actual)}${it.costo > 0 ? ' · ' + money(it.costo) : ''}</div>
-                </div>
-                <div class="shop-item-qty">+${esc(it.sugerido)}</div>
-              </div>`).join('')}
-          </div>`).join('')}
-      </div>`;
+    var totalItems = lista.reduce(function(a, c){ return a + c.items.length; }, 0);
+    var totalCosto = lista.reduce(function(a, c){ return a + c.items.reduce(function(s, i){ return s + (i.costo || 0); }, 0); }, 0);
+    body.innerHTML =
+      '<div style="font-size:12px;color:rgba(245,241,232,.5);margin-bottom:14px;line-height:1.5">' +
+        'Se detectaron <b style="color:#ff8a8a">' + totalItems + '</b> insumo' + (totalItems === 1 ? '' : 's') + ' con stock bajo.' +
+        (totalCosto > 0 ? ' Costo estimado: <b style="color:#7CFF9E">' + money(totalCosto) + '</b>' : '') +
+      '</div>' +
+      '<div class="shop-list">' +
+        lista.map(function(cat){
+          return '<div class="shop-cat">' +
+            '<div class="shop-cat-title">' + esc(cat.titulo) + ' · ' + cat.items.length + '</div>' +
+            cat.items.map(function(it){
+              return '<div class="shop-item">' +
+                '<div class="shop-item-info">' +
+                  '<div class="shop-item-name">' + esc(it.nombre) + '</div>' +
+                  '<div class="shop-item-current">Actual: ' + esc(it.actual) + (it.costo > 0 ? ' · ' + money(it.costo) : '') + '</div>' +
+                '</div>' +
+                '<div class="shop-item-qty">+' + esc(it.sugerido) + '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>';
+        }).join('') +
+      '</div>';
     $('shopExportPdf').style.display = 'inline-flex';
     $('shopExportXls').style.display = 'inline-flex';
   }
@@ -1488,38 +1471,38 @@ function closeShopModal() {
 }
 
 function exportShopPDF() {
-  const lista = calcularListaCompras();
+  var lista = calcularListaCompras();
   if (!lista.length) return toast('Lista vacía');
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const marginX = 14;
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF();
+  var marginX = 14;
 
   doc.setFontSize(17);
   doc.text('AION PERFUMES · Lista de compras sugerida', marginX, 18);
   doc.setFontSize(10);
   doc.text('Generado: ' + new Date().toLocaleString('es-ES'), marginX, 25);
 
-  const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
+  var totalCosto = lista.reduce(function(a, c){ return a + c.items.reduce(function(s, i){ return s + (i.costo || 0); }, 0); }, 0);
   doc.text('Insumos con stock bajo · Costo estimado: ' + money(totalCosto), marginX, 31);
 
-  let y = 40;
-  const HEAD = { fillColor: [255, 184, 77], textColor: [42, 21, 0], fontStyle: 'bold' };
-  const BASE = {
+  var y = 40;
+  var HEAD = { fillColor: [255, 184, 77], textColor: [42, 21, 0], fontStyle: 'bold' };
+  var BASE = {
     margin: { left: marginX, right: marginX },
     styles: { fontSize: 9, cellPadding: 2.4 },
     headStyles: HEAD,
     alternateRowStyles: { fillColor: [245, 243, 236] }
   };
 
-  lista.forEach(cat => {
+  lista.forEach(function(cat){
     doc.setFontSize(12);
     doc.text(cat.titulo, marginX, y);
-    const rows = cat.items.map(it => [
-      it.nombre, it.actual, it.sugerido, it.costo > 0 ? money(it.costo) : '—'
-    ]);
-    doc.autoTable({
-      ...BASE, startY: y + 3,
+    var rows = cat.items.map(function(it){
+      return [it.nombre, it.actual, it.sugerido, it.costo > 0 ? money(it.costo) : '—'];
+    });
+    doc.autoTable(Object.assign({}, BASE, {
+      startY: y + 3,
       head: [['Insumo', 'Stock actual', 'Comprar', 'Costo est.']],
       body: rows,
       columnStyles: {
@@ -1527,7 +1510,7 @@ function exportShopPDF() {
         2: { halign: 'right', cellWidth: 26, fontStyle: 'bold' },
         3: { halign: 'right', cellWidth: 26 }
       }
-    });
+    }));
     y = doc.lastAutoTable.finalY + 11;
     if (y > 260) { doc.addPage(); y = 22; }
   });
@@ -1537,24 +1520,24 @@ function exportShopPDF() {
 }
 
 function exportShopExcel() {
-  const lista = calcularListaCompras();
+  var lista = calcularListaCompras();
   if (!lista.length) return toast('Lista vacía');
 
-  const wb = XLSX.utils.book_new();
-  const allRows = [['Categoría', 'Insumo', 'Stock actual', 'Comprar', 'Costo estimado ($)']];
-  lista.forEach(cat => {
-    cat.items.forEach(it => {
+  var wb = XLSX.utils.book_new();
+  var allRows = [['Categoría', 'Insumo', 'Stock actual', 'Comprar', 'Costo estimado ($)']];
+  lista.forEach(function(cat){
+    cat.items.forEach(function(it){
       allRows.push([cat.titulo, it.nombre, it.actual, it.sugerido, r2(it.costo || 0)]);
     });
   });
-  const ws = XLSX.utils.aoa_to_sheet(allRows);
+  var ws = XLSX.utils.aoa_to_sheet(allRows);
   ws['!cols'] = [{ wch: 18 }, { wch: 34 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(wb, ws, 'Lista de compras');
 
-  const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
-  const resumen = [
+  var totalCosto = lista.reduce(function(a, c){ return a + c.items.reduce(function(s, i){ return s + (i.costo || 0); }, 0); }, 0);
+  var resumen = [
     ['Métrica', 'Valor'],
-    ['Total de insumos a comprar', lista.reduce((a, c) => a + c.items.length, 0)],
+    ['Total de insumos a comprar', lista.reduce(function(a, c){ return a + c.items.length; }, 0)],
     ['Costo total estimado ($)', r2(totalCosto)],
     ['Fecha de generación', new Date().toLocaleString('es-ES')],
     ['', ''],
@@ -1564,7 +1547,7 @@ function exportShopExcel() {
     ['Frascos < (u)', UMBRAL.frascoU],
     ['Atomizadores < (u)', UMBRAL.atomU]
   ];
-  const ws2 = XLSX.utils.aoa_to_sheet(resumen);
+  var ws2 = XLSX.utils.aoa_to_sheet(resumen);
   ws2['!cols'] = [{ wch: 30 }, { wch: 22 }];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
 
@@ -1572,30 +1555,31 @@ function exportShopExcel() {
   toast('Lista Excel exportada');
 }
 
-$('shopExportPdf').addEventListener('click', exportShopPDF);
-$('shopExportXls').addEventListener('click', exportShopExcel);
-$('shopBackdrop').addEventListener('click', e => { if (e.target === $('shopBackdrop')) closeShopModal(); });
-
 /* =========================================================
    EXPORTAR — PDF HISTORIAL
    ========================================================= */
 function exportPDF() {
-  const list = getFiltered();
+  var list = getFiltered();
   if (!list.length) return toast('Nada que exportar');
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape' });
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation: 'landscape' });
   doc.setFontSize(16);
   doc.text('AION PERFUMES · Historial de producción', 14, 18);
   doc.setFontSize(10);
   doc.text('Exportado: ' + new Date().toLocaleString('es-ES'), 14, 25);
-  const filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
-  doc.text(`Filtro: ${filtro}  |  Registros: ${list.length}`, 14, 31);
-  const rows = list.map(s => [
-    new Date(s.fecha).toLocaleDateString('es-ES'), s.cliente || '—', s.esenciaNombre,
-    s.tamanoMl + ' ml', s.cantidad, s.consumo?.esenciaMl ?? '—', s.consumo?.alcoholMl ?? '—',
-    s.consumo?.botellaModelo || '—', money(s.precioVenta || 0), money(s.costoTotal || 0),
-    money(s.ganancia || 0), s.precioVenta ? pct(s.margen) : '—'
-  ]);
+  var filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
+  doc.text('Filtro: ' + filtro + '  |  Registros: ' + list.length, 14, 31);
+  var rows = list.map(function(s){
+    return [
+      new Date(s.fecha).toLocaleDateString('es-ES'), s.cliente || '—', s.esenciaNombre,
+      s.tamanoMl + ' ml', s.cantidad,
+      (s.consumo && s.consumo.esenciaMl) != null ? s.consumo.esenciaMl : '—',
+      (s.consumo && s.consumo.alcoholMl) != null ? s.consumo.alcoholMl : '—',
+      (s.consumo && s.consumo.botellaModelo) || '—',
+      money(s.precioVenta || 0), money(s.costoTotal || 0),
+      money(s.ganancia || 0), s.precioVenta ? pct(s.margen) : '—'
+    ];
+  });
   doc.autoTable({
     startY: 37,
     head: [['Fecha','Cliente','Esencia','Tam.','Cant.','Ess ml','Alcohol','Frasco','Venta','Costo','Ganancia','Margen']],
@@ -1612,77 +1596,77 @@ function exportPDF() {
    EXPORTAR — PDF INVENTARIO
    ========================================================= */
 function exportInvPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const marginX = 14;
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF();
+  var marginX = 14;
   doc.setFontSize(17);
   doc.text('AION PERFUMES · Inventario actual', marginX, 18);
   doc.setFontSize(10);
   doc.text('Fecha: ' + new Date().toLocaleString('es-ES'), marginX, 25);
-  let y = 33;
-  const HEAD = { fillColor: [201, 162, 39], textColor: [10, 10, 10], fontStyle: 'bold' };
-  const BASE = { margin: { left: marginX, right: marginX }, styles: { fontSize: 8.5, cellPadding: 2.2 }, headStyles: HEAD, alternateRowStyles: { fillColor: [245, 243, 236] } };
-  const checkPage = (need = 40) => { if (y > 297 - need) { doc.addPage(); y = 22; } };
+  var y = 33;
+  var HEAD = { fillColor: [201, 162, 39], textColor: [10, 10, 10], fontStyle: 'bold' };
+  var BASE = { margin: { left: marginX, right: marginX }, styles: { fontSize: 8.5, cellPadding: 2.2 }, headStyles: HEAD, alternateRowStyles: { fillColor: [245, 243, 236] } };
+  var checkPage = function(need){ if (y > 297 - (need || 40)) { doc.addPage(); y = 22; } };
 
   doc.setFontSize(12); doc.text('Esencias', marginX, y);
-  doc.autoTable({
-    ...BASE, startY: y + 3,
+  doc.autoTable(Object.assign({}, BASE, {
+    startY: y + 3,
     head: [['#', 'Nombre', 'Stock (ml)', 'Costo $/ml', 'Valor total', 'Estado']],
     body: inventory.esencias.length
-      ? inventory.esencias.map((e, i) => [i + 1, e.nombre, fmt(e.stockMl), money(e.costoMl), money(e.stockMl * (e.costoMl || 0)), e.stockMl < UMBRAL.esenciaMl ? '⚠ Bajo' : 'OK'])
+      ? inventory.esencias.map(function(e, i){ return [i + 1, e.nombre, fmt(e.stockMl), money(e.costoMl), money(e.stockMl * (e.costoMl || 0)), e.stockMl < UMBRAL.esenciaMl ? '⚠ Bajo' : 'OK']; })
       : [['—', 'Sin esencias registradas', '—', '—', '—', '—']],
     columnStyles: { 0:{cellWidth:10,halign:'center'},2:{halign:'right',cellWidth:24},3:{halign:'right',cellWidth:24},4:{halign:'right',cellWidth:28},5:{cellWidth:20,halign:'center'} },
-    didParseCell: d => {
+    didParseCell: function(d){
       if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
     }
-  });
+  }));
   y = doc.lastAutoTable.finalY + 11;
 
   checkPage();
   doc.setFontSize(12); doc.text('Líquidos base', marginX, y);
-  doc.autoTable({
-    ...BASE, startY: y + 3,
+  doc.autoTable(Object.assign({}, BASE, {
+    startY: y + 3,
     head: [['Líquido', 'Stock (ml)', 'Costo $/ml', 'Valor total']],
-    body: LIQUIDOS.map(l => [l.label, fmt(inventory.liquidos[l.key]), money(inventory.costosLiquidos[l.key]), money(inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0))]),
+    body: LIQUIDOS.map(function(l){ return [l.label, fmt(inventory.liquidos[l.key]), money(inventory.costosLiquidos[l.key]), money(inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0))]; }),
     columnStyles: { 1:{halign:'right',cellWidth:26},2:{halign:'right',cellWidth:26},3:{halign:'right',cellWidth:30} }
-  });
+  }));
   y = doc.lastAutoTable.finalY + 11;
 
   checkPage();
   doc.setFontSize(12); doc.text('Frascos', marginX, y);
-  const frascosBody = [];
+  var frascosBody = [];
   if (!inventory.botellas.length) frascosBody.push(['—', 'Sin frascos registrados', '—', '—', '—', '—', '—']);
-  else inventory.botellas.forEach(b => {
+  else inventory.botellas.forEach(function(b){
     if (!b.variantes.length) frascosBody.push([b.modelo, '—', '—', '—', '—', '—', '—']);
-    else b.variantes.forEach((v, i) => {
+    else b.variantes.forEach(function(v, i){
       frascosBody.push([i === 0 ? b.modelo : '↳', v.tamano + ' ml', v.stock + ' u', money(v.costo || 0), money((v.costo || 0) * v.stock), v.stock < UMBRAL.frascoU ? '⚠ Bajo' : 'OK', (v.tamano * v.stock) + ' ml']);
     });
   });
-  doc.autoTable({
-    ...BASE, startY: y + 3,
+  doc.autoTable(Object.assign({}, BASE, {
+    startY: y + 3,
     head: [['Modelo', 'Tamaño', 'Stock', 'Costo $/u', 'Valor total', 'Estado', 'Capacidad']],
     body: frascosBody,
     columnStyles: { 0:{cellWidth:45},1:{halign:'right',cellWidth:20},2:{halign:'right',cellWidth:20},3:{halign:'right',cellWidth:22},4:{halign:'right',cellWidth:26},5:{cellWidth:20,halign:'center'},6:{halign:'right',cellWidth:26} },
-    didParseCell: d => {
+    didParseCell: function(d){
       if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
       if (d.section === 'body' && d.column.index === 0 && d.cell.raw === '↳') { d.cell.styles.textColor = [150, 150, 150]; }
     }
-  });
+  }));
   y = doc.lastAutoTable.finalY + 11;
 
   checkPage();
   doc.setFontSize(12); doc.text('Atomizadores', marginX, y);
-  doc.autoTable({
-    ...BASE, startY: y + 3,
+  doc.autoTable(Object.assign({}, BASE, {
+    startY: y + 3,
     head: [['Modelo', 'Stock (u)', 'Costo $/u', 'Valor total', 'Estado']],
     body: inventory.atomizadores.length
-      ? inventory.atomizadores.map(a => [a.modelo, a.stock, money(a.costo), money(a.stock * (a.costo || 0)), a.stock < UMBRAL.atomU ? '⚠ Bajo' : 'OK'])
+      ? inventory.atomizadores.map(function(a){ return [a.modelo, a.stock, money(a.costo), money(a.stock * (a.costo || 0)), a.stock < UMBRAL.atomU ? '⚠ Bajo' : 'OK']; })
       : [['Sin atomizadores registrados', '—', '—', '—', '—']],
     columnStyles: { 1:{halign:'right',cellWidth:24},2:{halign:'right',cellWidth:26},3:{halign:'right',cellWidth:30},4:{cellWidth:22,halign:'center'} },
-    didParseCell: d => {
+    didParseCell: function(d){
       if (d.section === 'body' && d.column.index === 4 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
     }
-  });
+  }));
   doc.save('AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('Inventario PDF exportado');
 }
@@ -1691,37 +1675,41 @@ function exportInvPDF() {
    EXPORTAR — EXCEL HISTORIAL
    ========================================================= */
 function exportHistExcel() {
-  const list = getFiltered();
+  var list = getFiltered();
   if (!list.length) return toast('Nada que exportar');
-  const header = ['Fecha','Cliente','Esencia','Tamaño (ml)','Cantidad','% Esencia','% Musk','% IPM','% DPG','% Alcohol','Esencia (ml)','Musk (ml)','IPM (ml)','DPG (ml)','Alcohol (ml)','Frasco','Atomizador','Total producido (ml)','Precio venta ($)','Precio unitario ($)','Costo total ($)','Costo esencia ($)','Costo alcohol ($)','Costo musk ($)','Costo IPM ($)','Costo DPG ($)','Costo frascos ($)','Costo atomizadores ($)','Ganancia ($)','Margen (%)'];
-  const rows = list.map(s => [
-    new Date(s.fecha).toLocaleString('es-ES'), s.cliente || '', s.esenciaNombre, s.tamanoMl, s.cantidad,
-    s.pctEsencia, s.pctMusk, s.pctIpm, s.pctDpg, s.pctAlcohol,
-    s.consumo?.esenciaMl ?? '', s.consumo?.muskMl ?? '', s.consumo?.ipmMl ?? '', s.consumo?.dpgMl ?? '', s.consumo?.alcoholMl ?? '',
-    s.consumo?.botellaModelo || '', s.consumo?.atomizadorModelo || '', s.totalMlProducido,
-    s.precioVenta || 0, s.precioUnitario || 0, s.costoTotal || 0,
-    s.desgloseCosto?.esencia || 0, s.desgloseCosto?.alcohol || 0, s.desgloseCosto?.musk || 0, s.desgloseCosto?.ipm || 0, s.desgloseCosto?.dpg || 0,
-    s.desgloseCosto?.frascos || 0, s.desgloseCosto?.atomizadores || 0, s.ganancia || 0, s.margen || 0
-  ]);
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  ws['!cols'] = header.map(h => ({ wch: Math.max(12, Math.min(24, h.length + 4)) }));
+  var header = ['Fecha','Cliente','Esencia','Tamaño (ml)','Cantidad','% Esencia','% Musk','% IPM','% DPG','% Alcohol','Esencia (ml)','Musk (ml)','IPM (ml)','DPG (ml)','Alcohol (ml)','Frasco','Atomizador','Total producido (ml)','Precio venta ($)','Precio unitario ($)','Costo total ($)','Costo esencia ($)','Costo alcohol ($)','Costo musk ($)','Costo IPM ($)','Costo DPG ($)','Costo frascos ($)','Costo atomizadores ($)','Ganancia ($)','Margen (%)'];
+  var rows = list.map(function(s){
+    var c = s.consumo || {};
+    var dc = s.desgloseCosto || {};
+    return [
+      new Date(s.fecha).toLocaleString('es-ES'), s.cliente || '', s.esenciaNombre, s.tamanoMl, s.cantidad,
+      s.pctEsencia, s.pctMusk, s.pctIpm, s.pctDpg, s.pctAlcohol,
+      c.esenciaMl != null ? c.esenciaMl : '', c.muskMl != null ? c.muskMl : '', c.ipmMl != null ? c.ipmMl : '', c.dpgMl != null ? c.dpgMl : '', c.alcoholMl != null ? c.alcoholMl : '',
+      c.botellaModelo || '', c.atomizadorModelo || '', s.totalMlProducido,
+      s.precioVenta || 0, s.precioUnitario || 0, s.costoTotal || 0,
+      dc.esencia || 0, dc.alcohol || 0, dc.musk || 0, dc.ipm || 0, dc.dpg || 0,
+      dc.frascos || 0, dc.atomizadores || 0, s.ganancia || 0, s.margen || 0
+    ];
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet([header].concat(rows));
+  ws['!cols'] = header.map(function(h){ return { wch: Math.max(12, Math.min(24, h.length + 4)) }; });
   XLSX.utils.book_append_sheet(wb, ws, 'Historial');
-  const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
-  const totalCosto = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
-  const totalGananc = totalVenta - totalCosto;
-  const resumen = [
+  var totalVenta = list.reduce *(function(a, s){ return a + (s.precioVenta || 0); }, 0);
+  var totalCosto = list.reduce(function(a, s){ return a + (s.costoTotal || 0); }, 0);
+  var totalGananc = totalVenta - totalCosto;
+  var resumen = [
     ['Métrica','Valor'], ['Total registros', list.length],
-    ['Total piezas', list.reduce((a, s) => a + (s.cantidad || 0), 0)],
-    ['Total ml producidos', list.reduce((a, s) => a + (s.totalMlProducido || 0), 0)],
-    ['Esencia consumida (ml)', r2(list.reduce((a, s) => a + (s.consumo?.esenciaMl || 0), 0))],
-    ['Alcohol consumido (ml)', r2(list.reduce((a, s) => a + (s.consumo?.alcoholMl || 0), 0))],
+    ['Total piezas', list.reduce(function(a, s){ return a + (s.cantidad || 0); }, 0)],
+    ['Total ml producidos', list.reduce(function(a, s){ return a + (s.totalMlProducido || 0); }, 0)],
+    ['Esencia consumida (ml)', r2(list.reduce(function(a, s){ return a + ((s.consumo && s.consumo.esenciaMl) || 0); }, 0))],
+    ['Alcohol consumido (ml)', r2(list.reduce(function(a, s){ return a + ((s.consumo && s.consumo.alcoholMl) || 0); }, 0))],
     ['', ''], ['Ingresos totales ($)', r2(totalVenta)], ['Costos totales ($)', r2(totalCosto)],
     ['Ganancia total ($)', r2(totalGananc)],
-    ['Margen promedio (%)', totalVenta > 0 ? r2((totalGananc / totalVenta) * 100) : 0],
+    ['Margen promedio (%)', totalVenta > 0 ? r2((totalGananc / totalVenta) 100) : 0],
     ['', ''], ['Fecha de exportación', new Date().toLocaleString('es-ES')]
   ];
-  const ws2 = XLSX.utils.aoa_to_sheet(resumen);
+  var ws2 = XLSX.utils.aoa_to_sheet(resumen);
   ws2['!cols'] = [{ wch: 30 }, { wch: 24 }];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
   XLSX.writeFile(wb, 'AION_Historial_' + new Date().toISOString().slice(0, 10) + '.xlsx');
@@ -1732,53 +1720,53 @@ function exportHistExcel() {
    EXPORTAR — EXCEL INVENTARIO
    ========================================================= */
 function exportInvExcel() {
-  const wb = XLSX.utils.book_new();
-  const essRows = [['Nombre','Stock (ml)','Costo $/ml','Valor total ($)','Estado']];
-  inventory.esencias.forEach(e => essRows.push([e.nombre, e.stockMl, e.costoMl || 0, r2(e.stockMl * (e.costoMl || 0)), e.stockMl < UMBRAL.esenciaMl ? 'Bajo' : 'OK']));
+  var wb = XLSX.utils.book_new();
+  var essRows = [['Nombre','Stock (ml)','Costo $/ml','Valor total ($)','Estado']];
+  inventory.esencias.forEach(function(e){ essRows.push([e.nombre, e.stockMl, e.costoMl || 0, r2(e.stockMl * (e.costoMl || 0)), e.stockMl < UMBRAL.esenciaMl ? 'Bajo' : 'OK']); });
   if (!inventory.esencias.length) essRows.push(['Sin esencias','','','','']);
-  const wsEss = XLSX.utils.aoa_to_sheet(essRows);
+  var wsEss = XLSX.utils.aoa_to_sheet(essRows);
   wsEss['!cols'] = [{wch:30},{wch:12},{wch:12},{wch:16},{wch:10}];
   XLSX.utils.book_append_sheet(wb, wsEss, 'Esencias');
 
-  const liqRows = [['Líquido','Stock (ml)','Costo $/ml','Valor total ($)']];
-  LIQUIDOS.forEach(l => liqRows.push([l.label, inventory.liquidos[l.key], inventory.costosLiquidos[l.key] || 0, r2(inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0))]));
-  const wsLiq = XLSX.utils.aoa_to_sheet(liqRows);
+  var liqRows = [['Líquido','Stock (ml)','Costo $/ml','Valor total ($)']];
+  LIQUIDOS.forEach(function(l){ liqRows.push([l.label, inventory.liquidos[l.key], inventory.costosLiquidos[l.key] || 0, r2(inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0))]); });
+  var wsLiq = XLSX.utils.aoa_to_sheet(liqRows);
   wsLiq['!cols'] = [{wch:34},{wch:12},{wch:12},{wch:16}];
   XLSX.utils.book_append_sheet(wb, wsLiq, 'Líquidos');
 
-  const botRows = [['Modelo','Tamaño (ml)','Stock (u)','Costo $/u','Valor total ($)','Capacidad total (ml)','Estado']];
-  inventory.botellas.forEach(b => {
+  var botRows = [['Modelo','Tamaño (ml)','Stock (u)','Costo $/u','Valor total ($)','Capacidad total (ml)','Estado']];
+  inventory.botellas.forEach(function(b){
     if (!b.variantes.length) botRows.push([b.modelo,'','','','','','']);
-    else b.variantes.forEach(v => botRows.push([b.modelo, v.tamano, v.stock, v.costo || 0, r2((v.costo || 0) * v.stock), v.tamano * v.stock, v.stock < UMBRAL.frascoU ? 'Bajo' : 'OK']));
+    else b.variantes.forEach(function(v){ botRows.push([b.modelo, v.tamano, v.stock, v.costo || 0, r2((v.costo || 0) * v.stock), v.tamano * v.stock, v.stock < UMBRAL.frascoU ? 'Bajo' : 'OK']); });
   });
   if (!inventory.botellas.length) botRows.push(['Sin frascos','','','','','','']);
-  const wsBot = XLSX.utils.aoa_to_sheet(botRows);
+  var wsBot = XLSX.utils.aoa_to_sheet(botRows);
   wsBot['!cols'] = [{wch:26},{wch:12},{wch:11},{wch:12},{wch:16},{wch:18},{wch:10}];
   XLSX.utils.book_append_sheet(wb, wsBot, 'Frascos');
 
-  const atoRows = [['Modelo','Stock (u)','Costo $/u','Valor total ($)','Estado']];
-  inventory.atomizadores.forEach(a => atoRows.push([a.modelo, a.stock, a.costo || 0, r2((a.costo || 0) * a.stock), a.stock < UMBRAL.atomU ? 'Bajo' : 'OK']));
+  var atoRows = [['Modelo','Stock (u)','Costo $/u','Valor total ($)','Estado']];
+  inventory.atomizadores.forEach(function(a){ atoRows.push([a.modelo, a.stock, a.costo || 0, r2((a.costo || 0) * a.stock), a.stock < UMBRAL.atomU ? 'Bajo' : 'OK']); });
   if (!inventory.atomizadores.length) atoRows.push(['Sin atomizadores','','','','']);
-  const wsAto = XLSX.utils.aoa_to_sheet(atoRows);
+  var wsAto = XLSX.utils.aoa_to_sheet(atoRows);
   wsAto['!cols'] = [{wch:30},{wch:11},{wch:12},{wch:16},{wch:10}];
   XLSX.utils.book_append_sheet(wb, wsAto, 'Atomizadores');
 
-  const valorEs = inventory.esencias.reduce((a, e) => a + e.stockMl * (e.costoMl || 0), 0);
-  const valorLiq = LIQUIDOS.reduce((a, l) => a + inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0), 0);
-  const valorBot = inventory.botellas.reduce((a, b) => a + b.variantes.reduce((s, v) => s + v.stock * (v.costo || 0), 0), 0);
-  const valorAto = inventory.atomizadores.reduce((a, x) => a + x.stock * (x.costo || 0), 0);
-  const valorTotal = valorEs + valorLiq + valorBot + valorAto;
+  var valorEs = inventory.esencias.reduce(function(a, e){ return a + e.stockMl * (e.costoMl || 0); }, 0);
+  var valorLiq = LIQUIDOS.reduce(function(a, l){ return a + inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0); }, 0);
+  var valorBot = inventory.botellas.reduce(function(a, b){ return a + b.variantes.reduce(function(s, v){ return s + v.stock * (v.costo || 0); }, 0); }, 0);
+  var valorAto = inventory.atomizadores.reduce(function(a, x){ return a + x.stock * (x.costo || 0); }, 0);
+  var valorTotal = valorEs + valorLiq + valorBot + valorAto;
 
-  const resumen = [
+  var resumen = [
     ['Categoría','Valor ($)'], ['Esencias', r2(valorEs)], ['Líquidos base', r2(valorLiq)],
     ['Frascos', r2(valorBot)], ['Atomizadores', r2(valorAto)], ['',''],
     ['VALOR TOTAL DEL INVENTARIO', r2(valorTotal)], ['',''],
     ['Modelos de frascos', inventory.botellas.length],
-    ['Unidades de frascos', inventory.botellas.reduce((a, b) => a + b.variantes.reduce((s, v) => s + v.stock, 0), 0)],
-    ['Unidades de atomizadores', inventory.atomizadores.reduce((a, x) => a + x.stock, 0)],
+    ['Unidades de frascos', inventory.botellas.reduce(function(a, b){ return a + b.variantes.reduce(function(s, v){ return s + v.stock; }, 0); }, 0)],
+    ['Unidades de atomizadores', inventory.atomizadores.reduce(function(a, x){ return a + x.stock; }, 0)],
     ['Fecha de exportación', new Date().toLocaleString('es-ES')]
   ];
-  const wsRes = XLSX.utils.aoa_to_sheet(resumen);
+  var wsRes = XLSX.utils.aoa_to_sheet(resumen);
   wsRes['!cols'] = [{wch:32},{wch:22}];
   XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
   XLSX.writeFile(wb, 'AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.xlsx');
@@ -1789,20 +1777,20 @@ function exportInvExcel() {
    EXPORTAR — REPORTE FINANCIERO PDF
    ========================================================= */
 function exportFinPDF() {
-  const list = getFiltered().filter(s => (s.precioVenta || 0) > 0);
+  var list = getFiltered().filter(function(s){ return (s.precioVenta || 0) > 0; });
   if (!list.length) return toast('No hay ventas con precio registrado');
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape' });
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation: 'landscape' });
   doc.setFontSize(17);
   doc.text('AION PERFUMES · Reporte financiero', 14, 18);
   doc.setFontSize(10);
   doc.text('Generado: ' + new Date().toLocaleString('es-ES'), 14, 25);
-  const filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
-  doc.text(`Filtro: ${filtro}  |  Ventas con precio: ${list.length}`, 14, 31);
-  const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
-  const totalCosto = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
-  const totalGananc = totalVenta - totalCosto;
-  const margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
+  var filtro = $('fEss').value === 'all' ? 'Todas las esencias' : $('fEss').value;
+  doc.text('Filtro: ' + filtro + '  |  Ventas con precio: ' + list.length, 14, 31);
+  var totalVenta = list.reduce(function(a, s){ return a + (s.precioVenta || 0); }, 0);
+  var totalCosto = list.reduce(function(a, s){ return a + (s.costoTotal || 0); }, 0);
+  var totalGananc = totalVenta - totalCosto;
+  var margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
   doc.autoTable({
     startY: 40,
     head: [['Métrica','Valor']],
@@ -1812,12 +1800,14 @@ function exportFinPDF() {
     columnStyles: { 0: { cellWidth: 90, fontStyle: 'bold' }, 1: { cellWidth: 50, halign: 'right' } },
     tableWidth: 140
   });
-  const yDespues = doc.lastAutoTable.finalY + 10;
+  var yDespues = doc.lastAutoTable.finalY + 10;
   doc.setFontSize(11); doc.text('Detalle por venta', 14, yDespues);
-  const rows = list.map(s => [
-    new Date(s.fecha).toLocaleDateString('es-ES'), s.cliente || '—', s.esenciaNombre,
-    s.tamanoMl + 'ml ×' + s.cantidad, money(s.precioVenta), money(s.costoTotal), money(s.ganancia), pct(s.margen)
-  ]);
+  var rows = list.map(function(s){
+    return [
+      new Date(s.fecha).toLocaleDateString('es-ES'), s.cliente || '—', s.esenciaNombre,
+      s.tamanoMl + 'ml ×' + s.cantidad, money(s.precioVenta), money(s.costoTotal), money(s.ganancia), pct(s.margen)
+    ];
+  });
   doc.autoTable({
     startY: yDespues + 4,
     head: [['Fecha','Cliente','Esencia','Producto','Precio venta','Costo producción','Ganancia','Margen']],
@@ -1826,23 +1816,23 @@ function exportFinPDF() {
     headStyles: { fillColor: [201, 162, 39], textColor: [10, 10, 10], fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [245, 243, 236] },
     columnStyles: { 4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'} },
-    didParseCell: d => {
+    didParseCell: function(d){
       if (d.section === 'body' && d.column.index === 6) {
-        const txt = String(d.cell.raw || '');
-        if (txt.startsWith('$-')) { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
+        var txt = String(d.cell.raw || '');
+        if (txt.indexOf('$-') === 0) { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
       }
     }
   });
-  const totalEss = list.reduce((a, s) => a + (s.desgloseCosto?.esencia || 0), 0);
-  const totalAlc = list.reduce((a, s) => a + (s.desgloseCosto?.alcohol || 0), 0);
-  const totalMus = list.reduce((a, s) => a + (s.desgloseCosto?.musk || 0), 0);
-  const totalIpm = list.reduce((a, s) => a + (s.desgloseCosto?.ipm || 0), 0);
-  const totalDpg = list.reduce((a, s) => a + (s.desgloseCosto?.dpg || 0), 0);
-  const totalFra = list.reduce((a, s) => a + (s.desgloseCosto?.frascos || 0), 0);
-  const totalAto = list.reduce((a, s) => a + (s.desgloseCosto?.atomizadores || 0), 0);
-  const y2 = doc.lastAutoTable.finalY + 10;
+  var totalEss = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.esencia) || 0); }, 0);
+  var totalAlc = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.alcohol) || 0); }, 0);
+  var totalMus = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.musk) || 0); }, 0);
+  var totalIpm = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.ipm) || 0); }, 0);
+  var totalDpg = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.dpg) || 0); }, 0);
+  var totalFra = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.frascos) || 0); }, 0);
+  var totalAto = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.atomizadores) || 0); }, 0);
+  var y2 = doc.lastAutoTable.finalY + 10;
   if (y2 > 180) doc.addPage();
-  const yFin = y2 > 180 ? 20 : y2;
+  var yFin = y2 > 180 ? 20 : y2;
   doc.setFontSize(11); doc.text('Desglose de costos por categoría', 14, yFin);
   doc.autoTable({
     startY: yFin + 4,
@@ -1870,41 +1860,40 @@ function exportFinPDF() {
    EXPORTAR — REPORTE FINANCIERO EXCEL
    ========================================================= */
 function exportFinExcel() {
-  const list = getFiltered().filter(s => (s.precioVenta || 0) > 0);
+  var list = getFiltered().filter(function(s){ return (s.precioVenta || 0) > 0; });
   if (!list.length) return toast('No hay ventas con precio registrado');
-  const wb = XLSX.utils.book_new();
-  const header = ['Fecha','Cliente','Esencia','Tamaño (ml)','Cantidad','Precio venta ($)','Precio unitario ($)','Costo producción ($)','Ganancia ($)','Margen (%)'];
-  const rows = list.map(s => [
-    new Date(s.fecha).toLocaleString('es-ES'), s.cliente || '', s.esenciaNombre, s.tamanoMl, s.cantidad,
-    s.precioVenta || 0, s.precioUnitario || 0, s.costoTotal || 0, s.ganancia || 0, s.margen || 0
-  ]);
-  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  ws['!cols'] = header.map(h => ({ wch: Math.max(12, h.length + 4) }));
+  var wb = XLSX.utils.book_new();
+  var header = ['Fecha','Cliente','Esencia','Tamaño (ml)','Cantidad','Precio venta ($)','Precio unitario ($)','Costo producción ($)','Ganancia ($)','Margen (%)'];
+  var rows = list.map(function(s){
+    return [new Date(s.fecha).toLocaleString('es-ES'), s.cliente || '', s.esenciaNombre, s.tamanoMl, s.cantidad, s.precioVenta || 0, s.precioUnitario || 0, s.costoTotal || 0, s.ganancia || 0, s.margen || 0];
+  });
+  var ws = XLSX.utils.aoa_to_sheet([header].concat(rows));
+  ws['!cols'] = header.map(function(h){ return { wch: Math.max(12, h.length + 4) }; });
   XLSX.utils.book_append_sheet(wb, ws, 'Detalle');
 
-  const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
-  const totalCosto = list.reduce((a, s) => a + (s.costoTotal || 0), 0);
-  const totalGananc = totalVenta - totalCosto;
-  const margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
-  const resumen = [
+  var totalVenta = list.reduce(function(a, s){ return a + (s.precioVenta || 0); }, 0);
+  var totalCosto = list.reduce(function(a, s){ return a + (s.costoTotal || 0); }, 0);
+  var totalGananc = totalVenta - totalCosto;
+  var margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
+  var resumen = [
     ['Métrica','Valor'], ['Número de ventas', list.length],
     ['Total ingresos ($)', r2(totalVenta)], ['Total costos ($)', r2(totalCosto)],
     ['Ganancia neta ($)', r2(totalGananc)], ['Margen promedio (%)', r2(margenProm)],
     ['Ticket promedio ($)', r2(totalVenta / list.length)], ['',''],
     ['Fecha de exportación', new Date().toLocaleString('es-ES')]
   ];
-  const ws2 = XLSX.utils.aoa_to_sheet(resumen);
+  var ws2 = XLSX.utils.aoa_to_sheet(resumen);
   ws2['!cols'] = [{wch:30},{wch:22}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
 
-  const totalEss = list.reduce((a, s) => a + (s.desgloseCosto?.esencia || 0), 0);
-  const totalAlc = list.reduce((a, s) => a + (s.desgloseCosto?.alcohol || 0), 0);
-  const totalMus = list.reduce((a, s) => a + (s.desgloseCosto?.musk || 0), 0);
-  const totalIpm = list.reduce((a, s) => a + (s.desgloseCosto?.ipm || 0), 0);
-  const totalDpg = list.reduce((a, s) => a + (s.desgloseCosto?.dpg || 0), 0);
-  const totalFra = list.reduce((a, s) => a + (s.desgloseCosto?.frascos || 0), 0);
-  const totalAto = list.reduce((a, s) => a + (s.desgloseCosto?.atomizadores || 0), 0);
-  const desglose = [
+  var totalEss = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.esencia) || 0); }, 0);
+  var totalAlc = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.alcohol) || 0); }, 0);
+  var totalMus = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.musk) || 0); }, 0);
+  var totalIpm = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.ipm) || 0); }, 0);
+  var totalDpg = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.dpg) || 0); }, 0);
+  var totalFra = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.frascos) || 0); }, 0);
+  var totalAto = list.reduce(function(a, s){ return a + ((s.desgloseCosto && s.desgloseCosto.atomizadores) || 0); }, 0);
+  var desglose = [
     ['Categoría','Costo total ($)','% del total'],
     ['Esencia', r2(totalEss), totalCosto > 0 ? r2(totalEss/totalCosto*100) : 0],
     ['Alcohol', r2(totalAlc), totalCosto > 0 ? r2(totalAlc/totalCosto*100) : 0],
@@ -1915,24 +1904,24 @@ function exportFinExcel() {
     ['Atomizadores', r2(totalAto), totalCosto > 0 ? r2(totalAto/totalCosto*100) : 0],
     ['TOTAL', r2(totalCosto), 100]
   ];
-  const ws3 = XLSX.utils.aoa_to_sheet(desglose);
+  var ws3 = XLSX.utils.aoa_to_sheet(desglose);
   ws3['!cols'] = [{wch:22},{wch:18},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws3, 'Desglose costos');
 
-  const porEsencia = {};
-  list.forEach(s => {
+  var porEsencia = {};
+  list.forEach(function(s){
     if (!porEsencia[s.esenciaNombre]) porEsencia[s.esenciaNombre] = { cant: 0, ingreso: 0, costo: 0, ganancia: 0 };
     porEsencia[s.esenciaNombre].cant += s.cantidad;
     porEsencia[s.esenciaNombre].ingreso += s.precioVenta || 0;
     porEsencia[s.esenciaNombre].costo += s.costoTotal || 0;
     porEsencia[s.esenciaNombre].ganancia += s.ganancia || 0;
   });
-  const porEsenciaRows = [['Esencia','Unidades','Ingresos ($)','Costos ($)','Ganancia ($)','Margen (%)']];
-  Object.keys(porEsencia).sort().forEach(k => {
-    const d = porEsencia[k];
+  var porEsenciaRows = [['Esencia','Unidades','Ingresos ($)','Costos ($)','Ganancia ($)','Margen (%)']];
+  Object.keys(porEsencia).sort().forEach(function(k){
+    var d = porEsencia[k];
     porEsenciaRows.push([k, d.cant, r2(d.ingreso), r2(d.costo), r2(d.ganancia), d.ingreso > 0 ? r2((d.ganancia/d.ingreso)*100) : 0]);
   });
-  const ws4 = XLSX.utils.aoa_to_sheet(porEsenciaRows);
+  var ws4 = XLSX.utils.aoa_to_sheet(porEsenciaRows);
   ws4['!cols'] = [{wch:26},{wch:10},{wch:14},{wch:12},{wch:14},{wch:12}];
   XLSX.utils.book_append_sheet(wb, ws4, 'Por esencia');
   XLSX.writeFile(wb, 'AION_Financiero_' + new Date().toISOString().slice(0, 10) + '.xlsx');
@@ -1961,37 +1950,41 @@ function clearAll() {
 /* =========================================================
    MODAL
    ========================================================= */
-function openModal(title, fields, onSave, opts = {}) {
+function openModal(title, fields, onSave, opts) {
+  opts = opts || {};
   $('modalBox').classList.toggle('modal-lg', !!opts.large);
   $('modalTitle').textContent = title;
-  $('modalBody').innerHTML = fields.map(f => `
-    <label class="field">
-      <span class="label">${esc(f.label)}</span>
-      <input class="input" data-key="${f.key}" type="${f.type || 'text'}"
-             ${f.step ? `step="${f.step}"` : ''}
-             value="${esc(f.value ?? '')}"
-             ${f.type === 'number' ? 'inputmode="decimal"' : 'autocomplete="off"'}>
-    </label>`).join('') +
-    (opts.onDelete ? `<button class="btn btn-danger btn-block btn-sm" id="modalDelete" style="margin-top:6px">Eliminar este tamaño</button>` : '');
+  $('modalBody').innerHTML = fields.map(function(f){
+    return '<label class="field">' +
+      '<span class="label">' + esc(f.label) + '</span>' +
+      '<input class="input" data-key="' + f.key + '" type="' + (f.type || 'text') + '"' +
+        (f.step ? ' step="' + f.step + '"' : '') +
+        ' value="' + esc(f.value != null ? f.value : '') + '"' +
+        (f.type === 'number' ? ' inputmode="decimal"' : ' autocomplete="off"') + '>' +
+    '</label>';
+  }).join('') +
+    (opts.onDelete ? '<button class="btn btn-danger btn-block btn-sm" id="modalDelete" style="margin-top:6px">Eliminar este tamaño</button>' : '');
 
   $('modalOk').textContent = opts.okText || 'Guardar';
-  $('modalOk').onclick = () => {
-    const data = {};
-    $('modalBody').querySelectorAll('input').forEach(i => {
+  $('modalOk').onclick = function(){
+    var data = {};
+    Array.prototype.forEach.call($('modalBody').querySelectorAll('input'), function(i){
       data[i.dataset.key] = i.type === 'number' ? num(i.value) : i.value.trim();
     });
     if (onSave(data) !== false) closeModal();
   };
+
   if (opts.onDelete) {
-    $('modalDelete').onclick = () => {
+    $('modalDelete').onclick = function(){
       if (!confirm('¿Eliminar este tamaño?')) return;
       opts.onDelete(); closeModal();
     };
   }
+
   $('modalBackdrop').classList.add('show');
   document.body.style.overflow = 'hidden';
   if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    setTimeout(() => { const f = $('modalBody').querySelector('input'); if (f) f.focus(); }, 60);
+    setTimeout(function(){ var f = $('modalBody').querySelector('input'); if (f) f.focus(); }, 60);
   }
 }
 
@@ -2000,25 +1993,16 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-$('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal(); });
-$('modalBody').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('modalOk').click(); } });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    if ($('modalBackdrop').classList.contains('show')) closeModal();
-    if ($('shopBackdrop').classList.contains('show')) closeShopModal();
-  }
-});
-
 /* =========================================================
    TABS
    ========================================================= */
 function switchTab(t) {
-  ['inv', 'venta', 'hist'].forEach(k => {
+  ['inv', 'venta', 'hist'].forEach(function(k){
     $('view-' + k).classList.toggle('active', k === t);
     $('tab-' + k).classList.toggle('active', k === t);
   });
   if (t === 'venta') calcFormula();
-  if (t === 'hist') renderHistorial();
+  if (t === 'hist')  renderHistorial();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -2026,45 +2010,64 @@ function switchTab(t) {
    EVENTOS
    ========================================================= */
 function bindEvents() {
-  ['pctEss','pctMusk','pctIpm','pctDpg','vCant','vPrecio'].forEach(id => {
-    const el = $(id);
+  ['pctEss','pctMusk','pctIpm','pctDpg','vCant','vPrecio'].forEach(function(id){
+    var el = $(id);
     el.addEventListener('input', calcFormula);
     el.addEventListener('change', calcFormula);
   });
-  $('vTamCustom').addEventListener('input', () => { tamState.value = num($('vTamCustom').value); calcFormula(); });
+  $('vTamCustom').addEventListener('input', function(){ tamState.value = num($('vTamCustom').value); calcFormula(); });
   $('vBotellaTam').addEventListener('change', calcFormula);
-  $('vUsaAtom').addEventListener('change', () => {
-    const ssRoot = $('ss-vAtom');
+  $('vUsaAtom').addEventListener('change', function(){
+    var ssRoot = $('ss-vAtom');
     if (ssRoot) ssRoot.style.display = $('vUsaAtom').checked ? 'block' : 'none';
     calcFormula();
   });
-  ['fEss','fDesde','fHasta'].forEach(id => $(id).addEventListener('change', renderHistorial));
+  ['fEss','fDesde','fHasta'].forEach(function(id){ $(id).addEventListener('change', renderHistorial); });
   $('fSearch').addEventListener('input', renderHistorial);
-  $('essName').addEventListener('keydown', e => { if (e.key === 'Enter') addEsencia(); });
-  $('essMl').addEventListener('keydown', e => { if (e.key === 'Enter') addEsencia(); });
-  $('essCosto').addEventListener('keydown', e => { if (e.key === 'Enter') addEsencia(); });
-  $('botModelo').addEventListener('keydown', e => { if (e.key === 'Enter') addFrasco(); });
-  $('botStock').addEventListener('keydown', e => { if (e.key === 'Enter') addFrasco(); });
-  $('botCosto').addEventListener('keydown', e => { if (e.key === 'Enter') addFrasco(); });
-  $('atoModelo').addEventListener('keydown', e => { if (e.key === 'Enter') addAtom(); });
-  $('atoStock').addEventListener('keydown', e => { if (e.key === 'Enter') addAtom(); });
-  $('atoCosto').addEventListener('keydown', e => { if (e.key === 'Enter') addAtom(); });
+  $('essName').addEventListener('keydown', function(e){ if (e.key === 'Enter') addEsencia(); });
+  $('essMl').addEventListener('keydown', function(e){ if (e.key === 'Enter') addEsencia(); });
+  $('essCosto').addEventListener('keydown', function(e){ if (e.key === 'Enter') addEsencia(); });
+  $('botModelo').addEventListener('keydown', function(e){ if (e.key === 'Enter') addFrasco(); });
+  $('botStock').addEventListener('keydown', function(e){ if (e.key === 'Enter') addFrasco(); });
+  $('botCosto').addEventListener('keydown', function(e){ if (e.key === 'Enter') addFrasco(); });
+  $('atoModelo').addEventListener('keydown', function(e){ if (e.key === 'Enter') addAtom(); });
+  $('atoStock').addEventListener('keydown', function(e){ if (e.key === 'Enter') addAtom(); });
+  $('atoCosto').addEventListener('keydown', function(e){ if (e.key === 'Enter') addAtom(); });
+
+  // Handlers globales
+  $('modalBackdrop').addEventListener('click', function(e){ if (e.target === $('modalBackdrop')) closeModal(); });
+  $('modalBody').addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); $('modalOk').click(); } });
+  $('shopBackdrop').addEventListener('click', function(e){ if (e.target === $('shopBackdrop')) closeShopModal(); });
+  $('shopExportPdf').addEventListener('click', exportShopPDF);
+  $('shopExportXls').addEventListener('click', exportShopExcel);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      if ($('modalBackdrop').classList.contains('show')) closeModal();
+      if ($('shopBackdrop').classList.contains('show')) closeShopModal();
+    }
+  });
 }
 
 /* =========================================================
    INICIALIZACIÓN
    ========================================================= */
 (function init() {
-  loadData();
-  ssEsencia = createSearchSelect('ss-vEsencia', 'Buscar esencia…', () => calcFormula());
-  ssBotModelo = createSearchSelect('ss-vBotellaModelo', 'Buscar modelo…', () => { renderVariantesVenta(); calcFormula(); });
-  ssAtom = createSearchSelect('ss-vAtom', 'Buscar atomizador…', () => calcFormula());
-  renderTamChips();
-  const ssAtomRoot = $('ss-vAtom');
-  if (ssAtomRoot) ssAtomRoot.style.display = $('vUsaAtom').checked ? 'block' : 'none';
-  restoreCollapseState();
-  bindEvents();
-  renderAll();
+  try {
+    loadData();
+    ssEsencia = createSearchSelect('ss-vEsencia', 'Buscar esencia…', function(){ calcFormula(); });
+    ssBotModelo = createSearchSelect('ss-vBotellaModelo', 'Buscar modelo…', function(){ renderVariantesVenta(); calcFormula(); });
+    ssAtom = createSearchSelect('ss-vAtom', 'Buscar atomizador…', function(){ calcFormula(); });
+    renderTamChips();
+    var ssAtomRoot = $('ss-vAtom');
+    if (ssAtomRoot) ssAtomRoot.style.display = $('vUsaAtom').checked ? 'block' : 'none';
+    restoreCollapseState();
+    bindEvents();
+    renderAll();
+    console.log('%c AION Gestor v4.3 iniciado ✓', 'color:#D4AF37;font-weight:bold');
+  } catch (err) {
+    console.error('Error al inicializar AION Gestor:', err);
+    alert('Error al iniciar la aplicación: ' + err.message);
+  }
 })();
 </script>
 </body>
