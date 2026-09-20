@@ -325,6 +325,30 @@ input[type=checkbox]{width:22px;height:22px;accent-color:#e0653d;cursor:pointer;
 .hist-box.money .line{display:flex;justify-content:space-between;gap:8px}
 .hist-box.money .line b{color:#8fb56b}
 .hist-box.money .line.loss b{color:#d64838}
+/* ───── Swipe para eliminar en historial ───── */
+.swipe-wrap{
+  position:relative;overflow:hidden;background:#15110d;
+  border-radius:12px 16px 14px 18px;
+}
+.swipe-del{
+  position:absolute;top:0;right:0;bottom:0;width:92px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:linear-gradient(180deg,#d64838 0%,#a83228 100%);
+  color:#fff8e8;border:0;border-radius:0 16px 18px 0;
+  font-family:'Patrick Hand',cursive;font-size:12.5px;font-weight:700;letter-spacing:.04em;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:filter .15s;
+}
+.swipe-del:active{filter:brightness(.88)}
+.swipe-wrap .hist-item{
+  position:relative;z-index:1;touch-action:pan-y;background:#15110d;
+  transition:transform .24s cubic-bezier(.2,.9,.3,1);will-change:transform;
+}
+.swipe-wrap .hist-item.dragging{transition:none}
+.swipe-wrap .hist-item.swiped{transform:translateX(-92px)}
+.hist-hint{
+  font-size:12px;color:rgba(240,230,210,.42);font-family:'Kalam',cursive;
+  display:flex;align-items:center;gap:6px;margin:-2px 0 10px;
+}
 .backdrop{
   position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
   background:rgba(0,0,0,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
@@ -532,42 +556,56 @@ input[type=checkbox]{width:22px;height:22px;accent-color:#e0653d;cursor:pointer;
       </div>
     </section>
     <section id="view-hist" class="view">
-      <div class="card">
-        <div class="card-head"><h2>Historial de producción</h2></div>
-        <div class="stats" id="stats"></div>
-        <div class="grid2" style="margin-bottom:10px">
-          <select id="fEss" class="input"></select>
-          <input id="fSearch" class="input" placeholder="Buscar..." autocomplete="off">
+      <div class="card" id="card-hist">
+        <div class="card-head">
+          <h2>Historial de producción</h2>
+          <div class="card-head-right">
+            <span class="badge" id="countHist">0</span>
+            <button class="collapse-btn" id="tog-hist" onclick="toggleCard('hist')" title="Minimizar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
         </div>
-        <div class="range-label">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-          </svg>
-          <span>Filtrar por rango de fechas</span>
+        <div class="card-body" id="body-hist">
+          <div class="stats" id="stats"></div>
+          <div class="grid2" style="margin-bottom:10px">
+            <select id="fEss" class="input"></select>
+            <input id="fSearch" class="input" placeholder="Buscar..." autocomplete="off">
+          </div>
+          <div class="range-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            <span>Filtrar por rango de fechas</span>
+          </div>
+          <div class="grid2" style="margin-bottom:14px">
+            <div><label class="label">Desde</label><input id="fDesde" class="input" type="date"></div>
+            <div><label class="label">Hasta</label><input id="fHasta" class="input" type="date"></div>
+          </div>
+          <button class="btn btn-shopping btn-block" style="margin-bottom:10px" onclick="abrirListaCompras()">🛒 Generar lista de compras sugerida</button>
+          <div class="grid2" style="margin-bottom:8px">
+            <button class="btn" onclick="exportPDF()">📄 PDF historial</button>
+            <button class="btn" onclick="exportHistExcel()">📊 Excel historial</button>
+          </div>
+          <div class="grid2" style="margin-bottom:8px">
+            <button class="btn btn-ghost" onclick="exportInvPDF()">📄 PDF inventario</button>
+            <button class="btn btn-ghost" onclick="exportInvExcel()">📊 Excel inventario</button>
+          </div>
+          <div class="grid2" style="margin-bottom:10px">
+            <button class="btn btn-money" onclick="exportFinPDF()">💰 PDF financiero</button>
+            <button class="btn btn-money" onclick="exportFinExcel()">💰 Excel financiero</button>
+          </div>
+          <div class="grid2">
+            <button class="btn btn-ghost btn-sm" onclick="clearHist()">Borrar historial</button>
+            <button class="btn btn-danger btn-sm" onclick="clearAll()">Borrar todo</button>
+          </div>
+          <div class="divider"></div>
+          <div class="hist-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+            Desliza una tarjeta a la izquierda para eliminarla
+          </div>
+          <div id="listHist" style="display:grid;gap:10px"></div>
         </div>
-        <div class="grid2" style="margin-bottom:14px">
-          <div><label class="label">Desde</label><input id="fDesde" class="input" type="date"></div>
-          <div><label class="label">Hasta</label><input id="fHasta" class="input" type="date"></div>
-        </div>
-        <button class="btn btn-shopping btn-block" style="margin-bottom:10px" onclick="abrirListaCompras()">🛒 Generar lista de compras sugerida</button>
-        <div class="grid2" style="margin-bottom:8px">
-          <button class="btn" onclick="exportPDF()">📄 PDF historial</button>
-          <button class="btn" onclick="exportHistExcel()">📊 Excel historial</button>
-        </div>
-        <div class="grid2" style="margin-bottom:8px">
-          <button class="btn btn-ghost" onclick="exportInvPDF()">📄 PDF inventario</button>
-          <button class="btn btn-ghost" onclick="exportInvExcel()">📊 Excel inventario</button>
-        </div>
-        <div class="grid2" style="margin-bottom:10px">
-          <button class="btn btn-money" onclick="exportFinPDF()">💰 PDF financiero</button>
-          <button class="btn btn-money" onclick="exportFinExcel()">💰 Excel financiero</button>
-        </div>
-        <div class="grid2">
-          <button class="btn btn-ghost btn-sm" onclick="clearHist()">Borrar historial</button>
-          <button class="btn btn-danger btn-sm" onclick="clearAll()">Borrar todo</button>
-        </div>
-        <div class="divider"></div>
-        <div id="listHist" style="display:grid;gap:10px"></div>
       </div>
     </section>
   </main>
@@ -642,7 +680,7 @@ function toggleCard(key){
 }
 function restoreCollapseState(){
   const st = getUIState();
-  ['ess','liq','bot','ato'].forEach(k => {
+  ['ess','liq','bot','ato','hist'].forEach(k => {
     if (!st[k]) return;
     const body = $('body-' + k); const btn  = $('tog-' + k); const card = $('card-' + k);
     if (body) body.classList.add('hidden');
@@ -1269,8 +1307,98 @@ function getFiltered() {
     return true;
   });
 }
+/* ───── Swipe para borrar tarjetas del historial ───── */
+const SWIPE_MAX = 92;
+const SWIPE_THRESHOLD = 46;
+let swipeOpenEl = null;
+
+function closeSwipe(el){
+  if(!el) return;
+  el.classList.remove('swiped','dragging');
+  el.style.transform = '';
+  if(swipeOpenEl === el) swipeOpenEl = null;
+}
+function closeAllSwipe(){ if(swipeOpenEl) closeSwipe(swipeOpenEl); }
+
+function bindSwipeItem(el){
+  let startX = 0, startY = 0, curX = 0, baseOffset = 0;
+  let dragging = false, decided = false, dragEndTime = 0;
+
+  el.addEventListener('pointerdown', e => {
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    dragging = true; decided = false; curX = 0;
+    startX = e.clientX; startY = e.clientY;
+    baseOffset = el.classList.contains('swiped') ? -SWIPE_MAX : 0;
+    el.classList.remove('dragging');
+  });
+
+  el.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if(!decided){
+      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if(Math.abs(dy) > Math.abs(dx)){ dragging = false; return; }
+      decided = true;
+      el.classList.add('dragging');
+      try { el.setPointerCapture(e.pointerId); } catch(_){}
+    }
+    let x = baseOffset + dx;
+    if(x > 0) x = 0;
+    const min = -(SWIPE_MAX + 34);
+    if(x < min) x = min + (x - min) * 0.25;
+    curX = x;
+    el.style.transform = 'translateX(' + x + 'px)';
+  });
+
+  const finish = e => {
+    if(!dragging) return;
+    dragging = false;
+    el.classList.remove('dragging');
+    if(!decided){ el.style.transform = ''; return; }
+    dragEndTime = Date.now();
+    try { el.releasePointerCapture(e.pointerId); } catch(_){}
+    el.style.transform = '';
+    if(curX < -SWIPE_THRESHOLD){
+      closeAllSwipe();
+      el.classList.add('swiped');
+      swipeOpenEl = el;
+    } else {
+      closeSwipe(el);
+    }
+    curX = 0;
+  };
+  el.addEventListener('pointerup', finish);
+  el.addEventListener('pointercancel', () => {
+    dragging = false; decided = false;
+    el.classList.remove('dragging');
+    el.style.transform = '';
+    curX = 0;
+  });
+
+  el.addEventListener('click', e => {
+    if(Date.now() - dragEndTime < 260){ e.preventDefault(); e.stopPropagation(); return; }
+    if(el.classList.contains('swiped')){ e.preventDefault(); e.stopPropagation(); closeSwipe(el); }
+  }, true);
+}
+
+document.addEventListener('pointerdown', e => {
+  if(swipeOpenEl && !swipeOpenEl.parentElement.contains(e.target)) closeAllSwipe();
+}, true);
+
+function deleteSale(id){
+  const s = sales.find(x => x.id === id);
+  if(!s) return;
+  const fecha = new Date(s.fecha).toLocaleDateString('es-ES');
+  if(!confirm(`¿Eliminar el registro de "${s.esenciaNombre}" (${fecha})?\n\nEl stock ya descontado NO se devuelve al inventario.`)) return;
+  sales = sales.filter(x => x.id !== id);
+  saveSales();
+  toast('Registro eliminado');
+}
+
 function renderHistorial() {
   const list = getFiltered();
+  $('countHist').textContent = list.length;
   const totalEss = list.reduce((a, s) => a + (s.consumo?.esenciaMl || 0), 0);
   const totalBot = list.reduce((a, s) => a + (s.cantidad || 0), 0);
   const totalVenta = list.reduce((a, s) => a + (s.precioVenta || 0), 0);
@@ -1296,38 +1424,48 @@ function renderHistorial() {
     const pillClass = !conP ? '' : (gan >= 0 ? 'money' : 'loss');
     const pillTxt = conP ? money(s.precioVenta) : (s.totalMlProducido + ' ml');
     return `
-      <div class="hist-item">
-        <div class="hist-top">
-          <div>
-            <div class="hist-title">${esc(s.esenciaNombre)} · ${s.tamanoMl} ml × ${s.cantidad}</div>
-            <div class="hist-date">${fecha}${s.cliente ? ' · ' + esc(s.cliente) : ''}</div>
+      <div class="swipe-wrap">
+        <button class="swipe-del" type="button" onclick="deleteSale('${s.id}')" aria-label="Eliminar registro">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>
+          </svg>
+          <span>Borrar</span>
+        </button>
+        <div class="hist-item">
+          <div class="hist-top">
+            <div>
+              <div class="hist-title">${esc(s.esenciaNombre)} · ${s.tamanoMl} ml × ${s.cantidad}</div>
+              <div class="hist-date">${fecha}${s.cliente ? ' · ' + esc(s.cliente) : ''}</div>
+            </div>
+            <div class="pill ${pillClass}">${pillTxt}</div>
           </div>
-          <div class="pill ${pillClass}">${pillTxt}</div>
-        </div>
-        <div class="hist-detail">
-          <div class="hist-box">
-            <strong>CONSUMO</strong>
-            Esencia: ${c.esenciaMl ?? '—'} ml (${s.pctEsencia}%)<br>
-            Alcohol: ${c.alcoholMl ?? '—'} ml (${Number(s.pctAlcohol || 0).toFixed(1)}%)<br>
-            Musk ${c.muskMl ?? '—'} · IPM ${c.ipmMl ?? '—'} · DPG ${c.dpgMl ?? '—'}
+          <div class="hist-detail">
+            <div class="hist-box">
+              <strong>CONSUMO</strong>
+              Esencia: ${c.esenciaMl ?? '—'} ml (${s.pctEsencia}%)<br>
+              Alcohol: ${c.alcoholMl ?? '—'} ml (${Number(s.pctAlcohol || 0).toFixed(1)}%)<br>
+              Musk ${c.muskMl ?? '—'} · IPM ${c.ipmMl ?? '—'} · DPG ${c.dpgMl ?? '—'}
+            </div>
+            ${conP ? `
+            <div class="hist-box money">
+              <strong>ECONÓMICO</strong>
+              <div class="line"><span>Venta</span><b>${money(s.precioVenta)}</b></div>
+              <div class="line"><span>Costo</span><b style="color:#d64838">${money(s.costoTotal)}</b></div>
+              <div class="line ${gan < 0 ? 'loss' : ''}"><span>Ganancia</span><b>${money(gan)}</b></div>
+              <div class="line"><span>Margen</span><b>${pct(s.margen)}</b></div>
+            </div>` : `
+            <div class="hist-box">
+              <strong>ENVASE</strong>
+              ${esc(c.botellaModelo || 'Sin frasco')}<br>
+              ${esc(c.atomizadorModelo || 'Sin atomizador')}<br>
+              <span style="color:rgba(240,230,210,.4)">Costo: ${money(s.costoTotal)}</span>
+            </div>`}
           </div>
-          ${conP ? `
-          <div class="hist-box money">
-            <strong>ECONÓMICO</strong>
-            <div class="line"><span>Venta</span><b>${money(s.precioVenta)}</b></div>
-            <div class="line"><span>Costo</span><b style="color:#d64838">${money(s.costoTotal)}</b></div>
-            <div class="line ${gan < 0 ? 'loss' : ''}"><span>Ganancia</span><b>${money(gan)}</b></div>
-            <div class="line"><span>Margen</span><b>${pct(s.margen)}</b></div>
-          </div>` : `
-          <div class="hist-box">
-            <strong>ENVASE</strong>
-            ${esc(c.botellaModelo || 'Sin frasco')}<br>
-            ${esc(c.atomizadorModelo || 'Sin atomizador')}<br>
-            <span style="color:rgba(240,230,210,.4)">Costo: ${money(s.costoTotal)}</span>
-          </div>`}
         </div>
       </div>`;
   }).join('');
+  swipeOpenEl = null;
+  wrap.querySelectorAll('.hist-item').forEach(bindSwipeItem);
 }
 function calcularListaCompras() {
   const lista = [];
