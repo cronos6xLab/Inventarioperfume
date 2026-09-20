@@ -3,1692 +3,614 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#F0DFC0">
-<title>AION PERFUMES · Gestor de Inventario</title>
+<meta name="theme-color" content="#15110d">
+<title>AION PERFUMES · Cuaderno de Inventario</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<!-- SVG Filters para bordes irregulares (estilo plastilina) -->
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <filter id="clay-rough" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7"/>
-      <feDisplacementMap in="SourceGraphic" scale="2.5"/>
-    </filter>
-    <filter id="clay-soft" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3"/>
-      <feDisplacementMap in="SourceGraphic" scale="1.2"/>
-    </filter>
-    <filter id="grain">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
-      <feColorMatrix values="0 0 0 0 0.24
-                             0 0 0 0 0.15
-                             0 0 0 0 0.09
-                             0 0 0 0.08 0"/>
-    </filter>
-  </defs>
-</svg>
-
 <style>
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-
 body{
   margin:0;
-  font-family:'Nunito','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
-  font-weight:500;
-  background-color:#E8D4B8;
-  color:#3D2817;
-  min-height:100vh;
-  padding-bottom:calc(110px + env(safe-area-inset-bottom));
-  -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
-  position:relative;
-}
-
-/* Textura de papel/cartón de fondo */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
+  font-family:'Patrick Hand','Kalam',cursive;
+  background-color:#15110d;
   background-image:
-    radial-gradient(circle at 20% 10%, rgba(201,139,78,0.15), transparent 45%),
-    radial-gradient(circle at 80% 80%, rgba(181,114,70,0.12), transparent 50%),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.22 0 0 0 0 0.12 0 0 0 0.25 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  background-attachment:fixed;
-  pointer-events:none;
-  z-index:0;
+    radial-gradient(ellipse 900px 520px at 18% 15%,rgba(224,101,61,.12),transparent 60%),
+    radial-gradient(ellipse 800px 520px at 82% 85%,rgba(143,181,107,.08),transparent 60%),
+    url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.6 0 0 0 0 0.4 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-attachment:fixed;color:#e8dccb;min-height:100vh;
+  padding-bottom:calc(108px + env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;font-size:17px;
 }
-
-/* Capa de grano sutil sobre todo */
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:
-    repeating-linear-gradient(45deg, rgba(61,40,23,0.015) 0 1px, transparent 1px 4px);
-  pointer-events:none;
-  z-index:1;
-}
-
-.wrap{max-width:960px;margin:0 auto;padding:0 14px;position:relative;z-index:2}
-
-h1,h2,h3,.serif{
-  font-family:'Instrument Serif',serif;
-  font-weight:400;
-  margin:0;
-  color:#2E1A0F;
-}
-
-.handwritten{font-family:'Caveat',cursive;font-weight:600}
-
+h1,h2,h3,.serif{font-family:'Caveat',cursive;font-weight:700;margin:0}
 button{font-family:inherit}
-
-/* ============ HEADER - Placa de madera ============ */
-header.topbar{
-  padding:28px 0 22px;
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-  position:relative;
-}
-
-.brand{
-  background:linear-gradient(180deg,#D4B896 0%,#C4A47E 100%);
-  border-radius:22px;
-  padding:18px 22px 16px;
-  box-shadow:
-    inset 0 2px 0 rgba(255,245,225,0.6),
-    inset 0 -3px 6px rgba(101,66,35,0.25),
-    0 6px 0 #A88660,
-    0 10px 20px -8px rgba(80,50,25,0.35);
-  filter:url(#clay-soft);
-  position:relative;
-  transform:rotate(-0.5deg);
-}
-
-.brand-kicker{
-  font-family:'Caveat',cursive;
-  font-size:14px;
-  letter-spacing:.05em;
-  color:#6B4423;
-  font-weight:700;
-  margin-bottom:2px;
-}
-
-.brand h1{
-  font-size:34px;
-  line-height:1;
-  margin-top:4px;
-  letter-spacing:-.02em;
-  color:#3D2817;
-}
-
-.brand h1 i{font-style:italic;color:#8B5A2B;font-size:0.7em;vertical-align:middle}
-
-.brand-sub{
-  display:block;
-  font-size:11px;
-  color:#6B4423;
-  margin-top:6px;
-  letter-spacing:.08em;
-  font-weight:600;
-}
-
-/* Sello lacre dorado decorativo */
-.brand::before{
-  content:"";
-  position:absolute;
-  top:-8px;
-  right:-8px;
-  width:40px;
-  height:40px;
-  background:radial-gradient(circle at 30% 30%, #F4D47C, #C9A227 45%, #8B6914);
-  border-radius:50%;
-  box-shadow:
-    inset -3px -3px 6px rgba(100,60,0,0.5),
-    inset 2px 2px 4px rgba(255,230,150,0.7),
-    0 3px 6px rgba(0,0,0,0.3);
-  filter:url(#clay-rough);
-}
-
+.wrap{max-width:960px;margin:0 auto;padding:0 14px}
+header.topbar{padding:24px 0 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.brand-kicker{font-family:'Kalam',cursive;font-size:11px;letter-spacing:.2em;color:#e0653d;font-weight:700;text-transform:uppercase}
+.brand h1{font-size:42px;line-height:1;margin-top:5px;letter-spacing:.01em;color:#f0e6d2;text-shadow:1px 1px 0 rgba(224,101,61,.25)}
+.brand h1 i{font-style:italic;color:#e0653d}
+.brand-sub{display:block;font-size:12.5px;color:#a89888;margin-top:7px;letter-spacing:.04em;font-family:'Kalam',cursive}
 .topstat{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-shrink:0;
-  font-size:12px;
-  color:#3D2817;
-  background:linear-gradient(180deg,#EADBC8 0%,#D4C1A8 100%);
-  border-radius:999px;
-  padding:10px 16px;
-  box-shadow:
-    inset 0 2px 0 rgba(255,250,235,0.7),
-    inset 0 -2px 4px rgba(101,66,35,0.2),
-    0 4px 0 #B89878,
-    0 6px 12px -4px rgba(80,50,25,0.3);
-  font-weight:600;
-  transform:rotate(0.8deg);
+  display:flex;align-items:center;gap:7px;flex-shrink:0;font-size:13px;color:#c8b8a8;
+  background:#221c16;border:2px solid rgba(224,101,61,.18);padding:8px 14px;
+  border-radius:18px 22px 19px 21px;white-space:nowrap;font-family:'Kalam',cursive;
+  box-shadow:0 2px 0 rgba(0,0,0,.4);transform:rotate(2deg);
 }
-
-.topstat .dot{
-  width:8px;height:8px;border-radius:50%;
-  background:radial-gradient(circle at 30% 30%, #A8E8BD, #5BB07A);
-  box-shadow:0 0 0 2px rgba(91,176,122,0.2), inset -1px -1px 2px rgba(0,0,0,0.2);
-}
-
-/* ============ CARDS - Piezas de arcilla ============ */
+.topstat .dot{width:8px;height:8px;border-radius:50%;background:#8fb56b;box-shadow:0 0 8px rgba(143,181,107,.7),inset 0 1px 0 rgba(255,255,255,.4)}
 .card{
-  background:linear-gradient(180deg,#F0DFC0 0%,#E0CBA8 100%);
-  border-radius:28px;
-  padding:20px;
-  margin-bottom:16px;
-  box-shadow:
-    inset 0 2px 0 rgba(255,250,235,0.8),
-    inset 0 -4px 8px rgba(120,80,40,0.15),
-    inset 2px 0 0 rgba(255,250,235,0.5),
-    inset -2px 0 0 rgba(120,80,40,0.08),
-    0 6px 0 #B89878,
-    0 10px 22px -8px rgba(80,50,25,0.35);
+  background:#1f1a14;border:1px solid rgba(240,230,210,.08);
+  border-radius:16px 22px 18px 24px;padding:18px;margin-bottom:14px;
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 2px 0 rgba(0,0,0,.3),0 8px 24px -6px rgba(0,0,0,.5);
   position:relative;
-  filter:url(#clay-soft);
 }
-
-/* Marca de dedo en esquina (estilo plastilina) */
-.card::after{
-  content:"";
-  position:absolute;
-  top:14px;
-  right:14px;
-  width:18px;
-  height:12px;
-  background:radial-gradient(ellipse, rgba(120,80,40,0.08), transparent 70%);
-  border-radius:50%;
-  transform:rotate(-20deg);
-  pointer-events:none;
+.card::before{
+  content:'';position:absolute;top:-9px;left:30px;width:54px;height:18px;
+  background:rgba(224,101,61,.25);border:1px solid rgba(224,101,61,.3);
+  transform:rotate(-3deg);border-radius:1px;pointer-events:none;
 }
-
-.card-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:16px;
-  gap:10px;
-}
-
-.card-head h2{
-  font-size:24px;
-  letter-spacing:-.01em;
-  flex:1;
-  color:#2E1A0F;
-  text-shadow:0 1px 0 rgba(255,250,235,0.5);
-}
-
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
+.card-head h2{font-size:26px;letter-spacing:.01em;flex:1;color:#f0e6d2}
 .card-head-right{display:flex;gap:8px;align-items:center;flex-shrink:0}
-
-.card-sub{
-  font-size:12px;
-  color:#6B4423;
-  margin:-8px 0 14px;
-  font-family:'Caveat',cursive;
-  font-size:16px;
-}
-
-.card-body{overflow:hidden;transition:opacity .3s ease}
+.card-sub{font-size:13.5px;color:#a89888;margin:-8px 0 12px;font-family:'Kalam',cursive;line-height:1.4}
+.card-body{overflow:hidden;transition:opacity .25s ease}
 .card-body.hidden{display:none}
 .card.collapsed .card-head{margin-bottom:0}
-
 .collapse-btn{
-  width:36px;height:36px;flex-shrink:0;
-  display:inline-flex;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#E8D4B8 0%,#C9B08F 100%);
-  border:0;
-  color:#3D2817;
-  border-radius:12px;
-  font-size:11px;
-  cursor:pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255,250,235,0.7),
-    inset 0 -2px 3px rgba(120,80,40,0.2),
-    0 3px 0 #8B6A48,
-    0 4px 8px -2px rgba(80,50,25,0.3);
-  transition:transform .12s steps(3), box-shadow .12s;
-  -webkit-tap-highlight-color:transparent;
+  width:34px;height:34px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;
+  background:#15110d;border:2px solid rgba(240,230,210,.12);color:#a89888;
+  border-radius:10px 14px 11px 13px;font-size:11px;cursor:pointer;transition:.2s;
+  -webkit-tap-highlight-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.4);
 }
-
-.collapse-btn:hover{transform:translateY(-1px)}
-.collapse-btn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.2),0 1px 0 #8B6A48}
-.collapse-btn svg{transition:transform .3s steps(4)}
+.collapse-btn:hover{background:#e0653d;color:#15110d;border-color:#e0653d;box-shadow:0 2px 0 #8a2c1c}
+.collapse-btn svg{transition:transform .25s ease}
 .collapse-btn.collapsed svg{transform:rotate(-90deg)}
-
+.collapse-btn:active{transform:translateY(2px);box-shadow:0 0 0 rgba(0,0,0,.4)}
 .badge{
-  font-size:12px;
-  font-weight:800;
-  padding:6px 12px;
-  border-radius:14px;
-  color:#fff;
-  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,230,150,0.6),
-    inset 0 -2px 3px rgba(100,60,0,0.4),
-    0 2px 0 #8B6914;
-  letter-spacing:.02em;
-  font-family:'Nunito',sans-serif;
+  font-family:'Kalam',cursive;font-size:12px;font-weight:700;padding:4px 10px;
+  border-radius:4px 6px 5px 7px;color:#ff815b;background:rgba(224,101,61,.15);
+  border:2px solid rgba(224,101,61,.35);letter-spacing:.04em;transform:rotate(-2deg);
+  display:inline-block;box-shadow:0 1px 0 rgba(0,0,0,.3);
 }
-
-/* ============ INPUTS - Campos tallados en arcilla ============ */
 .input{
-  width:100%;
-  background-color:#FAF0DC;
-  border:0;
-  border-radius:14px;
-  padding:13px 16px;
-  color:#3D2817;
-  font-size:15px;
-  font-family:inherit;
-  font-weight:600;
-  line-height:1.3;
-  outline:none;
-  transition:transform .1s steps(2);
-  -webkit-appearance:none;
-  appearance:none;
-  min-height:48px;
-  box-shadow:
-    inset 2px 2px 4px rgba(120,80,40,0.2),
-    inset -2px -2px 4px rgba(255,250,235,0.8),
-    0 2px 0 #B89878;
+  width:100%;background-color:#15110d;
+  background-image:repeating-linear-gradient(transparent 0,transparent 24px,rgba(255,255,255,.04) 24px,rgba(255,255,255,.04) 25px);
+  background-position:0 12px;border:1px solid rgba(240,230,210,.12);
+  border-bottom:2px solid rgba(224,101,61,.35);border-radius:8px 12px 9px 11px;
+  padding:12px 14px;color:#f0e6d2;font-size:17px;font-family:'Patrick Hand',cursive;
+  line-height:1.3;outline:none;transition:border-color .18s,box-shadow .18s,background-color .18s;
+  -webkit-appearance:none;appearance:none;min-height:46px;
 }
-
-.input::placeholder{color:rgba(107,68,35,0.45);font-weight:500}
-
-.input:focus{
-  transform:scale(1.01);
-  box-shadow:
-    inset 2px 2px 4px rgba(201,162,39,0.25),
-    inset -2px -2px 4px rgba(255,240,180,0.8),
-    0 2px 0 #C9A227,
-    0 0 0 3px rgba(201,162,39,0.3);
-}
-
+.input::placeholder{color:rgba(240,230,210,.35)}
+.input:focus{border-color:rgba(224,101,61,.7);background-color:#1a1612;box-shadow:0 0 0 3px rgba(224,101,61,.15)}
 select.input{
-  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'%3E%3Cpath fill='none' stroke='%236B4423' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;
-  background-position:right 16px center;
-  padding-right:42px;
-  cursor:pointer;
-  background-color:#FAF0DC;
+  background-image:repeating-linear-gradient(transparent 0,transparent 24px,rgba(255,255,255,.04) 24px,rgba(255,255,255,.04) 25px),
+  url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23e0653d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat,no-repeat;background-position:0 12px,right 14px center;
+  background-size:auto,12px 8px;padding-right:38px;cursor:pointer;
 }
-
-select.input option{background:#FAF0DC;color:#3D2817;padding:10px}
-
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+select.input option{background:#1f1a14;color:#f0e6d2}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
-input[type=date]{min-height:48px}
-
-input[type=checkbox]{
-  width:22px;height:22px;
-  accent-color:#C9A227;
-  cursor:pointer;
-  flex-shrink:0;
-  border-radius:6px;
-}
-
+input[type=date]{min-height:46px;color-scheme:dark}
+input[type=checkbox]{width:22px;height:22px;accent-color:#e0653d;cursor:pointer;flex-shrink:0}
 @media (hover:hover) and (pointer:fine){
-  .input{font-size:14px;min-height:44px;padding:11px 14px}
-  select.input{padding-right:40px}
+  .input{font-size:16px;min-height:42px;padding:10px 13px}
+  select.input{padding-right:36px}
 }
-
-.field{display:block;margin-bottom:14px}
+.field{display:block;margin-bottom:12px}
 .field:last-child{margin-bottom:0}
-
-.label{
-  display:block;
-  font-family:'Caveat',cursive;
-  font-size:17px;
-  color:#6B4423;
-  margin-bottom:6px;
-  font-weight:700;
-  letter-spacing:.02em;
-}
-
-.section-title{
-  font-family:'Caveat',cursive;
-  font-size:18px;
-  letter-spacing:.04em;
-  color:#8B5A2B;
-  font-weight:700;
-  margin-bottom:10px;
-  text-transform:uppercase;
-}
-
-/* ============ SEARCH SELECT ============ */
+.label{display:block;font-size:12px;color:#a89888;margin-bottom:6px;letter-spacing:.03em;font-family:'Kalam',cursive;font-weight:700}
+.section-title{font-size:11px;letter-spacing:.16em;color:#e0653d;font-weight:700;margin-bottom:10px;text-transform:uppercase;font-family:'Kalam',cursive}
 .search-select{position:relative}
 .search-select .ss-input{padding-right:38px;cursor:text}
-
-.search-select .ss-arrow{
-  position:absolute;right:15px;top:50%;transform:translateY(-50%);
-  pointer-events:none;color:#6B4423;
-  transition:transform .2s steps(3),color .2s;
-}
-.search-select.open .ss-arrow{transform:translateY(-50%) rotate(180deg);color:#C9A227}
-
+.search-select .ss-arrow{position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:rgba(240,230,210,.4);transition:transform .2s ease,color .2s ease}
+.search-select.open .ss-arrow{transform:translateY(-50%) rotate(180deg);color:#e0653d}
 .search-select .ss-dropdown{
-  position:absolute;
-  top:calc(100% + 6px);
-  left:0;right:0;
-  background:linear-gradient(180deg,#F0DFC0,#E0CBA8);
-  border-radius:18px;
-  max-height:280px;
-  overflow-y:auto;
-  z-index:100;
-  display:none;
-  padding:6px;
-  box-shadow:
-    inset 0 2px 0 rgba(255,250,235,0.8),
-    inset 0 -3px 6px rgba(120,80,40,0.15),
-    0 6px 0 #B89878,
-    0 18px 48px -12px rgba(80,50,25,0.45);
-  -webkit-overflow-scrolling:touch;
-  filter:url(#clay-soft);
+  position:absolute;top:calc(100% + 5px);left:0;right:0;background:#1f1a14;
+  border:2px solid rgba(224,101,61,.35);border-radius:12px 16px 14px 18px;
+  max-height:280px;overflow-y:auto;z-index:100;display:none;padding:5px;
+  box-shadow:0 18px 48px -12px rgba(0,0,0,.8);-webkit-overflow-scrolling:touch;
 }
-
-.search-select.open .ss-dropdown{display:block;animation:ssFade .2s steps(4)}
-
-@keyframes ssFade{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
-
+.search-select.open .ss-dropdown{display:block;animation:ssFade .16s ease}
+@keyframes ssFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .ss-option{
-  padding:11px 14px;
-  border-radius:12px;
-  font-size:13px;
-  cursor:pointer;
-  color:#3D2817;
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  align-items:center;
-  transition:background .08s steps(2);
-  -webkit-tap-highlight-color:transparent;
-  font-weight:600;
+  padding:10px 12px;border-radius:8px 10px 9px 11px;font-size:14px;cursor:pointer;
+  color:rgba(240,230,210,.85);display:flex;justify-content:space-between;gap:10px;align-items:center;
+  transition:background .12s ease;-webkit-tap-highlight-color:transparent;font-family:'Patrick Hand',cursive;
 }
-
-.ss-option:hover,.ss-option.active{
-  background:rgba(201,162,39,0.2);
-  color:#6B4423;
-  box-shadow:inset 1px 1px 2px rgba(120,80,40,0.2);
-}
-
-.ss-option.selected{
-  background:linear-gradient(180deg,#E6C55E,#C9A227);
-  color:#fff;
-  font-weight:700;
-  box-shadow:inset 0 1px 0 rgba(255,230,150,0.5),inset 0 -2px 3px rgba(100,60,0,0.4);
-}
-
+.ss-option:hover,.ss-option.active{background:rgba(224,101,61,.18);color:#ff815b}
+.ss-option.selected{background:rgba(224,101,61,.25);color:#ff815b;font-weight:700}
 .ss-option.disabled{opacity:.35;pointer-events:none}
 .ss-option-main{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ss-option-sub{font-size:11px;color:rgba(61,40,23,0.6);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:500}
-.ss-option.selected .ss-option-sub{color:rgba(255,255,255,0.9)}
-.ss-empty{padding:16px 12px;text-align:center;font-size:12px;color:rgba(61,40,23,0.5);font-style:italic;font-family:'Caveat',cursive;font-size:16px}
-.ss-count{padding:6px 12px 8px;font-size:11px;color:rgba(61,40,23,0.5);letter-spacing:.06em;border-bottom:1px solid rgba(120,80,40,0.15);margin-bottom:4px;font-weight:600}
-
-/* ============ BOTONES ============ */
+.ss-option-sub{font-size:11.5px;color:rgba(240,230,210,.5);white-space:nowrap;font-variant-numeric:tabular-nums;font-family:'Kalam',cursive}
+.ss-option.selected .ss-option-sub{color:rgba(255,129,91,.85)}
+.ss-empty{padding:16px 12px;text-align:center;font-size:13px;color:rgba(240,230,210,.45);font-style:italic}
+.ss-count{padding:6px 12px 8px;font-size:10.5px;color:rgba(240,230,210,.4);letter-spacing:.06em;border-bottom:1px solid rgba(240,230,210,.1);margin-bottom:4px;font-family:'Kalam',cursive}
 .btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
-  color:#3D2817;
-  border:0;
-  border-radius:16px;
-  padding:13px 18px;
-  font-size:14px;
-  font-weight:800;
-  letter-spacing:.02em;
-  cursor:pointer;
-  min-height:48px;
-  transition:transform .1s steps(2);
-  box-shadow:
-    inset 0 2px 0 rgba(255,240,180,0.8),
-    inset 0 -3px 5px rgba(100,60,0,0.35),
-    0 4px 0 #8B6914,
-    0 6px 14px -6px rgba(80,50,25,0.4);
-  -webkit-tap-highlight-color:transparent;
-  text-shadow:0 1px 0 rgba(255,240,180,0.3);
-  filter:url(#clay-soft);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(180deg,#e0653d 0%,#c84a28 100%);color:#fff8e8;border:0;
+  border-radius:14px 20px 16px 22px;padding:12px 16px;font-size:17px;font-weight:700;
+  letter-spacing:.02em;font-family:'Patrick Hand',cursive;cursor:pointer;min-height:46px;
+  transition:transform .12s ease,box-shadow .12s ease,filter .18s ease;
+  box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 4px 0 #8a2c1c,0 6px 12px rgba(0,0,0,.5);
+  -webkit-tap-highlight-color:transparent;position:relative;
 }
-
-.btn:hover{transform:translateY(-1px)}
-.btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,240,180,0.6),inset 0 -3px 5px rgba(100,60,0,0.4),0 1px 0 #8B6914}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 1px 0 #8a2c1c,0 2px 4px rgba(0,0,0,.5)}
 .btn-block{width:100%}
-
 .btn-ghost{
-  background:linear-gradient(180deg,#EADBC8 0%,#D4C1A8 100%);
-  color:#3D2817;
-  box-shadow:
-    inset 0 2px 0 rgba(255,250,235,0.7),
-    inset 0 -3px 5px rgba(120,80,40,0.2),
-    0 4px 0 #A88660,
-    0 6px 14px -6px rgba(80,50,25,0.3);
+  background:#221c16;color:#c8b8a8;border:2px solid rgba(240,230,210,.12);
+  box-shadow:0 -2px 0 rgba(0,0,0,.2) inset,0 3px 0 rgba(0,0,0,.4),0 4px 8px rgba(0,0,0,.3);
 }
-.btn-ghost:hover{transform:translateY(-1px);background:linear-gradient(180deg,#F0DFC0,#E0CBA8)}
-
+.btn-ghost:hover{background:#2a231b;filter:none;color:#f0e6d2}
+.btn-ghost:active{transform:translateY(2px);box-shadow:0 -2px 0 rgba(0,0,0,.2) inset,0 1px 0 rgba(0,0,0,.4)}
 .btn-danger{
-  background:linear-gradient(180deg,#E88A7C 0%,#C75A4A 100%);
-  color:#fff;
-  box-shadow:
-    inset 0 2px 0 rgba(255,200,190,0.6),
-    inset 0 -3px 5px rgba(120,30,20,0.4),
-    0 4px 0 #8B3A2A,
-    0 6px 14px -6px rgba(100,30,20,0.4);
-  text-shadow:0 1px 0 rgba(0,0,0,0.2);
+  background:#d64838;color:#fff8e8;
+  box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 4px 0 #8a2c1c,0 6px 12px rgba(0,0,0,.5);
 }
-.btn-danger:hover{transform:translateY(-1px)}
-
+.btn-danger:hover{filter:brightness(1.1)}
+.btn-danger:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 1px 0 #8a2c1c,0 2px 4px rgba(0,0,0,.5)}
 .btn-money{
-  background:linear-gradient(180deg,#A8E8BD 0%,#5BB07A 100%);
-  color:#1A3A25;
-  box-shadow:
-    inset 0 2px 0 rgba(200,255,220,0.6),
-    inset 0 -3px 5px rgba(30,80,40,0.35),
-    0 4px 0 #2E6A42,
-    0 6px 14px -6px rgba(30,80,40,0.4);
-  text-shadow:0 1px 0 rgba(200,255,220,0.3);
+  background:linear-gradient(180deg,#8fb56b 0%,#6b8a4c 100%);color:#15110d;
+  box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 4px 0 #4d5a2a,0 6px 12px rgba(0,0,0,.5);
 }
-
+.btn-money:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 1px 0 #4d5a2a,0 2px 4px rgba(0,0,0,.5)}
 .btn-shopping{
-  background:linear-gradient(180deg,#FFB84D 0%,#E68A00 100%);
-  color:#3D1F00;
-  box-shadow:
-    inset 0 2px 0 rgba(255,230,160,0.6),
-    inset 0 -3px 5px rgba(150,70,0,0.4),
-    0 4px 0 #8B5500,
-    0 6px 14px -6px rgba(100,60,20,0.4);
-  text-shadow:0 1px 0 rgba(255,230,160,0.3);
+  background:linear-gradient(180deg,#d4a554 0%,#b07d2c 100%);color:#15110d;
+  box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 4px 0 #7a5520,0 6px 12px rgba(0,0,0,.5);
 }
-
-.btn-sm{padding:10px 14px;font-size:12.5px;border-radius:13px;min-height:40px}
-.btn-lg{padding:15px;font-size:15px;letter-spacing:.05em}
-
+.btn-shopping:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -2px 0 rgba(0,0,0,.2) inset,0 1px 0 #7a5520,0 2px 4px rgba(0,0,0,.5)}
+.btn-sm{padding:9px 12px;font-size:14px;border-radius:10px 14px 12px 16px;min-height:38px}
+.btn-lg{padding:15px;font-size:18px;letter-spacing:.05em}
 .icon-btn{
-  width:38px;height:38px;flex-shrink:0;
-  display:inline-flex;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#E8D4B8 0%,#C9B08F 100%);
-  border:0;
-  color:#3D2817;
-  border-radius:13px;
-  font-size:15px;
-  cursor:pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255,250,235,0.7),
-    inset 0 -2px 3px rgba(120,80,40,0.2),
-    0 3px 0 #8B6A48;
-  transition:transform .1s steps(2);
-  -webkit-tap-highlight-color:transparent;
-  font-weight:800;
+  width:38px;height:38px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;
+  background:#221c16;border:2px solid rgba(240,230,210,.12);color:#c8b8a8;
+  border-radius:10px 14px 11px 13px;font-size:15px;cursor:pointer;transition:.16s;
+  -webkit-tap-highlight-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.4);
 }
-
-.icon-btn:hover{transform:translateY(-1px);background:linear-gradient(180deg,#F0DFC0,#D4C1A8)}
-.icon-btn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.3),0 1px 0 #8B6A48}
-.icon-btn.danger:hover{background:linear-gradient(180deg,#F0A89C,#D87566);color:#fff}
-
-/* ============ GRIDS & ROWS ============ */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-
+.icon-btn:hover{background:#2a231b;color:#fff8e8}
+.icon-btn:active{transform:translateY(2px);box-shadow:0 0 0 rgba(0,0,0,.4)}
+.icon-btn.danger:hover{background:#d64838;color:#fff8e8;border-color:#d64838;box-shadow:0 2px 0 #8a2c1c}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @media(max-width:640px){.grid4{grid-template-columns:1fr 1fr}}
-
 .row{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:10px;
-  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
-  border:0;
-  border-radius:18px;
-  padding:14px;
-  box-shadow:
-    inset 2px 2px 3px rgba(255,250,235,0.7),
-    inset -2px -2px 3px rgba(120,80,40,0.15),
-    0 3px 0 #B89878;
-  filter:url(#clay-soft);
-  position:relative;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  background:#15110d;border:1px solid rgba(240,230,210,.08);border-left:4px solid #e0653d;
+  border-radius:10px 14px 12px 16px;padding:12px;box-shadow:0 2px 0 rgba(0,0,0,.3);
 }
-
-.row+.row{margin-top:10px}
+.row+.row{margin-top:8px}
 .row-main{min-width:0;flex:1}
-
-.row-title{
-  font-size:14px;
-  font-weight:800;
-  word-break:break-word;
-  color:#2E1A0F;
-}
-
-.row-sub{
-  font-size:13px;
-  color:#8B5A2B;
-  margin-top:4px;
-  font-weight:600;
-  font-family:'Caveat',cursive;
-  font-size:16px;
-}
-
-.row-sub.is-low{color:#C75A4A;font-weight:700}
-
-.row-sub2{
-  font-size:11.5px;
-  color:#6B4423;
-  margin-top:4px;
-  font-weight:600;
-}
-
+.row-title{font-size:16px;font-weight:700;word-break:break-word;color:#f0e6d2}
+.row-sub{font-size:13.5px;color:#e0653d;margin-top:3px;font-family:'Kalam',cursive;font-weight:700}
+.row-sub.is-low{color:#d64838}
+.row-sub2{font-size:12.5px;color:#a89888;margin-top:3px;font-family:'Kalam',cursive}
 .row-actions{display:flex;gap:6px;flex-shrink:0}
-
-.empty{
-  text-align:center;
-  color:#8B6A48;
-  font-size:14px;
-  padding:30px 10px;
-  border:2px dashed rgba(120,80,40,0.3);
-  border-radius:18px;
-  font-family:'Caveat',cursive;
-  font-size:20px;
-  background:rgba(255,250,235,0.3);
-}
-
-/* ============ CHIPS & VARIANTS ============ */
-.chips{display:flex;flex-wrap:wrap;gap:8px}
+.empty{text-align:center;color:rgba(240,230,210,.4);font-size:15px;padding:26px 10px;border:2px dashed rgba(240,230,210,.15);border-radius:12px 16px 14px 18px;font-style:italic}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
 .chips-mini{gap:6px;margin-top:8px}
-
 .chip{
-  background:linear-gradient(180deg,#E8D4B8 0%,#C9B08F 100%);
-  color:#3D2817;
-  padding:10px 16px;
-  border-radius:999px;
-  font-size:13px;
-  font-weight:700;
-  cursor:pointer;
-  transition:transform .1s steps(2);
-  -webkit-tap-highlight-color:transparent;
-  min-height:40px;
-  box-shadow:
-    inset 0 1px 0 rgba(255,250,235,0.7),
-    inset 0 -2px 3px rgba(120,80,40,0.2),
-    0 3px 0 #8B6A48;
-  border:0;
-  filter:url(#clay-soft);
+  border:2px solid rgba(240,230,210,.15);background:#15110d;color:#c8b8a8;
+  padding:9px 14px;border-radius:18px 22px 19px 21px;font-size:16px;font-weight:700;
+  font-family:'Patrick Hand',cursive;cursor:pointer;transition:.16s;
+  -webkit-tap-highlight-color:transparent;min-height:38px;box-shadow:0 2px 0 rgba(0,0,0,.4);
 }
-
-.chip:hover{transform:translateY(-1px);background:linear-gradient(180deg,#F0DFC0,#D4C1A8)}
-.chip:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.3),0 1px 0 #8B6A48}
-
-.chip.active{
-  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
-  color:#fff;
-  font-weight:800;
-  box-shadow:
-    inset 0 1px 0 rgba(255,240,180,0.6),
-    inset 0 -2px 3px rgba(100,60,0,0.4),
-    0 3px 0 #8B6914;
-}
-
+.chip:hover{border-color:rgba(240,230,210,.3);color:#f0e6d2}
+.chip.active{background:linear-gradient(180deg,#e0653d,#c84a28);border-color:#8a2c1c;color:#fff8e8;box-shadow:0 2px 0 #5a2a18,0 0 8px rgba(224,101,61,.4)}
+.chip:active{transform:translateY(2px);box-shadow:0 0 0 rgba(0,0,0,.4)}
 .variant{
-  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
-  color:#3D2817;
-  padding:7px 12px;
-  border-radius:12px;
-  font-size:12px;
-  cursor:pointer;
-  transition:transform .1s steps(2);
-  -webkit-tap-highlight-color:transparent;
-  box-shadow:
-    inset 1px 1px 2px rgba(255,250,235,0.7),
-    inset -1px -1px 2px rgba(120,80,40,0.15),
-    0 2px 0 #A88660;
-  border:0;
-  font-weight:700;
-  filter:url(#clay-soft);
+  border:2px solid rgba(240,230,210,.12);background:#15110d;color:rgba(240,230,210,.75);
+  padding:6px 11px;border-radius:9px 12px 10px 14px;font-size:13.5px;cursor:pointer;
+  font-family:'Patrick Hand',cursive;transition:.16s;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 1px 0 rgba(0,0,0,.3);
 }
-
-.variant:hover{transform:translateY(-1px);background:linear-gradient(180deg,#E6C55E,#C9A227);color:#fff}
-.variant.low{background:linear-gradient(180deg,#F0A89C,#D87566);color:#fff;box-shadow:inset 1px 1px 2px rgba(255,200,190,0.5),inset -1px -1px 2px rgba(120,30,20,0.2),0 2px 0 #8B3A2A}
-
-/* ============ LIQUIDOS ============ */
+.variant:hover{border-color:rgba(224,101,61,.6);color:#e0653d}
+.variant.low{color:#d64838;border-color:rgba(214,72,56,.5);background:rgba(214,72,56,.1)}
 .liq{
-  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
-  border-radius:18px;
-  padding:14px;
-  box-shadow:
-    inset 2px 2px 3px rgba(255,250,235,0.7),
-    inset -2px -2px 3px rgba(120,80,40,0.15),
-    0 3px 0 #B89878;
-  filter:url(#clay-soft);
+  background:#15110d;border:1px solid rgba(240,230,210,.08);
+  border-radius:12px 16px 14px 18px;padding:12px;box-shadow:0 2px 0 rgba(0,0,0,.3);
 }
-
-.liq-name{
-  font-size:14px;
-  color:#6B4423;
-  margin-bottom:10px;
-  line-height:1.35;
-  font-weight:700;
-  font-family:'Caveat',cursive;
-  font-size:18px;
-}
-
-.liq-row{display:flex;gap:8px;margin-bottom:8px}
+.liq-name{font-size:13.5px;color:#a89888;margin-bottom:8px;line-height:1.35;font-family:'Kalam',cursive;font-weight:700}
+.liq-row{display:flex;gap:6px;margin-bottom:6px}
 .liq-row .input{flex:1;min-width:0}
-
-.liq-stock{
-  font-size:12px;
-  color:#8B5A2B;
-  font-weight:700;
-  margin-top:8px;
-  font-variant-numeric:tabular-nums;
-  font-family:'Caveat',cursive;
-  font-size:15px;
-}
-
-.liq-cost-label{
-  font-family:'Caveat',cursive;
-  font-size:15px;
-  color:#6B4423;
-  margin-bottom:5px;
-  font-weight:700;
-}
-
-/* ============ BOTTOM NAV ============ */
+.liq-stock{font-size:14px;color:#e0653d;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums;font-family:'Kalam',cursive}
+.liq-cost-label{font-size:11px;color:rgba(240,230,210,.4);margin-bottom:4px;letter-spacing:.05em;font-family:'Kalam',cursive}
 .bottom{
-  position:fixed;
-  left:0;right:0;
-  bottom:0;
-  z-index:50;
-  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-  background:linear-gradient(180deg,rgba(232,212,184,0.6) 0%,rgba(212,193,168,0.98) 50%);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border-top:3px solid #B89878;
-  box-shadow:0 -4px 20px rgba(80,50,25,0.2);
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(21,17,13,.85) 0%,rgba(15,12,9,.98) 45%);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:2px dashed rgba(240,230,210,.1);box-shadow:0 -4px 12px rgba(0,0,0,.4);
 }
-
-.bottom-inner{max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-
+.bottom-inner{max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
 .tab{
-  border:0;
-  background:linear-gradient(180deg,#E8D4B8 0%,#D4C1A8 100%);
-  cursor:pointer;
-  border-radius:18px;
-  padding:10px 6px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:5px;
-  color:#6B4423;
-  transition:transform .12s steps(2);
-  -webkit-tap-highlight-color:transparent;
-  box-shadow:
-    inset 0 1px 0 rgba(255,250,235,0.7),
-    inset 0 -2px 3px rgba(120,80,40,0.2),
-    0 3px 0 #A88660;
-  filter:url(#clay-soft);
+  border:0;background:transparent;cursor:pointer;
+  border-radius:14px 18px 16px 20px;padding:9px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;color:#a89888;
+  transition:background .2s,color .2s,transform .12s;-webkit-tap-highlight-color:transparent;
+  font-family:'Patrick Hand',cursive;
 }
-
-.tab span{
-  font-size:10px;
-  letter-spacing:.12em;
-  font-weight:800;
-  font-family:'Nunito',sans-serif;
-}
-
-.tab svg{color:#6B4423}
-
-.tab.active{
-  background:linear-gradient(180deg,#E6C55E,#C9A227);
-  color:#3D2817;
-  box-shadow:
-    inset 0 2px 0 rgba(255,240,180,0.8),
-    inset 0 -3px 5px rgba(100,60,0,0.4),
-    0 4px 0 #8B6914;
-}
-
-.tab.active svg{color:#3D2817}
-
-.tab:not(.active):active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,250,235,0.7),inset 0 -2px 3px rgba(120,80,40,0.3),0 1px 0 #A88660}
-
-/* ============ FORMULA & PREVIEW BOXES ============ */
+.tab span{font-size:10.5px;letter-spacing:.1em;font-weight:700}
+.tab.active{background:linear-gradient(180deg,#e0653d,#c84a28);color:#fff8e8;box-shadow:0 3px 0 #8a2c1c,0 4px 8px rgba(0,0,0,.3)}
+.tab:not(.active):active{background:rgba(224,101,61,.12);transform:translateY(1px)}
 .formula-box{
-  margin-top:16px;
-  padding:16px;
-  border-radius:20px;
-  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
-  box-shadow:
-    inset 2px 2px 3px rgba(255,250,235,0.7),
-    inset -2px -2px 3px rgba(120,80,40,0.15),
-    0 3px 0 #B89878;
-  filter:url(#clay-soft);
+  margin-top:14px;padding:14px;border-radius:14px 18px 16px 20px;
+  background:#15110d;border:1px solid rgba(240,230,210,.08);box-shadow:0 2px 0 rgba(0,0,0,.3);
 }
-
-.formula-title{
-  font-family:'Caveat',cursive;
-  font-size:18px;
-  letter-spacing:.04em;
-  color:#8B5A2B;
-  margin-bottom:14px;
-  font-weight:700;
-  text-transform:uppercase;
-}
-
+.formula-title{font-size:11px;letter-spacing:.15em;color:rgba(240,230,210,.5);margin-bottom:12px;font-weight:700;font-family:'Kalam',cursive}
 .alc-box{
-  margin-top:14px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  background:linear-gradient(180deg,#E8D4B8,#D4C1A8);
-  padding:14px 16px;
-  border-radius:16px;
-  box-shadow:inset 2px 2px 3px rgba(255,250,235,0.6),inset -2px -2px 3px rgba(120,80,40,0.2),0 2px 0 #A88660;
+  margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;
+  background:#221c16;border:1px solid rgba(240,230,210,.08);padding:12px 14px;
+  border-radius:12px 16px 14px 18px;
 }
-
-.alc-label{
-  font-size:11px;
-  color:#6B4423;
-  letter-spacing:.06em;
-  font-weight:700;
-}
-
-.alc-val{
-  font-size:24px;
-  color:#8B5A2B;
-  font-weight:800;
-  font-variant-numeric:tabular-nums;
-  font-family:'Instrument Serif',serif;
-}
-
-.fij-val{font-size:14px;font-weight:800;color:#6B4423;font-family:'Instrument Serif',serif}
-.alert-txt{font-size:11.5px;margin-top:4px;line-height:1.3;font-family:'Caveat',cursive;font-size:15px;font-weight:700}
-
+.alc-label{font-size:11px;color:rgba(240,230,210,.5);letter-spacing:.06em;font-family:'Kalam',cursive;font-weight:700}
+.alc-val{font-size:26px;color:#e0653d;font-weight:700;font-variant-numeric:tabular-nums;font-family:'Caveat',cursive;line-height:1}
+.fij-val{font-size:16px;font-weight:700;font-family:'Caveat',cursive;color:#f0e6d2}
+.alert-txt{font-size:11.5px;margin-top:3px;line-height:1.3;font-family:'Kalam',cursive}
 .precio-box{
-  margin-top:16px;
-  padding:16px;
-  border-radius:20px;
-  background:linear-gradient(180deg,#D8F0DE 0%,#B8D8C0 100%);
-  box-shadow:
-    inset 2px 2px 3px rgba(220,255,230,0.8),
-    inset -2px -2px 3px rgba(60,120,80,0.15),
-    0 3px 0 #7CA888;
-  filter:url(#clay-soft);
+  margin-top:14px;padding:14px;border-radius:14px 18px 16px 20px;
+  background:linear-gradient(180deg,rgba(143,181,107,.12),rgba(143,181,107,.04));
+  border:2px solid rgba(143,181,107,.3);box-shadow:0 2px 0 rgba(0,0,0,.3);
 }
-
-.precio-title{
-  font-family:'Caveat',cursive;
-  font-size:20px;
-  letter-spacing:.04em;
-  color:#2E6A42;
-  margin-bottom:12px;
-  font-weight:700;
-  text-transform:uppercase;
-}
-
-.precio-unit{font-size:12px;color:#4A6B52;margin-top:8px;font-weight:600}
-
+.precio-title{font-size:11px;letter-spacing:.15em;color:#8fb56b;margin-bottom:10px;font-weight:700;font-family:'Kalam',cursive}
+.precio-unit{font-size:12px;color:rgba(240,230,210,.5);margin-top:6px;font-family:'Kalam',cursive}
 .preview{
-  margin-top:18px;
-  padding:16px;
-  border-radius:20px;
-  background:linear-gradient(180deg,#F8E8C8 0%,#E8D4B0 100%);
-  box-shadow:
-    inset 2px 2px 3px rgba(255,250,235,0.8),
-    inset -2px -2px 3px rgba(180,130,70,0.2),
-    0 3px 0 #B89878;
-  font-size:13px;
-  filter:url(#clay-soft);
+  margin-top:16px;padding:14px;border-radius:14px 18px 16px 20px;
+  background:#15110d;border:2px solid rgba(224,101,61,.3);font-size:14px;
+  box-shadow:0 2px 0 rgba(0,0,0,.3);
 }
-
-.pv-head{
-  font-family:'Caveat',cursive;
-  font-size:18px;
-  letter-spacing:.04em;
-  color:#8B5A2B;
-  font-weight:700;
-  margin-bottom:14px;
-  text-transform:uppercase;
-}
-
-.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pv-head{font-size:11px;letter-spacing:.14em;color:#e0653d;font-weight:700;margin-bottom:12px;font-family:'Kalam',cursive}
+.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:480px){.pv-grid{grid-template-columns:1fr}}
-
-.pv-col-title{
-  font-size:11px;
-  color:#6B4423;
-  letter-spacing:.06em;
-  margin-bottom:8px;
-  font-weight:800;
-  text-transform:uppercase;
-}
-
-.pv-line{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:3px 0;
-  color:#3D2817;
-}
-
-.pv-line b{font-weight:800;color:#2E1A0F;font-variant-numeric:tabular-nums}
-
-.ok{color:#2E6A42!important;font-weight:800}
-.bad{color:#8B3A2A!important;font-weight:800}
-.gold{color:#8B5A2B!important;font-weight:800}
-
-.pv-econ{
-  margin-top:16px;
-  padding-top:14px;
-  border-top:2px dashed rgba(120,80,40,0.25);
-}
-
-.pv-econ-title{
-  font-family:'Caveat',cursive;
-  font-size:18px;
-  letter-spacing:.04em;
-  color:#2E6A42;
-  font-weight:700;
-  margin-bottom:12px;
-  text-transform:uppercase;
-}
-
-.pv-econ-line{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:5px 0;
-  font-size:13px;
-}
-
-.pv-econ-line span{color:#6B4423;font-weight:600}
-.pv-econ-line b{font-variant-numeric:tabular-nums;font-weight:800;color:#2E1A0F}
-.pv-econ-line.big b{font-size:20px;font-family:'Instrument Serif',serif}
-
-.pv-status{
-  margin-top:14px;
-  padding:12px 14px;
-  border-radius:14px;
-  font-size:13px;
-  font-weight:800;
-  text-align:center;
-  letter-spacing:.01em;
-  box-shadow:inset 2px 2px 3px rgba(255,250,235,0.6),inset -2px -2px 3px rgba(120,80,40,0.15),0 2px 0 rgba(120,80,40,0.2);
-  filter:url(#clay-soft);
-}
-
-.pv-status.good{background:linear-gradient(180deg,#D8F0DE,#B8D8C0);color:#1A3A25}
-.pv-status.bad{background:linear-gradient(180deg,#F0C8C0,#D89888);color:#5A2015}
-
-/* ============ STATS ============ */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:16px}
-
+.pv-col-title{font-size:11px;color:rgba(240,230,210,.5);letter-spacing:.06em;margin-bottom:7px;font-family:'Kalam',cursive;font-weight:700}
+.pv-line{display:flex;justify-content:space-between;gap:10px;padding:2.5px 0;color:rgba(240,230,210,.7);font-family:'Patrick Hand',cursive}
+.pv-line b{font-weight:700;color:#f0e6d2;font-variant-numeric:tabular-nums}
+.ok{color:#8fb56b!important}
+.bad{color:#d64838!important}
+.gold{color:#e0653d!important}
+.pv-econ{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(224,101,61,.3)}
+.pv-econ-title{font-size:11px;letter-spacing:.14em;color:#8fb56b;font-weight:700;margin-bottom:10px;font-family:'Kalam',cursive}
+.pv-econ-line{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:14px;font-family:'Patrick Hand',cursive}
+.pv-econ-line span{color:rgba(240,230,210,.6)}
+.pv-econ-line b{font-variant-numeric:tabular-nums;font-weight:700}
+.pv-econ-line.big b{font-size:22px;font-family:'Caveat',cursive}
+.pv-status{margin-top:12px;padding:10px 12px;border-radius:11px 14px 12px 16px;font-size:13.5px;font-weight:700;text-align:center;letter-spacing:.01em;font-family:'Patrick Hand',cursive}
+.pv-status.good{background:rgba(143,181,107,.15);color:#8fb56b;border:2px solid rgba(143,181,107,.4)}
+.pv-status.bad{background:rgba(214,72,56,.12);color:#d64838;border:2px solid rgba(214,72,56,.4)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:14px}
 .stat{
-  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
-  border-radius:18px;
-  padding:14px 10px;
-  text-align:center;
-  box-shadow:
-    inset 2px 2px 3px rgba(255,250,235,0.7),
-    inset -2px -2px 3px rgba(120,80,40,0.15),
-    0 3px 0 #B89878;
-  filter:url(#clay-soft);
+  background:#15110d;border:2px solid rgba(240,230,210,.08);
+  border-radius:10px 14px 12px 16px;padding:12px 8px;text-align:center;
+  box-shadow:0 2px 0 rgba(0,0,0,.3);position:relative;
 }
-
-.stat-label{
-  font-size:10px;
-  color:#6B4423;
-  letter-spacing:.06em;
-  line-height:1.3;
-  font-weight:800;
-  text-transform:uppercase;
-}
-
-.stat-val{
-  font-size:22px;
-  margin-top:5px;
-  font-variant-numeric:tabular-nums;
-  font-weight:800;
-  color:#2E1A0F;
-}
-
-.stat-val.serif{font-family:'Instrument Serif',serif}
-.stat-val.money{color:#2E6A42}
-.stat-val.gold{color:#8B5A2B}
-.stat-val.red{color:#8B3A2A}
-
-/* ============ HISTORIAL ============ */
+.stat:nth-child(3n+1){transform:rotate(-1.2deg)}
+.stat:nth-child(3n+2){transform:rotate(.8deg)}
+.stat:nth-child(3n){transform:rotate(-.4deg)}
+.stat-label{font-size:10px;color:rgba(240,230,210,.5);letter-spacing:.05em;line-height:1.3;font-family:'Kalam',cursive;font-weight:700;text-transform:uppercase}
+.stat-val{font-size:22px;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat-val.serif{font-family:'Caveat',cursive}
+.stat-val.money{color:#8fb56b}
+.stat-val.gold{color:#e0653d}
+.stat-val.red{color:#d64838}
 .hist-item{
-  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
-  border-radius:20px;
-  padding:15px;
-  box-shadow:
-    inset 2px 2px 3px rgba(255,250,235,0.7),
-    inset -2px -2px 3px rgba(120,80,40,0.15),
-    0 3px 0 #B89878;
-  filter:url(#clay-soft);
+  background:#15110d;border:1px solid rgba(240,230,210,.08);
+  border-left:4px solid #e0653d;border-radius:12px 16px 14px 18px;
+  padding:13px;box-shadow:0 2px 0 rgba(0,0,0,.3);
 }
-
 .hist-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-
-.hist-title{font-size:15px;font-weight:800;color:#2E1A0F}
-.hist-date{font-size:12px;color:#6B4423;margin-top:4px;font-family:'Caveat',cursive;font-size:16px;font-weight:700}
-
+.hist-title{font-size:16px;font-weight:700;color:#f0e6d2;font-family:'Patrick Hand',cursive}
+.hist-date{font-size:12.5px;color:rgba(240,230,210,.5);margin-top:3px;font-family:'Kalam',cursive}
 .pill{
-  font-size:12px;
-  font-weight:800;
-  padding:7px 12px;
-  border-radius:14px;
-  white-space:nowrap;
-  background:linear-gradient(180deg,#E6C55E 0%,#C9A227 100%);
-  color:#3D2817;
-  font-variant-numeric:tabular-nums;
-  box-shadow:
-    inset 0 1px 0 rgba(255,240,180,0.6),
-    inset 0 -2px 3px rgba(100,60,0,0.4),
-    0 2px 0 #8B6914;
-  filter:url(#clay-soft);
+  font-size:12px;font-weight:700;padding:5px 10px;border-radius:14px 18px 16px 20px;
+  white-space:nowrap;background:rgba(224,101,61,.15);color:#ff815b;
+  border:2px solid rgba(224,101,61,.35);font-variant-numeric:tabular-nums;
+  font-family:'Kalam',cursive;transform:rotate(2deg);display:inline-block;
 }
-
-.pill.money{background:linear-gradient(180deg,#A8E8BD 0%,#5BB07A 100%);color:#1A3A25;box-shadow:inset 0 1px 0 rgba(200,255,220,0.6),inset 0 -2px 3px rgba(30,80,40,0.35),0 2px 0 #2E6A42}
-.pill.loss{background:linear-gradient(180deg,#E88A7C 0%,#C75A4A 100%);color:#fff;box-shadow:inset 0 1px 0 rgba(255,200,190,0.6),inset 0 -2px 3px rgba(120,30,20,0.4),0 2px 0 #8B3A2A}
-
-.hist-detail{margin-top:13px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px}
+.pill.money{background:rgba(143,181,107,.15);color:#8fb56b;border-color:rgba(143,181,107,.35)}
+.pill.loss{background:rgba(214,72,56,.15);color:#d64838;border-color:rgba(214,72,56,.4);transform:rotate(-2deg)}
+.hist-detail{margin-top:11px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12.5px}
 @media(max-width:420px){.hist-detail{grid-template-columns:1fr}}
-
 .hist-box{
-  background:linear-gradient(180deg,#F0DFC0,#E0CBA8);
-  border-radius:14px;
-  padding:11px 13px;
-  line-height:1.7;
-  color:#3D2817;
-  box-shadow:inset 1px 1px 2px rgba(255,250,235,0.6),inset -1px -1px 2px rgba(120,80,40,0.15);
-  font-weight:600;
+  background:#1f1a14;border:1px solid rgba(240,230,210,.08);
+  border-radius:10px 14px 12px 16px;padding:9px 11px;line-height:1.65;
+  color:rgba(240,230,210,.8);font-family:'Kalam',cursive;
 }
-
-.hist-box strong{
-  display:block;
-  font-size:11px;
-  color:#8B5A2B;
-  letter-spacing:.12em;
-  margin-bottom:5px;
-  font-weight:800;
-  font-family:'Caveat',cursive;
-  font-size:16px;
-  text-transform:uppercase;
-}
-
-.hist-box.money{background:linear-gradient(180deg,#D8F0DE,#B8D8C0);box-shadow:inset 1px 1px 2px rgba(220,255,230,0.6),inset -1px -1px 2px rgba(60,120,80,0.15)}
+.hist-box strong{display:block;font-size:10px;color:rgba(240,230,210,.45);letter-spacing:.12em;margin-bottom:4px;font-weight:700;text-transform:uppercase}
+.hist-box.money{background:rgba(143,181,107,.06);border-color:rgba(143,181,107,.2)}
 .hist-box.money .line{display:flex;justify-content:space-between;gap:8px}
-.hist-box.money .line b{color:#1A3A25;font-weight:800}
-.hist-box.money .line.loss b{color:#8B3A2A}
-
-/* ============ MODALES ============ */
+.hist-box.money .line b{color:#8fb56b}
+.hist-box.money .line.loss b{color:#d64838}
 .backdrop{
-  position:fixed;
-  inset:0;
-  z-index:200;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  background:rgba(61,40,23,0.5);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
+  position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
 }
-
-.backdrop.show{display:flex;animation:fade .2s steps(4)}
+.backdrop.show{display:flex;animation:fade .18s ease}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-
 .modal{
-  width:100%;
-  max-width:420px;
-  background:linear-gradient(180deg,#F0DFC0 0%,#E0CBA8 100%);
-  border-radius:28px;
-  padding:24px;
-  box-shadow:
-    inset 0 2px 0 rgba(255,250,235,0.8),
-    inset 0 -4px 8px rgba(120,80,40,0.15),
-    0 6px 0 #B89878,
-    0 20px 50px -15px rgba(60,40,20,0.5);
-  animation:pop .25s steps(5);
-  max-height:calc(100vh - 40px);
-  overflow-y:auto;
-  filter:url(#clay-soft);
+  width:100%;max-width:420px;background:#1f1a14;border:2px solid rgba(240,230,210,.1);
+  border-radius:20px 26px 22px 28px;padding:22px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6),0 2px 0 rgba(255,255,255,.04) inset;
+  animation:pop .22s cubic-bezier(.2,.9,.3,1.2);max-height:calc(100vh - 40px);overflow-y:auto;position:relative;
 }
-
+.modal::before{
+  content:'';position:absolute;top:-10px;left:50%;
+  transform:translateX(-50%) rotate(3deg);width:80px;height:20px;
+  background:rgba(224,101,61,.3);border:1px solid rgba(224,101,61,.35);
+  border-radius:1px;pointer-events:none;
+}
 .modal.modal-lg{max-width:520px}
-
-@keyframes pop{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:none}}
-
-.modal h3{font-size:22px;margin-bottom:18px;color:#2E1A0F}
-.modal-actions{display:flex;gap:10px;margin-top:20px}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.modal h3{font-size:24px;margin-bottom:16px;color:#f0e6d2}
+.modal-actions{display:flex;gap:8px;margin-top:18px}
 .modal-actions .btn{flex:1}
-
-/* ============ SHOPPING LIST ============ */
-.shop-list{margin-top:6px;max-height:52vh;overflow-y:auto;padding-right:4px}
-.shop-cat{margin-bottom:18px}
+.shop-list{margin-top:4px;max-height:52vh;overflow-y:auto;padding-right:4px}
+.shop-cat{margin-bottom:16px}
 .shop-cat:last-child{margin-bottom:0}
-
 .shop-cat-title{
-  font-family:'Caveat',cursive;
-  font-size:20px;
-  letter-spacing:.04em;
-  color:#8B5A2B;
-  font-weight:700;
-  margin-bottom:10px;
-  padding-bottom:8px;
-  border-bottom:2px dashed rgba(120,80,40,0.25);
-  text-transform:uppercase;
+  font-size:11px;letter-spacing:.14em;color:#e0653d;font-weight:700;
+  margin-bottom:8px;padding-bottom:6px;border-bottom:2px dashed rgba(224,101,61,.3);
+  font-family:'Kalam',cursive;text-transform:uppercase;
 }
-
 .shop-item{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:11px 13px;
-  background:linear-gradient(180deg,#FAF0DC 0%,#E8D4B8 100%);
-  border-radius:14px;
-  margin-bottom:8px;
-  font-size:13px;
-  align-items:center;
-  box-shadow:inset 2px 2px 3px rgba(255,250,235,0.6),inset -2px -2px 3px rgba(120,80,40,0.15),0 2px 0 #A88660;
-  filter:url(#clay-soft);
+  display:flex;justify-content:space-between;gap:10px;padding:9px 11px;
+  background:#15110d;border:1px solid rgba(240,230,210,.08);border-left:3px solid #e0653d;
+  border-radius:8px 12px 10px 14px;margin-bottom:6px;font-size:14px;align-items:center;
+  font-family:'Patrick Hand',cursive;box-shadow:0 1px 0 rgba(0,0,0,.3);
 }
-
 .shop-item-info{flex:1;min-width:0}
-.shop-item-name{color:#2E1A0F;font-weight:800;word-break:break-word}
-.shop-item-current{font-size:12px;color:#6B4423;margin-top:3px;font-family:'Caveat',cursive;font-size:15px}
-.shop-item-qty{font-size:14px;font-weight:800;color:#2E6A42;white-space:nowrap;font-variant-numeric:tabular-nums}
-
-.shop-empty{text-align:center;padding:30px 12px;color:#6B4423;font-size:14px;font-family:'Caveat',cursive;font-size:20px}
-.shop-empty-icon{font-size:42px;margin-bottom:12px;opacity:.6}
-
-/* ============ TOAST ============ */
+.shop-item-name{color:#f0e6d2;font-weight:700;word-break:break-word}
+.shop-item-current{font-size:11.5px;color:#d64838;margin-top:2px;font-family:'Kalam',cursive}
+.shop-item-qty{font-size:16px;font-weight:700;color:#8fb56b;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:'Caveat',cursive}
+.shop-empty{text-align:center;padding:30px 12px;color:rgba(240,230,210,.45);font-size:15px;font-style:italic}
+.shop-empty-icon{font-size:42px;margin-bottom:10px;opacity:.7}
 .toast{
-  position:fixed;
-  left:50%;
-  bottom:calc(110px + env(safe-area-inset-bottom));
-  transform:translate(-50%,16px);
-  background:linear-gradient(180deg,#E6C55E,#C9A227);
-  color:#3D2817;
-  padding:13px 22px;
-  border-radius:999px;
-  font-size:14px;
-  font-weight:800;
-  z-index:300;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .25s steps(4),transform .25s steps(4);
-  box-shadow:
-    inset 0 1px 0 rgba(255,240,180,0.6),
-    inset 0 -2px 3px rgba(100,60,0,0.4),
-    0 4px 0 #8B6914,
-    0 10px 28px -8px rgba(80,50,25,0.45);
-  max-width:calc(100vw - 40px);
-  text-align:center;
-  filter:url(#clay-soft);
+  position:fixed;left:50%;bottom:calc(108px + env(safe-area-inset-bottom));
+  transform:translate(-50%,16px);background:linear-gradient(180deg,#e0653d,#c84a28);
+  color:#fff8e8;padding:12px 22px;border-radius:18px 24px 22px 20px;
+  font-size:15px;font-weight:700;font-family:'Patrick Hand',cursive;z-index:300;
+  opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;
+  box-shadow:0 4px 0 #8a2c1c,0 8px 20px rgba(0,0,0,.5);max-width:calc(100vw - 40px);text-align:center;
 }
-
 .toast.show{opacity:1;transform:translate(-50%,0)}
-
-/* ============ VIEWS ============ */
-.view{display:none;animation:fade .3s steps(4)}
+.view{display:none;animation:fade .25s ease}
 .view.active{display:block}
-.divider{height:2px;background:rgba(120,80,40,0.2);margin:16px 0;border-radius:2px}
-
-.range-label{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  font-size:12px;
-  color:#6B4423;
-  letter-spacing:.03em;
-  margin-bottom:8px;
-  font-weight:700;
-}
-
-.range-label svg{color:#8B5A2B;flex-shrink:0}
-
-/* ============ SCROLLBAR ============ */
-::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-track{background:rgba(120,80,40,0.1);border-radius:10px}
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#C9A227,#8B6914);border-radius:10px;border:2px solid rgba(0,0,0,0)}
-::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#E6C55E,#C9A227)}
-
-/* ============ ANIMACIONES STOP-MOTION ============ */
-@keyframes stopShake{
-  0%,100%{transform:rotate(0deg) translate(0,0)}
-  25%{transform:rotate(-0.3deg) translate(0.5px,0)}
-  75%{transform:rotate(0.3deg) translate(-0.5px,0)}
-}
-
-.card:hover{animation:stopShake 0.6s steps(4) infinite}
-
-/* Marca de dedo que aparece al hover */
-.row:hover::before,
-.hist-item:hover::before{
-  content:"";
-  position:absolute;
-  top:8px;
-  right:50px;
-  width:14px;
-  height:10px;
-  background:radial-gradient(ellipse, rgba(120,80,40,0.15), transparent 70%);
-  border-radius:50%;
-  pointer-events:none;
-}
-
-.row,.hist-item{position:relative}
-
-/* Efecto de "presionar" plastilina en botones activos */
-.btn:active,
-.icon-btn:active,
-.chip:active,
-.variant:active{
-  filter:url(#clay-rough) !important;
-}
-
+.divider{height:0;border-bottom:2px dashed rgba(240,230,210,.15);margin:14px 0}
+.range-label{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(240,230,210,.5);letter-spacing:.03em;margin-bottom:6px;font-family:'Kalam',cursive;font-weight:700}
+.range-label svg{color:#e0653d;flex-shrink:0}
 </style>
 </head>
 <body>
-
 <div class="wrap">
-
   <header class="topbar">
-
     <div class="brand">
-
-      <span class="brand-kicker">AION Perfumería</span>
-
-      <h1>Gestor <i>v4.2</i></h1>
-
-      <span class="brand-sub">EXTRAIT 42% · ISF 0.2 · Control financiero</span>
-
+      <span class="brand-kicker">AION PERFUMERÍA</span>
+      <h1>Cuaderno <i>v4.2</i></h1>
+      <span class="brand-sub">EXTRAIT 42% · ISF 0.2 · Control artesanal</span>
     </div>
-
     <div class="topstat"><span class="dot"></span><span id="statTot">0 esencias</span></div>
-
   </header>
-
   <main>
-
-    <!-- ================= INVENTARIO ================= -->
-
     <section id="view-inv" class="view active">
-
-      <!-- ESENCIAS -->
-
       <div class="card" id="card-ess">
-
         <div class="card-head">
-
-          <h2>✦ Esencias</h2>
-
+          <h2>Esencias</h2>
           <div class="card-head-right">
-
             <span class="badge" id="countEss">0</span>
-
             <button class="collapse-btn" id="tog-ess" onclick="toggleCard('ess')" title="Minimizar">
-
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
-
           </div>
-
         </div>
-
         <div class="card-body" id="body-ess">
-
           <label class="label">Nombre</label>
-
-          <input id="essName" class="input" placeholder="Ej: Baccarat Rouge" autocomplete="off" style="margin-bottom:12px">
-
-          <div class="grid2" style="margin-bottom:12px">
-
+          <input id="essName" class="input" placeholder="Ej: Baccarat Rouge" autocomplete="off" style="margin-bottom:10px">
+          <div class="grid2" style="margin-bottom:10px">
             <div><label class="label">Stock (ml)</label><input id="essMl" class="input" type="number" inputmode="decimal" value="100"></div>
-
             <div><label class="label">Costo $/ml</label><input id="essCosto" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01"></div>
-
           </div>
-
-          <button class="btn btn-block" onclick="addEsencia()">✦ Añadir esencia</button>
-
-          <div id="listEss" style="margin-top:14px"></div>
-
+          <button class="btn btn-block" onclick="addEsencia()">+ Añadir esencia</button>
+          <div id="listEss" style="margin-top:12px"></div>
         </div>
-
       </div>
-
-      <!-- LÍQUIDOS -->
-
       <div class="card" id="card-liq">
-
         <div class="card-head">
-
-          <h2>✦ Líquidos base</h2>
-
+          <h2>Líquidos base</h2>
           <div class="card-head-right">
-
             <button class="collapse-btn" id="tog-liq" onclick="toggleCard('liq')" title="Minimizar">
-
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
-
           </div>
-
         </div>
-
         <div class="card-body" id="body-liq">
-
-          <p class="card-sub">💡 Introduce el costo por ml una sola vez. Se usará para calcular el costo de cada producción.</p>
-
+          <p class="card-sub">Introduce el costo por ml una sola vez. Se usará para calcular el costo de cada producción.</p>
           <div class="grid2" id="liqGrid"></div>
-
         </div>
-
       </div>
-
-      <!-- FRASCOS -->
-
       <div class="card" id="card-bot">
-
         <div class="card-head">
-
-          <h2>✦ Frascos</h2>
-
+          <h2>Frascos</h2>
           <div class="card-head-right">
-
             <span class="badge" id="countBot">0</span>
-
             <button class="collapse-btn" id="tog-bot" onclick="toggleCard('bot')" title="Minimizar">
-
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
-
           </div>
-
         </div>
-
         <div class="card-body" id="body-bot">
-
-          <p class="card-sub">📦 Un modelo puede tener varios tamaños. Si el modelo ya existe, se añade el nuevo tamaño.</p>
-
+          <p class="card-sub">Un modelo puede tener varios tamaños. Si el modelo ya existe, se añade el nuevo tamaño.</p>
           <label class="label">Modelo</label>
-
-          <input id="botModelo" class="input" placeholder="Ej: Cilíndrica dorada" autocomplete="off" style="margin-bottom:12px">
-
-          <div class="grid3" style="margin-bottom:12px">
-
+          <input id="botModelo" class="input" placeholder="Ej: Cilíndrica dorada" autocomplete="off" style="margin-bottom:10px">
+          <div class="grid3" style="margin-bottom:10px">
             <div><label class="label">Tamaño (ml)</label><input id="botTam" class="input" type="number" inputmode="decimal" value="50"></div>
-
             <div><label class="label">Stock (u)</label><input id="botStock" class="input" type="number" inputmode="numeric" value="10"></div>
-
             <div><label class="label">Costo $/u</label><input id="botCosto" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01"></div>
-
           </div>
-
-          <button class="btn btn-block" onclick="addFrasco()">✦ Añadir frasco</button>
-
-          <div id="listBot" style="margin-top:14px"></div>
-
+          <button class="btn btn-block" onclick="addFrasco()">+ Añadir frasco</button>
+          <div id="listBot" style="margin-top:12px"></div>
         </div>
-
       </div>
-
-      <!-- ATOMIZADORES -->
-
       <div class="card" id="card-ato">
-
         <div class="card-head">
-
-          <h2>✦ Atomizadores</h2>
-
+          <h2>Atomizadores</h2>
           <div class="card-head-right">
-
             <span class="badge" id="countAto">0</span>
-
             <button class="collapse-btn" id="tog-ato" onclick="toggleCard('ato')" title="Minimizar">
-
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
-
           </div>
-
         </div>
-
         <div class="card-body" id="body-ato">
-
           <label class="label">Modelo</label>
-
-          <input id="atoModelo" class="input" placeholder="Ej: Atomizador negro premium" autocomplete="off" style="margin-bottom:12px">
-
-          <div class="grid2" style="margin-bottom:12px">
-
+          <input id="atoModelo" class="input" placeholder="Ej: Atomizador negro premium" autocomplete="off" style="margin-bottom:10px">
+          <div class="grid2" style="margin-bottom:10px">
             <div><label class="label">Stock (u)</label><input id="atoStock" class="input" type="number" inputmode="numeric" value="20"></div>
-
             <div><label class="label">Costo $/u</label><input id="atoCosto" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01"></div>
-
           </div>
-
-          <button class="btn btn-block" onclick="addAtom()">✦ Añadir atomizador</button>
-
-          <div id="listAto" style="margin-top:14px"></div>
-
+          <button class="btn btn-block" onclick="addAtom()">+ Añadir atomizador</button>
+          <div id="listAto" style="margin-top:12px"></div>
         </div>
-
       </div>
-
     </section>
-
-    <!-- ================= VENTA ================= -->
-
     <section id="view-venta" class="view">
-
-      <div class="card" style="background:linear-gradient(180deg,#F8E8C8 0%,#E8D4B0 100%)">
-
-        <div class="brand-kicker" style="margin-bottom:8px">✦ FÓRMULA EXTRAIT 42% · MDDP ISF 0.2</div>
-
-        <h2 style="font-size:26px;margin-bottom:18px">Registrar venta / producción</h2>
-
+      <div class="card" style="border-color:rgba(224,101,61,.3)">
+        <div class="brand-kicker" style="margin-bottom:8px">FÓRMULA EXTRAIT 42% · MDDP ISF 0.2</div>
+        <h2 style="font-size:28px;margin-bottom:16px">Registrar venta / producción</h2>
         <label class="label">Cliente / Referencia (opcional)</label>
-
-        <input id="vCliente" class="input" placeholder="Ej: María · pedido Instagram" autocomplete="off" style="margin-bottom:16px">
-
+        <input id="vCliente" class="input" placeholder="Ej: María · pedido Instagram" autocomplete="off" style="margin-bottom:14px">
         <label class="label">Esencia utilizada</label>
-
-        <div id="ss-vEsencia" style="margin-bottom:16px"></div>
-
+        <div id="ss-vEsencia" style="margin-bottom:14px"></div>
         <label class="label">Tamaño por frasco</label>
-
-        <div class="chips" id="vTamChips" style="margin-bottom:10px"></div>
-
-        <input id="vTamCustom" class="input" type="number" inputmode="decimal" placeholder="ml personalizado" style="display:none;margin-bottom:16px">
-
+        <div class="chips" id="vTamChips" style="margin-bottom:8px"></div>
+        <input id="vTamCustom" class="input" type="number" inputmode="decimal" placeholder="ml personalizado" style="display:none;margin-bottom:14px">
         <label class="label">Cantidad de piezas</label>
-
-        <input id="vCant" class="input" type="number" inputmode="numeric" value="1" min="1" style="margin-bottom:16px">
-
+        <input id="vCant" class="input" type="number" inputmode="numeric" value="1" min="1" style="margin-bottom:14px">
         <div class="precio-box">
-
           <div class="precio-title">💰 PRECIO DE VENTA</div>
-
           <label class="label">Precio total de la venta ($ · opcional)</label>
-
           <input id="vPrecio" class="input" type="number" inputmode="decimal" placeholder="0.00" step="0.01">
-
           <div class="precio-unit" id="vPrecioUnit"></div>
-
         </div>
-
         <div class="formula-box">
-
-          <div class="formula-title">⚗ Ajuste de fórmula (editable)</div>
-
+          <div class="formula-title">AJUSTE DE FÓRMULA (EDITABLE)</div>
           <div class="grid4">
-
             <div><label class="label">% Esencia</label><input id="pctEss" class="input" type="number" inputmode="decimal" step="0.1" value="42"></div>
-
             <div><label class="label">% Musk</label><input id="pctMusk" class="input" type="number" inputmode="decimal" step="0.05" value="0.25"></div>
-
             <div><label class="label">% IPM</label><input id="pctIpm" class="input" type="number" inputmode="decimal" step="0.05" value="0.8"></div>
-
             <div><label class="label">% DPG</label><input id="pctDpg" class="input" type="number" inputmode="decimal" step="0.05" value="0"></div>
-
           </div>
-
           <div class="alc-box">
-
             <div>
-
               <div class="alc-label">% PERFUMOL / ALCOHOL (AUTO)</div>
-
               <div class="alc-val" id="pctAlc">56.95%</div>
-
             </div>
-
             <div style="text-align:right">
-
               <div class="alc-label">FIJADORES TOTALES</div>
-
               <div class="fij-val" id="fijTot">1.05%</div>
-
               <div class="alert-txt" id="alertAlc"></div>
-
             </div>
-
           </div>
-
         </div>
-
-        <div class="grid2" style="margin-top:18px">
-
+        <div class="grid2" style="margin-top:16px">
           <div><label class="label">Modelo de frasco</label><div id="ss-vBotellaModelo"></div></div>
-
           <div><label class="label">Tamaño del frasco</label><select id="vBotellaTam" class="input"></select></div>
-
         </div>
-
-        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
-
-          <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:#3D2817;white-space:nowrap;font-weight:700">
-
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+          <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:#c8b8a8;white-space:nowrap;font-family:'Patrick Hand',cursive">
             <input type="checkbox" id="vUsaAtom" checked> Atomizador
-
           </label>
-
           <div id="ss-vAtom" style="flex:1;min-width:0"></div>
-
         </div>
-
         <div id="preview" class="preview">
-
-          <div style="font-size:14px;color:#6B4423;text-align:center;padding:10px 0;font-family:'Caveat',cursive;font-size:18px">Selecciona esencia, tamaño y cantidad para ver el consumo</div>
-
+          <div style="font-size:13px;color:rgba(240,230,210,.45);text-align:center;padding:8px 0">Selecciona esencia, tamaño y cantidad para ver el consumo</div>
         </div>
-
-        <button class="btn btn-block btn-lg" style="margin-top:18px" onclick="registrarVenta()">✦ REGISTRAR Y DESCONTAR INVENTARIO</button>
-
+        <button class="btn btn-block btn-lg" style="margin-top:16px" onclick="registrarVenta()">REGISTRAR Y DESCONTAR INVENTARIO</button>
       </div>
-
     </section>
-
-    <!-- ================= HISTORIAL ================= -->
-
     <section id="view-hist" class="view">
-
       <div class="card">
-
-        <div class="card-head"><h2>✦ Historial de producción</h2></div>
-
+        <div class="card-head"><h2>Historial de producción</h2></div>
         <div class="stats" id="stats"></div>
-
-        <div class="grid2" style="margin-bottom:12px">
-
+        <div class="grid2" style="margin-bottom:10px">
           <select id="fEss" class="input"></select>
-
           <input id="fSearch" class="input" placeholder="Buscar..." autocomplete="off">
-
         </div>
-
         <div class="range-label">
-
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-
             <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-
           </svg>
-
           <span>Filtrar por rango de fechas</span>
-
         </div>
-
-        <div class="grid2" style="margin-bottom:16px">
-
-          <div>
-
-            <label class="label">Desde</label>
-
-            <input id="fDesde" class="input" type="date">
-
-          </div>
-
-          <div>
-
-            <label class="label">Hasta</label>
-
-            <input id="fHasta" class="input" type="date">
-
-          </div>
-
+        <div class="grid2" style="margin-bottom:14px">
+          <div><label class="label">Desde</label><input id="fDesde" class="input" type="date"></div>
+          <div><label class="label">Hasta</label><input id="fHasta" class="input" type="date"></div>
         </div>
-
-        <button class="btn btn-shopping btn-block" style="margin-bottom:12px" onclick="abrirListaCompras()">
-
-          🛒 Generar lista de compras sugerida
-
-        </button>
-
-        <div class="grid2" style="margin-bottom:10px">
-
+        <button class="btn btn-shopping btn-block" style="margin-bottom:10px" onclick="abrirListaCompras()">🛒 Generar lista de compras sugerida</button>
+        <div class="grid2" style="margin-bottom:8px">
           <button class="btn" onclick="exportPDF()">📄 PDF historial</button>
-
           <button class="btn" onclick="exportHistExcel()">📊 Excel historial</button>
-
         </div>
-
-        <div class="grid2" style="margin-bottom:10px">
-
+        <div class="grid2" style="margin-bottom:8px">
           <button class="btn btn-ghost" onclick="exportInvPDF()">📄 PDF inventario</button>
-
           <button class="btn btn-ghost" onclick="exportInvExcel()">📊 Excel inventario</button>
-
         </div>
-
-        <div class="grid2" style="margin-bottom:12px">
-
+        <div class="grid2" style="margin-bottom:10px">
           <button class="btn btn-money" onclick="exportFinPDF()">💰 PDF financiero</button>
-
           <button class="btn btn-money" onclick="exportFinExcel()">💰 Excel financiero</button>
-
         </div>
-
         <div class="grid2">
-
           <button class="btn btn-ghost btn-sm" onclick="clearHist()">Borrar historial</button>
-
           <button class="btn btn-danger btn-sm" onclick="clearAll()">Borrar todo</button>
-
         </div>
-
         <div class="divider"></div>
-
-        <div id="listHist" style="display:grid;gap:12px"></div>
-
+        <div id="listHist" style="display:grid;gap:10px"></div>
       </div>
-
     </section>
-
   </main>
-
 </div>
-
 <nav class="bottom">
-
   <div class="bottom-inner">
-
     <button id="tab-inv" class="tab active" onclick="switchTab('inv')">
-
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
-
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
       <span>INVENTARIO</span>
-
     </button>
-
     <button id="tab-venta" class="tab" onclick="switchTab('venta')">
-
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       <span>VENTA</span>
-
     </button>
-
     <button id="tab-hist" class="tab" onclick="switchTab('hist')">
-
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l3.5-3.5L13 14l4-6"/></svg>
-
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l3.5-3.5L13 14l4-6"/></svg>
       <span>HISTORIAL</span>
-
     </button>
-
   </div>
-
 </nav>
-
 <div class="backdrop" id="modalBackdrop">
-
   <div class="modal" id="modalBox">
-
     <h3 id="modalTitle">Editar</h3>
-
     <div id="modalBody"></div>
-
     <div class="modal-actions">
-
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-
       <button class="btn" id="modalOk">Guardar</button>
-
     </div>
-
   </div>
-
 </div>
-
 <div class="backdrop" id="shopBackdrop">
-
   <div class="modal modal-lg">
-
     <h3 id="shopTitle">🛒 Lista de compras sugerida</h3>
-
     <div id="shopBody"></div>
-
     <div class="modal-actions">
-
       <button class="btn btn-ghost" onclick="closeShopModal()">Cerrar</button>
-
       <button class="btn" id="shopExportPdf">📄 PDF</button>
-
       <button class="btn btn-money" id="shopExportXls">📊 Excel</button>
-
     </div>
-
   </div>
-
 </div>
-
 <div class="toast" id="toast"></div>
-
 <script>
-/* =========================================================
-   UTILIDADES
-   ========================================================= */
-
 const $  = id => document.getElementById(id);
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1700,69 +622,43 @@ const pct = n => (Math.round(n * 10) / 10) + '%';
 function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
 let toastTimer;
 function toast(msg){
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 function fillSelect(el, html, keep = true) {
-  const prev = keep ? el.value : null;
-  el.innerHTML = html;
+  const prev = keep ? el.value : null; el.innerHTML = html;
   if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
 }
-
-/* =========================================================
-   COLLAPSE CARDS
-   ========================================================= */
-
 const LS_UI = 'aion_ui_v4';
-function getUIState(){
-  try { return JSON.parse(localStorage.getItem(LS_UI)) || {}; } catch(e){ return {}; }
-}
-function saveUIState(st){
-  try { localStorage.setItem(LS_UI, JSON.stringify(st)); } catch(e){}
-}
+function getUIState(){ try { return JSON.parse(localStorage.getItem(LS_UI)) || {}; } catch(e){ return {}; } }
+function saveUIState(st){ try { localStorage.setItem(LS_UI, JSON.stringify(st)); } catch(e){} }
 function toggleCard(key){
-  const body = $('body-' + key);
-  const btn  = $('tog-' + key);
-  const card = $('card-' + key);
+  const body = $('body-' + key); const btn  = $('tog-' + key); const card = $('card-' + key);
   if (!body || !btn) return;
   const collapsed = body.classList.toggle('hidden');
   btn.classList.toggle('collapsed', collapsed);
   if (card) card.classList.toggle('collapsed', collapsed);
-  const st = getUIState();
-  st[key] = collapsed;
-  saveUIState(st);
+  const st = getUIState(); st[key] = collapsed; saveUIState(st);
 }
 function restoreCollapseState(){
   const st = getUIState();
   ['ess','liq','bot','ato'].forEach(k => {
     if (!st[k]) return;
-    const body = $('body-' + k);
-    const btn  = $('tog-' + k);
-    const card = $('card-' + k);
+    const body = $('body-' + k); const btn  = $('tog-' + k); const card = $('card-' + k);
     if (body) body.classList.add('hidden');
     if (btn) btn.classList.add('collapsed');
     if (card) card.classList.add('collapsed');
   });
 }
-
-/* =========================================================
-   SEARCH SELECT
-   ========================================================= */
-
 function createSearchSelect(rootId, placeholder, onChange) {
-  const root = $(rootId);
-  if (!root) return null;
+  const root = $(rootId); if (!root) return null;
   root.className = 'search-select';
   root.innerHTML = `
     <input class="input ss-input" placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false">
     <svg class="ss-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
       <path stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M1 1.5 6 6.5l5-5"/>
     </svg>
-    <div class="ss-dropdown" role="listbox"></div>
-  `;
+    <div class="ss-dropdown" role="listbox"></div>`;
   const input = root.querySelector('.ss-input');
   const dropdown = root.querySelector('.ss-dropdown');
   const state = { options: [], value: '', filtered: [], activeIndex: -1, onChange: onChange || null };
@@ -1770,8 +666,7 @@ function createSearchSelect(rootId, placeholder, onChange) {
     const q = norm(input.value);
     state.filtered = state.options.filter(o => !q || norm(o.label).includes(q) || norm(o.sub).includes(q));
     if (!state.filtered.length) {
-      dropdown.innerHTML = '<div class="ss-empty">Sin resultados para "' + esc(input.value) + '"</div>';
-      return;
+      dropdown.innerHTML = '<div class="ss-empty">Sin resultados para "' + esc(input.value) + '"</div>'; return;
     }
     let html = '';
     if (q) html += `<div class="ss-count">${state.filtered.length} resultado${state.filtered.length === 1 ? '' : 's'}</div>`;
@@ -1780,8 +675,7 @@ function createSearchSelect(rootId, placeholder, onChange) {
            data-value="${esc(o.value)}" data-index="${i}" role="option">
         <div class="ss-option-main">${esc(o.label)}</div>
         ${o.sub ? `<div class="ss-option-sub">${esc(o.sub)}</div>` : ''}
-      </div>
-    `).join('');
+      </div>`).join('');
     dropdown.innerHTML = html;
     dropdown.querySelectorAll('.ss-option').forEach(el => {
       el.addEventListener('mousedown', e => { e.preventDefault(); selectValue(el.dataset.value); });
@@ -1790,10 +684,7 @@ function createSearchSelect(rootId, placeholder, onChange) {
   function selectValue(v) {
     const opt = state.options.find(o => o.value === v);
     if (!opt || opt.disabled) return;
-    state.value = v;
-    input.value = opt.label;
-    input.blur();
-    closeDropdown();
+    state.value = v; input.value = opt.label; input.blur(); closeDropdown();
     if (state.onChange) state.onChange(v);
   }
   function openDropdown() { root.classList.add('open'); state.activeIndex = -1; input.value = ''; renderDropdown(); }
@@ -1802,31 +693,24 @@ function createSearchSelect(rootId, placeholder, onChange) {
   input.addEventListener('focus', openDropdown);
   input.addEventListener('input', () => {
     if (!root.classList.contains('open')) root.classList.add('open');
-    state.activeIndex = -1;
-    renderDropdown();
+    state.activeIndex = -1; renderDropdown();
   });
   input.addEventListener('keydown', e => {
     if (!root.classList.contains('open') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { openDropdown(); return; }
     if (!root.classList.contains('open')) return;
     if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      state.activeIndex = Math.min(state.activeIndex + 1, state.filtered.length - 1);
-      renderDropdown();
-      const a = dropdown.querySelector('.ss-option.active'); if (a) a.scrollIntoView({ block: 'nearest' });
+      e.preventDefault(); state.activeIndex = Math.min(state.activeIndex + 1, state.filtered.length - 1);
+      renderDropdown(); const a = dropdown.querySelector('.ss-option.active'); if (a) a.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      state.activeIndex = Math.max(state.activeIndex - 1, 0);
-      renderDropdown();
-      const a = dropdown.querySelector('.ss-option.active'); if (a) a.scrollIntoView({ block: 'nearest' });
+      e.preventDefault(); state.activeIndex = Math.max(state.activeIndex - 1, 0);
+      renderDropdown(); const a = dropdown.querySelector('.ss-option.active'); if (a) a.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (state.activeIndex >= 0 && state.filtered[state.activeIndex]) selectValue(state.filtered[state.activeIndex].value);
       else if (state.filtered.length === 1) selectValue(state.filtered[0].value);
     } else if (e.key === 'Escape') { input.blur(); closeDropdown(); }
   });
-  input.addEventListener('blur', () => {
-    setTimeout(() => { closeDropdown(); syncInput(); }, 130);
-  });
+  input.addEventListener('blur', () => { setTimeout(() => { closeDropdown(); syncInput(); }, 130); });
   document.addEventListener('click', e => { if (!root.contains(e.target)) closeDropdown(); });
   return {
     setOptions(options) {
@@ -1839,11 +723,6 @@ function createSearchSelect(rootId, placeholder, onChange) {
     root, input
   };
 }
-
-/* =========================================================
-   DATOS
-   ========================================================= */
-
 const LS_INV   = 'aion_inventory_v4';
 const LS_SALES = 'aion_sales_v4';
 const LIQUIDOS = [
@@ -1881,7 +760,6 @@ const DEFAULT_INV = {
 let inventory = JSON.parse(JSON.stringify(DEFAULT_INV));
 let sales = [];
 let ssEsencia = null, ssBotModelo = null, ssAtom = null;
-
 function migrate(inv) {
   if (!inv.esencias) inv.esencias = [];
   if (!inv.atomizadores) inv.atomizadores = [];
@@ -1909,11 +787,9 @@ function migrate(inv) {
   inv.atomizadores.forEach(a => { if (typeof a.costo !== 'number') a.costo = 0; });
   return inv;
 }
-
 function saveInv() { localStorage.setItem(LS_INV, JSON.stringify(inventory)); renderAll(); }
 function saveSales() { localStorage.setItem(LS_SALES, JSON.stringify(sales)); renderHistorial(); }
 function saveInvSilent() { localStorage.setItem(LS_INV, JSON.stringify(inventory)); }
-
 function loadData() {
   try {
     const ri = localStorage.getItem(LS_INV);
@@ -1925,22 +801,16 @@ function loadData() {
     sales = [];
   }
 }
-
-/* =========================================================
-   RENDER INVENTARIO
-   ========================================================= */
-
 function renderAll() {
   renderEsencias(); renderLiquidos(); renderBotellas(); renderAtomizadores();
   syncSelects(); calcFormula(); renderHistorial();
   const n = inventory.esencias.length;
   $('statTot').textContent = n + (n === 1 ? ' esencia' : ' esencias');
 }
-
 function renderEsencias() {
   $('countEss').textContent = inventory.esencias.length;
   const wrap = $('listEss');
-  if (!inventory.esencias.length) { wrap.innerHTML = '<p class="empty">🌿 Sin esencias registradas</p>'; return; }
+  if (!inventory.esencias.length) { wrap.innerHTML = '<p class="empty">Sin esencias registradas</p>'; return; }
   wrap.innerHTML = inventory.esencias.map(e => {
     const valor = e.stockMl * (e.costoMl || 0);
     return `
@@ -1957,24 +827,18 @@ function renderEsencias() {
     </div>`;
   }).join('');
 }
-
 function addEsencia() {
-  const n  = $('essName').value.trim();
-  const ml = num($('essMl').value);
-  const co = num($('essCosto').value);
+  const n  = $('essName').value.trim(); const ml = num($('essMl').value); const co = num($('essCosto').value);
   if (!n) return toast('Escribe el nombre de la esencia');
   if (ml <= 0) return toast('Introduce un stock válido');
   const ex = inventory.esencias.find(e => e.nombre.toLowerCase() === n.toLowerCase());
   if (ex) { ex.stockMl += ml; if (co > 0) ex.costoMl = co; }
   else inventory.esencias.push({ id: uid(), nombre: n, stockMl: ml, costoMl: co });
   $('essName').value = ''; $('essMl').value = 100; $('essCosto').value = '';
-  saveInv();
-  toast(ex ? 'Stock actualizado' : 'Esencia añadida');
+  saveInv(); toast(ex ? 'Stock actualizado' : 'Esencia añadida');
 }
-
 function editEsencia(id) {
-  const e = inventory.esencias.find(x => x.id === id);
-  if (!e) return;
+  const e = inventory.esencias.find(x => x.id === id); if (!e) return;
   openModal('Editar esencia', [
     { key:'nombre',  label:'Nombre',       type:'text',   value:e.nombre },
     { key:'stockMl', label:'Stock (ml)',   type:'number', value:e.stockMl, step:'0.01' },
@@ -1985,20 +849,18 @@ function editEsencia(id) {
     saveInv(); toast('Esencia actualizada');
   });
 }
-
 function delEsencia(id) {
   const e = inventory.esencias.find(x => x.id === id);
   if (!e || !confirm(`¿Eliminar "${e.nombre}" del inventario?`)) return;
   inventory.esencias = inventory.esencias.filter(x => x.id !== id);
   saveInv(); toast('Esencia eliminada');
 }
-
 function renderLiquidos() {
   const g = $('liqGrid');
   if (!g.dataset.built) {
     g.innerHTML = LIQUIDOS.map(l => `
       <div class="liq">
-        <div class="liq-name">💧 ${esc(l.label)}</div>
+        <div class="liq-name">${esc(l.label)}</div>
         <div class="liq-row">
           <input id="liq-${l.key}" class="input" type="number" inputmode="decimal" value="0" placeholder="ml">
           <button class="btn btn-sm" onclick="addLiq('${l.key}')">+</button>
@@ -2017,30 +879,24 @@ function renderLiquidos() {
     $('stock-' + l.key).textContent = fmt(inventory.liquidos[l.key]) + ' ml · ' + money(c) + '/ml · ' + money(v);
   });
 }
-
 function addLiq(key) {
   const v = num($('liq-' + key).value);
   if (v <= 0) return toast('Cantidad no válida');
   inventory.liquidos[key] += v;
-  $('liq-' + key).value = 0;
-  saveInv();
+  $('liq-' + key).value = 0; saveInv();
   const lbl = (LIQUIDOS.find(l => l.key === key) || {}).label || key;
   toast(`${lbl} +${fmt(v)} ml`);
 }
-
 function setCostoLiq(key, val) {
-  inventory.costosLiquidos[key] = num(val);
-  saveInvSilent();
-  const c = num(val);
-  const v = inventory.liquidos[key] * c;
+  inventory.costosLiquidos[key] = num(val); saveInvSilent();
+  const c = num(val); const v = inventory.liquidos[key] * c;
   $('stock-' + key).textContent = fmt(inventory.liquidos[key]) + ' ml · ' + money(c) + '/ml · ' + money(v);
   calcFormula();
 }
-
 function renderBotellas() {
   $('countBot').textContent = inventory.botellas.length;
   const wrap = $('listBot');
-  if (!inventory.botellas.length) { wrap.innerHTML = '<p class="empty">🧴 Sin frascos. Añade tu primer modelo.</p>'; return; }
+  if (!inventory.botellas.length) { wrap.innerHTML = '<p class="empty">Sin frascos. Añade tu primer modelo.</p>'; return; }
   wrap.innerHTML = inventory.botellas.map(b => `
     <div class="row">
       <div class="row-main">
@@ -2051,7 +907,7 @@ function renderBotellas() {
                 <button class="variant ${v.stock < UMBRAL.frascoU ? 'low' : ''}" onclick="editVariante('${b.id}','${v.id}')">
                   ${v.tamano} ml · ${v.stock} u · ${money(v.costo || 0)}
                 </button>`).join('')
-            : '<span class="row-sub" style="color:rgba(61,40,23,0.5)">Sin tamaños</span>'}
+            : '<span class="row-sub" style="color:rgba(240,230,210,.4)">Sin tamaños</span>'}
         </div>
       </div>
       <div class="row-actions">
@@ -2061,12 +917,9 @@ function renderBotellas() {
       </div>
     </div>`).join('');
 }
-
 function addFrasco() {
-  const modelo = $('botModelo').value.trim();
-  const tam = num($('botTam').value);
-  const stock = num($('botStock').value);
-  const costo = num($('botCosto').value);
+  const modelo = $('botModelo').value.trim(); const tam = num($('botTam').value);
+  const stock = num($('botStock').value); const costo = num($('botCosto').value);
   if (!modelo) return toast('Escribe el modelo del frasco');
   if (tam <= 0) return toast('Tamaño no válido');
   if (stock < 0) return toast('Stock no válido');
@@ -2078,13 +931,10 @@ function addFrasco() {
   else b.variantes.push({ id: uid(), tamano: tam, stock, costo });
   b.variantes.sort((a, c) => a.tamano - c.tamano);
   $('botModelo').value = ''; $('botCosto').value = '';
-  saveInv();
-  toast(existia ? (v ? 'Stock actualizado' : 'Tamaño añadido') : 'Modelo añadido');
+  saveInv(); toast(existia ? (v ? 'Stock actualizado' : 'Tamaño añadido') : 'Modelo añadido');
 }
-
 function addVariante(bid) {
-  const b = inventory.botellas.find(x => x.id === bid);
-  if (!b) return;
+  const b = inventory.botellas.find(x => x.id === bid); if (!b) return;
   openModal(`Nuevo tamaño · ${b.modelo}`, [
     { key:'tamano', label:'Tamaño (ml)',       type:'number', value:50, step:'1' },
     { key:'stock',  label:'Unidades en stock', type:'number', value:10, step:'1' },
@@ -2099,11 +949,9 @@ function addVariante(bid) {
     saveInv(); toast('Tamaño guardado');
   });
 }
-
 function editVariante(bid, vid) {
   const b = inventory.botellas.find(x => x.id === bid);
-  const v = b && b.variantes.find(x => x.id === vid);
-  if (!v) return;
+  const v = b && b.variantes.find(x => x.id === vid); if (!v) return;
   openModal(`Editar ${v.tamano} ml · ${b.modelo}`, [
     { key:'tamano', label:'Tamaño (ml)',       type:'number', value:v.tamano, step:'1' },
     { key:'stock',  label:'Unidades en stock', type:'number', value:v.stock,  step:'1' },
@@ -2119,30 +967,25 @@ function editVariante(bid, vid) {
       saveInv(); toast('Tamaño eliminado');
   }});
 }
-
 function editModelo(bid) {
-  const b = inventory.botellas.find(x => x.id === bid);
-  if (!b) return;
+  const b = inventory.botellas.find(x => x.id === bid); if (!b) return;
   openModal('Renombrar modelo', [
     { key:'modelo', label:'Nombre del modelo', type:'text', value:b.modelo }
   ], d => {
     if (!d.modelo) return toast('Nombre requerido'), false;
-    b.modelo = d.modelo;
-    saveInv(); toast('Modelo actualizado');
+    b.modelo = d.modelo; saveInv(); toast('Modelo actualizado');
   });
 }
-
 function delModelo(bid) {
   const b = inventory.botellas.find(x => x.id === bid);
   if (!b || !confirm(`¿Eliminar "${b.modelo}" y todos sus tamaños?`)) return;
   inventory.botellas = inventory.botellas.filter(x => x.id !== bid);
   saveInv(); toast('Modelo eliminado');
 }
-
 function renderAtomizadores() {
   $('countAto').textContent = inventory.atomizadores.length;
   const wrap = $('listAto');
-  if (!inventory.atomizadores.length) { wrap.innerHTML = '<p class="empty">💨 Sin atomizadores registrados</p>'; return; }
+  if (!inventory.atomizadores.length) { wrap.innerHTML = '<p class="empty">Sin atomizadores registrados</p>'; return; }
   wrap.innerHTML = inventory.atomizadores.map(a => {
     const valor = a.stock * (a.costo || 0);
     return `
@@ -2159,23 +1002,18 @@ function renderAtomizadores() {
     </div>`;
   }).join('');
 }
-
 function addAtom() {
   const modelo = $('atoModelo').value.trim();
-  const stock = num($('atoStock').value);
-  const costo = num($('atoCosto').value);
+  const stock = num($('atoStock').value); const costo = num($('atoCosto').value);
   if (!modelo) return toast('Escribe el modelo');
   const ex = inventory.atomizadores.find(a => a.modelo.toLowerCase() === modelo.toLowerCase());
   if (ex) { ex.stock += stock; if (costo > 0) ex.costo = costo; }
   else inventory.atomizadores.push({ id: uid(), modelo, stock, costo });
   $('atoModelo').value = ''; $('atoStock').value = 20; $('atoCosto').value = '';
-  saveInv();
-  toast(ex ? 'Stock actualizado' : 'Atomizador añadido');
+  saveInv(); toast(ex ? 'Stock actualizado' : 'Atomizador añadido');
 }
-
 function editAtom(id) {
-  const a = inventory.atomizadores.find(x => x.id === id);
-  if (!a) return;
+  const a = inventory.atomizadores.find(x => x.id === id); if (!a) return;
   openModal('Editar atomizador', [
     { key:'modelo', label:'Modelo',           type:'text',   value:a.modelo },
     { key:'stock',  label:'Stock',            type:'number', value:a.stock, step:'1' },
@@ -2186,18 +1024,12 @@ function editAtom(id) {
     saveInv(); toast('Atomizador actualizado');
   });
 }
-
 function delAtom(id) {
   const a = inventory.atomizadores.find(x => x.id === id);
   if (!a || !confirm(`¿Eliminar "${a.modelo}"?`)) return;
   inventory.atomizadores = inventory.atomizadores.filter(x => x.id !== id);
   saveInv(); toast('Atomizador eliminado');
 }
-
-/* =========================================================
-   SELECTS DE VENTA
-   ========================================================= */
-
 function syncSelects() {
   if (ssEsencia) {
     ssEsencia.setOptions(inventory.esencias.map(e => ({
@@ -2227,7 +1059,6 @@ function syncSelects() {
     })));
   }
 }
-
 function renderVariantesVenta() {
   const modelId = ssBotModelo ? ssBotModelo.getValue() : '';
   const sel = $('vBotellaTam');
@@ -2238,24 +1069,16 @@ function renderVariantesVenta() {
     ? m.variantes.map(v => `<option value="${v.id}">${v.tamano} ml · ${v.stock} u · ${money(v.costo)}</option>`).join('')
     : '<option value="">Sin tamaños</option>', true);
 }
-
-/* =========================================================
-   FÓRMULA
-   ========================================================= */
-
 const TAMANOS = [10, 30, 50, 60, 100, 120, 320];
 const tamState = { value: 50, custom: false };
-
 function renderTamChips() {
   $('vTamChips').innerHTML =
     TAMANOS.map(t => `<button type="button" class="chip ${(!tamState.custom && tamState.value === t) ? 'active' : ''}" onclick="setTam(${t})">${t} ml</button>`).join('') +
     `<button type="button" class="chip ${tamState.custom ? 'active' : ''}" onclick="setCustom()">Otro</button>`;
 }
-
 function setTam(v) { tamState.value = v; tamState.custom = false; $('vTamCustom').style.display = 'none'; renderTamChips(); calcFormula(); }
 function setCustom() { tamState.custom = true; $('vTamCustom').style.display = 'block'; tamState.value = num($('vTamCustom').value); renderTamChips(); calcFormula(); }
 function getTamano() { return tamState.custom ? num($('vTamCustom').value) : tamState.value; }
-
 function calcularCostos(ess, tot, botV, cant, usaAtom, atom) {
   const es   = tot.es   * (ess?.costoMl || 0);
   const alc  = tot.alc  * (inventory.costosLiquidos.perfumol || 0);
@@ -2267,7 +1090,6 @@ function calcularCostos(ess, tot, botV, cant, usaAtom, atom) {
   const total = es + alc + musk + ipm + dpg + frasco + atomC;
   return { es, alc, musk, ipm, dpg, frasco, atom: atomC, total };
 }
-
 function calcFormula() {
   const pctEss  = num($('pctEss').value);
   const pctMusk = num($('pctMusk').value);
@@ -2279,12 +1101,11 @@ function calcFormula() {
   $('pctAlc').textContent = pctAlc.toFixed(2) + '%';
   $('fijTot').textContent = fij.toFixed(2) + '%';
   const alertEl = $('alertAlc');
-  if (sum > 100) { alertEl.textContent = '⚠ La fórmula supera el 100%'; alertEl.style.color = '#8B3A2A'; }
-  else if (pctAlc < 50) { alertEl.textContent = '⚠ Alcohol <50% · riesgo de sofocación'; alertEl.style.color = '#8B3A2A'; }
-  else if (fij > 8) { alertEl.textContent = '⚠ Fijadores >8% · no permitido'; alertEl.style.color = '#8B3A2A'; }
-  else if (fij > 4) { alertEl.textContent = 'Nota: fijadores >4% solo perfiles volátiles'; alertEl.style.color = '#8B5A2B'; }
-  else { alertEl.textContent = '✓ ISF 0.2 OK · fijación mínima'; alertEl.style.color = '#2E6A42'; }
-
+  if (sum > 100) { alertEl.textContent = '⚠ La fórmula supera el 100%'; alertEl.style.color = '#d64838'; }
+  else if (pctAlc < 50) { alertEl.textContent = '⚠ Alcohol <50% · riesgo de sofocación'; alertEl.style.color = '#d64838'; }
+  else if (fij > 8) { alertEl.textContent = '⚠ Fijadores >8% · no permitido'; alertEl.style.color = '#d64838'; }
+  else if (fij > 4) { alertEl.textContent = 'Nota: fijadores >4% solo perfiles volátiles'; alertEl.style.color = '#e0653d'; }
+  else { alertEl.textContent = '✓ ISF 0.2 OK · fijación mínima'; alertEl.style.color = '#8fb56b'; }
   const tam = getTamano();
   const cant = parseInt($('vCant').value, 10) || 0;
   const essId = ssEsencia ? ssEsencia.getValue() : '';
@@ -2296,16 +1117,13 @@ function calcFormula() {
   const atomId = ssAtom ? ssAtom.getValue() : '';
   const atom = inventory.atomizadores.find(a => a.id === atomId);
   const precioTotal = num($('vPrecio').value);
-
   if (precioTotal > 0 && cant > 0) $('vPrecioUnit').textContent = `≈ ${money(precioTotal / cant)} por unidad`;
   else $('vPrecioUnit').textContent = '';
-
   const prev = $('preview');
   if (!tam || !cant) {
-    prev.innerHTML = '<div style="font-size:14px;color:#6B4423;text-align:center;padding:10px 0;font-family:Caveat,cursive;font-size:18px">Selecciona tamaño y cantidad para ver el consumo</div>';
+    prev.innerHTML = '<div style="font-size:13px;color:rgba(240,230,210,.45);text-align:center;padding:8px 0">Selecciona tamaño y cantidad para ver el consumo</div>';
     return;
   }
-
   const per = { es: tam*pctEss/100, musk: tam*pctMusk/100, ipm: tam*pctIpm/100, dpg: tam*pctDpg/100, alc: tam*pctAlc/100 };
   const tot = { es: per.es*cant, musk: per.musk*cant, ipm: per.ipm*cant, dpg: per.dpg*cant, alc: per.alc*cant };
   const ck = {
@@ -2322,30 +1140,28 @@ function calcFormula() {
   const cos = calcularCostos(ess, tot, botV, cant, usaAtom, atom);
   const ganancia = precioTotal - cos.total;
   const margen = precioTotal > 0 ? (ganancia / precioTotal) * 100 : 0;
-
   const econHtml = `
     <div class="pv-econ">
-      <div class="pv-econ-title">💰 Análisis económico</div>
+      <div class="pv-econ-title">ANÁLISIS ECONÓMICO</div>
       <div class="pv-econ-line"><span>Esencia</span><b>${money(cos.es)}</b></div>
       <div class="pv-econ-line"><span>Alcohol</span><b>${money(cos.alc)}</b></div>
       <div class="pv-econ-line"><span>Musk + IPM + DPG</span><b>${money(cos.musk + cos.ipm + cos.dpg)}</b></div>
       ${cos.frasco > 0 ? `<div class="pv-econ-line"><span>Frascos</span><b>${money(cos.frasco)}</b></div>` : ''}
       ${cos.atom > 0 ? `<div class="pv-econ-line"><span>Atomizadores</span><b>${money(cos.atom)}</b></div>` : ''}
-      <div class="pv-econ-line" style="border-top:2px dashed rgba(120,80,40,0.25);padding-top:8px;margin-top:6px">
+      <div class="pv-econ-line" style="border-top:1px solid rgba(240,230,210,.1);padding-top:8px;margin-top:6px">
         <span>Costo de producción</span><b class="gold">${money(cos.total)}</b>
       </div>
       ${precioTotal > 0 ? `
         <div class="pv-econ-line"><span>Precio de venta</span><b>${money(precioTotal)}</b></div>
         <div class="pv-econ-line big"><span>Ganancia</span><b class="${ganancia >= 0 ? 'ok' : 'bad'}">${money(ganancia)}</b></div>
         <div class="pv-econ-line"><span>Margen</span><b class="${ganancia >= 0 ? 'ok' : 'bad'}">${pct(margen)}</b></div>
-      ` : `<div class="pv-econ-line"><span style="color:#6B4423;font-style:italic;font-family:Caveat,cursive;font-size:16px">Introduce un precio de venta para ver la ganancia</span></div>`}
+      ` : `<div class="pv-econ-line"><span style="color:rgba(240,230,210,.4);font-style:italic">Introduce un precio de venta para ver la ganancia</span></div>`}
     </div>`;
-
   prev.innerHTML = `
-    <div class="pv-head">Consumo estimado ${ess ? '· ' + esc(ess.nombre).toUpperCase() : ''}</div>
+    <div class="pv-head">CONSUMO ESTIMADO ${ess ? '· ' + esc(ess.nombre).toUpperCase() : ''}</div>
     <div class="pv-grid">
       <div>
-        <div class="pv-col-title">Por frasco · ${tam} ml</div>
+        <div class="pv-col-title">POR FRASCO · ${tam} ML</div>
         <div class="pv-line"><span>Esencia</span><b>${r2(per.es)} ml</b></div>
         <div class="pv-line"><span>Perfumol</span><b>${r2(per.alc)} ml</b></div>
         <div class="pv-line"><span>Musk</span><b>${r2(per.musk)} ml</b></div>
@@ -2353,7 +1169,7 @@ function calcFormula() {
         <div class="pv-line"><span>DPG</span><b>${r2(per.dpg)} ml</b></div>
       </div>
       <div>
-        <div class="pv-col-title">Total ×${cant} · ${(tam * cant).toFixed(0)} ml</div>
+        <div class="pv-col-title">TOTAL ×${cant} · ${(tam * cant).toFixed(0)} ML</div>
         <div class="pv-line"><span>Esencia</span><b class="${cls(ck.es)}">${r2(tot.es)} ml${ess ? ' / ' + fmt(ess.stockMl) : ''}</b></div>
         <div class="pv-line"><span>Perfumol</span><b class="${cls(ck.alc)}">${r2(tot.alc)} ml / ${fmt(inventory.liquidos.perfumol)}</b></div>
         <div class="pv-line"><span>Musk</span><b class="${cls(ck.musk)}">${r2(tot.musk)} ml</b></div>
@@ -2368,11 +1184,6 @@ function calcFormula() {
       ${allOk ? '✓ Stock suficiente para registrar' : '✗ Stock insuficiente o falta seleccionar esencia'}
     </div>`;
 }
-
-/* =========================================================
-   REGISTRAR VENTA
-   ========================================================= */
-
 function registrarVenta() {
   const cliente = $('vCliente').value.trim();
   const essId = ssEsencia ? ssEsencia.getValue() : '';
@@ -2437,19 +1248,11 @@ function registrarVenta() {
     },
     totalMlProducido: tam * cant
   });
-  saveInv();
-  saveSales();
+  saveInv(); saveSales();
   toast('Venta registrada ✓');
-  $('vCliente').value = '';
-  $('vCant').value = 1;
-  $('vPrecio').value = '';
+  $('vCliente').value = ''; $('vCant').value = 1; $('vPrecio').value = '';
   calcFormula();
 }
-
-/* =========================================================
-   HISTORIAL
-   ========================================================= */
-
 function getFiltered() {
   const fEss = $('fEss').value;
   const fSearch = $('fSearch').value.trim().toLowerCase();
@@ -2466,7 +1269,6 @@ function getFiltered() {
     return true;
   });
 }
-
 function renderHistorial() {
   const list = getFiltered();
   const totalEss = list.reduce((a, s) => a + (s.consumo?.esenciaMl || 0), 0);
@@ -2477,15 +1279,15 @@ function renderHistorial() {
   const conPrecio = list.filter(s => (s.precioVenta || 0) > 0);
   const margenProm = totalVenta > 0 ? (totalGananc / totalVenta) * 100 : 0;
   $('stats').innerHTML = `
-    <div class="stat"><div class="stat-label">Ventas</div><div class="stat-val serif">${list.length}</div></div>
-    <div class="stat"><div class="stat-label">Esencia</div><div class="stat-val serif">${totalEss.toFixed(1)}<span style="font-size:12px"> ml</span></div></div>
-    <div class="stat"><div class="stat-label">Frascos</div><div class="stat-val serif">${totalBot}</div></div>
-    <div class="stat"><div class="stat-label">Ingresos</div><div class="stat-val money">${money(totalVenta)}</div></div>
-    <div class="stat"><div class="stat-label">Costos</div><div class="stat-val red">${money(totalCosto)}</div></div>
-    <div class="stat"><div class="stat-label">Ganancia</div><div class="stat-val ${totalGananc >= 0 ? 'money' : 'red'}">${money(totalGananc)}</div></div>
-    <div class="stat"><div class="stat-label">Margen</div><div class="stat-val gold">${conPrecio.length ? pct(margenProm) : '—'}</div></div>`;
+    <div class="stat"><div class="stat-label">VENTAS</div><div class="stat-val serif">${list.length}</div></div>
+    <div class="stat"><div class="stat-label">ESENCIA</div><div class="stat-val serif">${totalEss.toFixed(1)}<span style="font-size:13px"> ml</span></div></div>
+    <div class="stat"><div class="stat-label">FRASCOS</div><div class="stat-val serif">${totalBot}</div></div>
+    <div class="stat"><div class="stat-label">INGRESOS</div><div class="stat-val money">${money(totalVenta)}</div></div>
+    <div class="stat"><div class="stat-label">COSTOS</div><div class="stat-val red">${money(totalCosto)}</div></div>
+    <div class="stat"><div class="stat-label">GANANCIA</div><div class="stat-val ${totalGananc >= 0 ? 'money' : 'red'}">${money(totalGananc)}</div></div>
+    <div class="stat"><div class="stat-label">MARGEN</div><div class="stat-val gold">${conPrecio.length ? pct(margenProm) : '—'}</div></div>`;
   const wrap = $('listHist');
-  if (!list.length) { wrap.innerHTML = '<p class="empty">📭 Sin registros que coincidan</p>'; return; }
+  if (!list.length) { wrap.innerHTML = '<p class="empty">Sin registros que coincidan</p>'; return; }
   wrap.innerHTML = list.map(s => {
     const c = s.consumo || {};
     const fecha = new Date(s.fecha).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
@@ -2504,34 +1306,29 @@ function renderHistorial() {
         </div>
         <div class="hist-detail">
           <div class="hist-box">
-            <strong>Consumo</strong>
+            <strong>CONSUMO</strong>
             Esencia: ${c.esenciaMl ?? '—'} ml (${s.pctEsencia}%)<br>
             Alcohol: ${c.alcoholMl ?? '—'} ml (${Number(s.pctAlcohol || 0).toFixed(1)}%)<br>
             Musk ${c.muskMl ?? '—'} · IPM ${c.ipmMl ?? '—'} · DPG ${c.dpgMl ?? '—'}
           </div>
           ${conP ? `
           <div class="hist-box money">
-            <strong>Económico</strong>
+            <strong>ECONÓMICO</strong>
             <div class="line"><span>Venta</span><b>${money(s.precioVenta)}</b></div>
-            <div class="line"><span>Costo</span><b style="color:#8B3A2A">${money(s.costoTotal)}</b></div>
+            <div class="line"><span>Costo</span><b style="color:#d64838">${money(s.costoTotal)}</b></div>
             <div class="line ${gan < 0 ? 'loss' : ''}"><span>Ganancia</span><b>${money(gan)}</b></div>
             <div class="line"><span>Margen</span><b>${pct(s.margen)}</b></div>
           </div>` : `
           <div class="hist-box">
-            <strong>Envase</strong>
+            <strong>ENVASE</strong>
             ${esc(c.botellaModelo || 'Sin frasco')}<br>
             ${esc(c.atomizadorModelo || 'Sin atomizador')}<br>
-            <span style="color:#6B4423">Costo: ${money(s.costoTotal)}</span>
+            <span style="color:rgba(240,230,210,.4)">Costo: ${money(s.costoTotal)}</span>
           </div>`}
         </div>
       </div>`;
   }).join('');
 }
-
-/* =========================================================
-   LISTA DE COMPRAS SUGERIDA
-   ========================================================= */
-
 function calcularListaCompras() {
   const lista = [];
   const esenciasBajas = inventory.esencias
@@ -2541,8 +1338,7 @@ function calcularListaCompras() {
     lista.push({
       titulo: 'Esencias',
       items: esenciasBajas.map(e => ({
-        nombre: e.nombre,
-        actual: `${fmt(e.stockMl)} ml`,
+        nombre: e.nombre, actual: `${fmt(e.stockMl)} ml`,
         sugerido: `${UMBRAL.sugeridoEsenciaMl} ml`,
         costo: (e.costoMl || 0) * UMBRAL.sugeridoEsenciaMl
       }))
@@ -2553,8 +1349,7 @@ function calcularListaCompras() {
     lista.push({
       titulo: 'Líquidos base',
       items: liqBajos.map(l => ({
-        nombre: l.label,
-        actual: `${fmt(inventory.liquidos[l.key])} ml`,
+        nombre: l.label, actual: `${fmt(inventory.liquidos[l.key])} ml`,
         sugerido: `${UMBRAL.sugeridoLiquidoMl} ml`,
         costo: (inventory.costosLiquidos[l.key] || 0) * UMBRAL.sugeridoLiquidoMl
       }))
@@ -2565,8 +1360,7 @@ function calcularListaCompras() {
     b.variantes.forEach(v => {
       if (v.stock < UMBRAL.frascoU) {
         frascosBajos.push({
-          nombre: `${b.modelo} · ${v.tamano} ml`,
-          actual: `${v.stock} u`,
+          nombre: `${b.modelo} · ${v.tamano} ml`, actual: `${v.stock} u`,
           sugerido: `${UMBRAL.sugeridoFrascoU} u`,
           costo: (v.costo || 0) * UMBRAL.sugeridoFrascoU
         });
@@ -2581,8 +1375,7 @@ function calcularListaCompras() {
     lista.push({
       titulo: 'Atomizadores',
       items: atoBajos.map(a => ({
-        nombre: a.modelo,
-        actual: `${a.stock} u`,
+        nombre: a.modelo, actual: `${a.stock} u`,
         sugerido: `${UMBRAL.sugeridoAtomU} u`,
         costo: (a.costo || 0) * UMBRAL.sugeridoAtomU
       }))
@@ -2590,7 +1383,6 @@ function calcularListaCompras() {
   }
   return lista;
 }
-
 function abrirListaCompras() {
   const lista = calcularListaCompras();
   const body = $('shopBody');
@@ -2599,7 +1391,7 @@ function abrirListaCompras() {
       <div class="shop-empty">
         <div class="shop-empty-icon">🎉</div>
         <div>¡Todo en orden!</div>
-        <div style="margin-top:10px;font-size:15px;color:#6B4423">No hay insumos con stock bajo en este momento.</div>
+        <div style="margin-top:8px;font-size:13px;color:rgba(240,230,210,.4)">No hay insumos con stock bajo en este momento.</div>
       </div>`;
     $('shopExportPdf').style.display = 'none';
     $('shopExportXls').style.display = 'none';
@@ -2607,14 +1399,14 @@ function abrirListaCompras() {
     const totalItems = lista.reduce((a, c) => a + c.items.length, 0);
     const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
     body.innerHTML = `
-      <div style="font-size:13px;color:#6B4423;margin-bottom:16px;line-height:1.5;font-weight:600">
-        Se detectaron <b style="color:#8B3A2A">${totalItems}</b> insumo${totalItems === 1 ? '' : 's'} con stock bajo.
-        ${totalCosto > 0 ? `Costo estimado: <b style="color:#2E6A42">${money(totalCosto)}</b>` : ''}
+      <div style="font-size:13px;color:rgba(240,230,210,.6);margin-bottom:14px;line-height:1.5;font-family:'Kalam',cursive">
+        Se detectaron <b style="color:#d64838">${totalItems}</b> insumo${totalItems === 1 ? '' : 's'} con stock bajo.
+        ${totalCosto > 0 ? `Costo estimado: <b style="color:#8fb56b">${money(totalCosto)}</b>` : ''}
       </div>
       <div class="shop-list">
         ${lista.map(cat => `
           <div class="shop-cat">
-            <div class="shop-cat-title">✦ ${esc(cat.titulo)} · ${cat.items.length}</div>
+            <div class="shop-cat-title">${esc(cat.titulo)} · ${cat.items.length}</div>
             ${cat.items.map(it => `
               <div class="shop-item">
                 <div class="shop-item-info">
@@ -2631,12 +1423,10 @@ function abrirListaCompras() {
   $('shopBackdrop').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
-
 function closeShopModal() {
   $('shopBackdrop').classList.remove('show');
   document.body.style.overflow = '';
 }
-
 function exportShopPDF() {
   const lista = calcularListaCompras();
   if (!lista.length) return toast('Lista vacía');
@@ -2650,12 +1440,12 @@ function exportShopPDF() {
   const totalCosto = lista.reduce((a, c) => a + c.items.reduce((s, i) => s + (i.costo || 0), 0), 0);
   doc.text('Insumos con stock bajo · Costo estimado: ' + money(totalCosto), marginX, 31);
   let y = 40;
-  const HEAD = { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' };
+  const HEAD = { fillColor: [255, 184, 77], textColor: [42, 21, 0], fontStyle: 'bold' };
   const BASE = {
     margin: { left: marginX, right: marginX },
     styles: { fontSize: 9, cellPadding: 2.4 },
     headStyles: HEAD,
-    alternateRowStyles: { fillColor: [250, 240, 220] }
+    alternateRowStyles: { fillColor: [245, 243, 236] }
   };
   lista.forEach(cat => {
     doc.setFontSize(12);
@@ -2679,7 +1469,6 @@ function exportShopPDF() {
   doc.save('AION_ListaCompras_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('Lista PDF exportada');
 }
-
 function exportShopExcel() {
   const lista = calcularListaCompras();
   if (!lista.length) return toast('Lista vacía');
@@ -2712,15 +1501,9 @@ function exportShopExcel() {
   XLSX.writeFile(wb, 'AION_ListaCompras_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   toast('Lista Excel exportada');
 }
-
-$('shopExportPdf').addEventListener('click', exportShopPDF);
-$('shopExportXls').addEventListener('click', exportShopExcel);
-$('shopBackdrop').addEventListener('click', e => { if (e.target === $('shopBackdrop')) closeShopModal(); });
-
-/* =========================================================
-   EXPORTAR — PDF HISTORIAL
-   ========================================================= */
-
+ $('shopExportPdf').addEventListener('click', exportShopPDF);
+ $('shopExportXls').addEventListener('click', exportShopExcel);
+ $('shopBackdrop').addEventListener('click', e => { if (e.target === $('shopBackdrop')) closeShopModal(); });
 function exportPDF() {
   const list = getFiltered();
   if (!list.length) return toast('Nada que exportar');
@@ -2743,17 +1526,12 @@ function exportPDF() {
     head: [['Fecha','Cliente','Esencia','Tam.','Cant.','Ess ml','Alcohol','Frasco','Venta','Costo','Ganancia','Margen']],
     body: rows,
     styles: { fontSize: 7.5, cellPadding: 1.8 },
-    headStyles: { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [250, 240, 220] }
+    headStyles: { fillColor: [200, 112, 77], textColor: [255, 248, 232], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 242, 224] }
   });
   doc.save('AION_Historial_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('PDF exportado');
 }
-
-/* =========================================================
-   EXPORTAR — PDF INVENTARIO
-   ========================================================= */
-
 function exportInvPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -2763,8 +1541,8 @@ function exportInvPDF() {
   doc.setFontSize(10);
   doc.text('Fecha: ' + new Date().toLocaleString('es-ES'), marginX, 25);
   let y = 33;
-  const HEAD = { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' };
-  const BASE = { margin: { left: marginX, right: marginX }, styles: { fontSize: 8.5, cellPadding: 2.2 }, headStyles: HEAD, alternateRowStyles: { fillColor: [250, 240, 220] } };
+  const HEAD = { fillColor: [200, 112, 77], textColor: [255, 248, 232], fontStyle: 'bold' };
+  const BASE = { margin: { left: marginX, right: marginX }, styles: { fontSize: 8.5, cellPadding: 2.2 }, headStyles: HEAD, alternateRowStyles: { fillColor: [250, 242, 224] } };
   const checkPage = (need = 40) => { if (y > 297 - need) { doc.addPage(); y = 22; } };
   doc.setFontSize(12); doc.text('Esencias', marginX, y);
   doc.autoTable({
@@ -2775,11 +1553,10 @@ function exportInvPDF() {
       : [['—', 'Sin esencias registradas', '—', '—', '—', '—']],
     columnStyles: { 0:{cellWidth:10,halign:'center'},2:{halign:'right',cellWidth:24},3:{halign:'right',cellWidth:24},4:{halign:'right',cellWidth:28},5:{cellWidth:20,halign:'center'} },
     didParseCell: d => {
-      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
+      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 70, 48]; d.cell.styles.fontStyle = 'bold'; }
     }
   });
-  y = doc.lastAutoTable.finalY + 11;
-  checkPage();
+  y = doc.lastAutoTable.finalY + 11; checkPage();
   doc.setFontSize(12); doc.text('Líquidos base', marginX, y);
   doc.autoTable({
     ...BASE, startY: y + 3,
@@ -2787,8 +1564,7 @@ function exportInvPDF() {
     body: LIQUIDOS.map(l => [l.label, fmt(inventory.liquidos[l.key]), money(inventory.costosLiquidos[l.key]), money(inventory.liquidos[l.key] * (inventory.costosLiquidos[l.key] || 0))]),
     columnStyles: { 1:{halign:'right',cellWidth:26},2:{halign:'right',cellWidth:26},3:{halign:'right',cellWidth:30} }
   });
-  y = doc.lastAutoTable.finalY + 11;
-  checkPage();
+  y = doc.lastAutoTable.finalY + 11; checkPage();
   doc.setFontSize(12); doc.text('Frascos', marginX, y);
   const frascosBody = [];
   if (!inventory.botellas.length) frascosBody.push(['—', 'Sin frascos registrados', '—', '—', '—', '—', '—']);
@@ -2804,12 +1580,11 @@ function exportInvPDF() {
     body: frascosBody,
     columnStyles: { 0:{cellWidth:45},1:{halign:'right',cellWidth:20},2:{halign:'right',cellWidth:20},3:{halign:'right',cellWidth:22},4:{halign:'right',cellWidth:26},5:{cellWidth:20,halign:'center'},6:{halign:'right',cellWidth:26} },
     didParseCell: d => {
-      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
+      if (d.section === 'body' && d.column.index === 5 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 70, 48]; d.cell.styles.fontStyle = 'bold'; }
       if (d.section === 'body' && d.column.index === 0 && d.cell.raw === '↳') { d.cell.styles.textColor = [150, 150, 150]; }
     }
   });
-  y = doc.lastAutoTable.finalY + 11;
-  checkPage();
+  y = doc.lastAutoTable.finalY + 11; checkPage();
   doc.setFontSize(12); doc.text('Atomizadores', marginX, y);
   doc.autoTable({
     ...BASE, startY: y + 3,
@@ -2819,17 +1594,12 @@ function exportInvPDF() {
       : [['Sin atomizadores registrados', '—', '—', '—', '—']],
     columnStyles: { 1:{halign:'right',cellWidth:24},2:{halign:'right',cellWidth:26},3:{halign:'right',cellWidth:30},4:{cellWidth:22,halign:'center'} },
     didParseCell: d => {
-      if (d.section === 'body' && d.column.index === 4 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
+      if (d.section === 'body' && d.column.index === 4 && d.cell.raw === '⚠ Bajo') { d.cell.styles.textColor = [200, 70, 48]; d.cell.styles.fontStyle = 'bold'; }
     }
   });
   doc.save('AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('Inventario PDF exportado');
 }
-
-/* =========================================================
-   EXPORTAR — EXCEL HISTORIAL
-   ========================================================= */
-
 function exportHistExcel() {
   const list = getFiltered();
   if (!list.length) return toast('Nada que exportar');
@@ -2867,11 +1637,6 @@ function exportHistExcel() {
   XLSX.writeFile(wb, 'AION_Historial_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   toast('Excel exportado');
 }
-
-/* =========================================================
-   EXPORTAR — EXCEL INVENTARIO
-   ========================================================= */
-
 function exportInvExcel() {
   const wb = XLSX.utils.book_new();
   const essRows = [['Nombre','Stock (ml)','Costo $/ml','Valor total ($)','Estado']];
@@ -2920,11 +1685,6 @@ function exportInvExcel() {
   XLSX.writeFile(wb, 'AION_Inventario_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   toast('Inventario Excel exportado');
 }
-
-/* =========================================================
-   EXPORTAR — REPORTE FINANCIERO PDF
-   ========================================================= */
-
 function exportFinPDF() {
   const list = getFiltered().filter(s => (s.precioVenta || 0) > 0);
   if (!list.length) return toast('No hay ventas con precio registrado');
@@ -2945,7 +1705,7 @@ function exportFinPDF() {
     head: [['Métrica','Valor']],
     body: [['Total ingresos', money(totalVenta)],['Total costos de producción', money(totalCosto)],['Ganancia neta', money(totalGananc)],['Margen promedio', pct(margenProm)],['Número de ventas', list.length],['Ticket promedio', money(totalVenta / list.length)]],
     styles: { fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: [168, 232, 189], textColor: [26, 58, 37], fontStyle: 'bold' },
+    headStyles: { fillColor: [122, 139, 90], textColor: [255, 248, 232], fontStyle: 'bold' },
     columnStyles: { 0: { cellWidth: 90, fontStyle: 'bold' }, 1: { cellWidth: 50, halign: 'right' } },
     tableWidth: 140
   });
@@ -2960,13 +1720,13 @@ function exportFinPDF() {
     head: [['Fecha','Cliente','Esencia','Producto','Precio venta','Costo producción','Ganancia','Margen']],
     body: rows,
     styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [250, 240, 220] },
+    headStyles: { fillColor: [200, 112, 77], textColor: [255, 248, 232], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 242, 224] },
     columnStyles: { 4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'} },
     didParseCell: d => {
       if (d.section === 'body' && d.column.index === 6) {
         const txt = String(d.cell.raw || '');
-        if (txt.startsWith('$-')) { d.cell.styles.textColor = [200, 40, 40]; d.cell.styles.fontStyle = 'bold'; }
+        if (txt.startsWith('$-')) { d.cell.styles.textColor = [200, 70, 48]; d.cell.styles.fontStyle = 'bold'; }
       }
     }
   });
@@ -2995,18 +1755,13 @@ function exportFinPDF() {
       ['TOTAL', money(totalCosto), '100%']
     ],
     styles: { fontSize: 9, cellPadding: 2.4 },
-    headStyles: { fillColor: [230, 197, 94], textColor: [61, 40, 23], fontStyle: 'bold' },
+    headStyles: { fillColor: [200, 112, 77], textColor: [255, 248, 232], fontStyle: 'bold' },
     columnStyles: { 1:{halign:'right',cellWidth:32},2:{halign:'right',cellWidth:28} },
     tableWidth: 200
   });
   doc.save('AION_Financiero_' + new Date().toISOString().slice(0, 10) + '.pdf');
   toast('Reporte financiero PDF exportado');
 }
-
-/* =========================================================
-   EXPORTAR — REPORTE FINANCIERO EXCEL
-   ========================================================= */
-
 function exportFinExcel() {
   const list = getFiltered().filter(s => (s.precioVenta || 0) > 0);
   if (!list.length) return toast('No hay ventas con precio registrado');
@@ -3073,17 +1828,11 @@ function exportFinExcel() {
   XLSX.writeFile(wb, 'AION_Financiero_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   toast('Reporte financiero Excel exportado');
 }
-
-/* =========================================================
-   RESET
-   ========================================================= */
-
 function clearHist() {
   if (!sales.length) return toast('El historial ya está vacío');
   if (!confirm('¿Borrar todo el historial de producción?')) return;
   sales = []; saveSales(); toast('Historial borrado');
 }
-
 function clearAll() {
   if (!confirm('¿Borrar TODO el inventario y el historial?')) return;
   if (!confirm('Confirmación final: esta acción no se puede deshacer.')) return;
@@ -3093,11 +1842,6 @@ function clearAll() {
   sales = [];
   saveInv(); saveSales(); toast('Todo reseteado');
 }
-
-/* =========================================================
-   MODAL
-   ========================================================= */
-
 function openModal(title, fields, onSave, opts = {}) {
   $('modalBox').classList.toggle('modal-lg', !!opts.large);
   $('modalTitle').textContent = title;
@@ -3130,25 +1874,18 @@ function openModal(title, fields, onSave, opts = {}) {
     setTimeout(() => { const f = $('modalBody').querySelector('input'); if (f) f.focus(); }, 60);
   }
 }
-
 function closeModal() {
   $('modalBackdrop').classList.remove('show');
   document.body.style.overflow = '';
 }
-
-$('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal(); });
-$('modalBody').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('modalOk').click(); } });
+ $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal(); });
+ $('modalBody').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('modalOk').click(); } });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if ($('modalBackdrop').classList.contains('show')) closeModal();
     if ($('shopBackdrop').classList.contains('show')) closeShopModal();
   }
 });
-
-/* =========================================================
-   TABS
-   ========================================================= */
-
 function switchTab(t) {
   ['inv', 'venta', 'hist'].forEach(k => {
     $('view-' + k).classList.toggle('active', k === t);
@@ -3158,11 +1895,6 @@ function switchTab(t) {
   if (t === 'hist') renderHistorial();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-/* =========================================================
-   EVENTOS
-   ========================================================= */
-
 function bindEvents() {
   ['pctEss','pctMusk','pctIpm','pctDpg','vCant','vPrecio'].forEach(id => {
     const el = $(id);
@@ -3188,11 +1920,6 @@ function bindEvents() {
   $('atoStock').addEventListener('keydown', e => { if (e.key === 'Enter') addAtom(); });
   $('atoCosto').addEventListener('keydown', e => { if (e.key === 'Enter') addAtom(); });
 }
-
-/* =========================================================
-   INICIALIZACIÓN
-   ========================================================= */
-
 (function init() {
   loadData();
   ssEsencia = createSearchSelect('ss-vEsencia', 'Buscar esencia…', () => calcFormula());
@@ -3206,6 +1933,5 @@ function bindEvents() {
   renderAll();
 })();
 </script>
-
 </body>
 </html>
