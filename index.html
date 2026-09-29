@@ -422,8 +422,8 @@ body.light .liq{background:rgba(0,0,0,.02)}
 }
 body.light .bottom{background:rgba(245,245,247,.78)}
 .bottom-inner{
-  max-width:520px;margin:0 auto;
-  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;
+  max-width:560px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
   background:var(--surface-1);
   border-radius:20px;padding:4px;
   border:1px solid var(--border-hairline);
@@ -1392,6 +1392,10 @@ body.light ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25)}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3.5-3.5L13 14l4-6"/></svg>
       <span>Historial</span>
     </button>
+    <button id="tab-config" class="tab" onclick="switchTab('config')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+      <span>Ajustes</span>
+    </button>
   </div>
 </nav>
 
@@ -1975,9 +1979,13 @@ function renderLiquidos() {
         <div class="liq-stock" id="stock-${l.key}">0 ml</div>
       </div>`).join('');
     g.dataset.built = '1';
-    LIQUIDOS.forEach(l => { $('costo-' + l.key).value = inventory.costosLiquidos[l.key] || ''; });
   }
   LIQUIDOS.forEach(l => {
+    // Sincroniza el input SOLO si el usuario no lo está editando
+    const inp = $('costo-' + l.key);
+    if (inp && document.activeElement !== inp) {
+      inp.value = inventory.costosLiquidos[l.key] || '';
+    }
     const c = inventory.costosLiquidos[l.key] || 0;
     const v = inventory.liquidos[l.key] * c;
     const stock = inventory.liquidos[l.key];
@@ -3062,6 +3070,7 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 function confirmAction({ title, msg, okText = 'Confirmar', danger = false, icon = 'danger', onConfirm }){
+  $('modalBox').classList.remove('modal-lg');
   const icons = {
     danger: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>',
     warn: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
@@ -3081,6 +3090,7 @@ function confirmAction({ title, msg, okText = 'Confirmar', danger = false, icon 
   setTimeout(() => $('confirmOk').focus(), 60);
 }
 function openShortcuts(){
+  $('modalBox').classList.remove('modal-lg');
   $('modalTitle').textContent = 'Atajos de teclado';
   $('modalBody').innerHTML = `
     <p class="card-sub" style="margin-bottom:14px">Atajos disponibles para acelerar tu trabajo.</p>
@@ -3186,7 +3196,7 @@ function renderSalesChart(){
         return `
           <div class="chart-col" title="${fullDate}: ${d.value} u">
             <div class="chart-col-bar-wrap">
-              <div class="chart-col-bar" style="height:${h}%">
+              <div class="chart-col-bar" style="height:${h}%;${d.value > 0 ? '' : 'opacity:0;'}">
                 ${d.value > 0 ? `<span class="chart-col-val">${d.value}</span>` : ''}
               </div>
             </div>
@@ -3293,6 +3303,7 @@ function bindEvents() {
     else if (e.key === '2') switchTab('inv');
     else if (e.key === '3') switchTab('venta');
     else if (e.key === '4') switchTab('hist');
+    else if (e.key === '5') switchTab('config');
     else if (e.key === 'n' || e.key === 'N') quickSale();
     else if (e.key === '/') { e.preventDefault(); switchTab('inv'); setTimeout(() => $('invSearch')?.focus(), 200); }
     else if (e.key === 't' || e.key === 'T') toggleTheme();
